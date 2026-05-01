@@ -1077,7 +1077,23 @@ async function downloadReceiptPDF() {
     showToast('✅ PDF downloaded!', 'success');
   } catch(e) { showToast('Error generating PDF', 'error'); console.error(e); }
 }
-
+  
+async function downloadById(id, type) {
+  const all = await dbLoad();
+  const r = all.find(x => x.id === id);
+  if (!r) return;
+  // Temporarily render receipt in hidden div
+  const prev = lastReceipt;
+  lastReceipt = r;
+  renderReceiptPreview(r);
+  document.getElementById('receipt-wrap').classList.add('show');
+  await new Promise(res => setTimeout(res, 300)); // wait for render
+  if (type === 'pdf') await downloadReceiptPDF();
+  else await downloadReceiptImage();
+  document.getElementById('receipt-wrap').classList.remove('show');
+  if (prev) { lastReceipt = prev; renderReceiptPreview(prev); document.getElementById('receipt-wrap').classList.add('show'); }
+  else lastReceipt = null;
+}
 async function shareReceiptWhatsApp() {
   if (!lastReceipt) return;
   const r = lastReceipt;
@@ -1175,6 +1191,8 @@ async function renderTable() {
       <td><span class="badge badge-${r.payment.toLowerCase().replace(/[^a-z]/g,'')}">${r.payment}</span></td>
       <td><div class="action-btns">
         <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
+        <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button>
+        <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
         ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬</button>` : ''}
       </div></td>
     </tr>`).join('');
@@ -1422,7 +1440,7 @@ function applyRoleAccess() {
   //});
   //document.getElementById('tab-btn-admin').style.display = isAdmin ? '' : 'none';
 
-  ['records','bulk','stats','admin'].forEach(id => {
+  ['bulk','stats','admin'].forEach(id => {
     const btn = document.querySelector(`[onclick="switchTab('${id}')"]`);
     if (btn) btn.style.display = isAdmin ? '' : 'none';
   });
