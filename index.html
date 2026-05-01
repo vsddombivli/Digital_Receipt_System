@@ -934,7 +934,16 @@ function switchTab(id) {
 async function generateReceipt() {
   const name = document.getElementById('donor-name').value.trim();
   if (!name) { showToast('Donor name is required', 'error'); return; }
-
+  
+  const mobile = document.getElementById('donor-mobile').value.trim();
+  if (mobile && !/^[6-9]\d{9}$/.test(mobile)) { showToast('Mobile must be 10 digits starting with 6-9', 'error'); return; }
+  
+  const pan = document.getElementById('donor-pan').value.trim();
+  if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) { showToast('Invalid PAN format (e.g. ABCDE1234F)', 'error'); return; }
+  
+  const email = document.getElementById('donor-email').value.trim();
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Invalid email address', 'error'); return; }
+  
   const selectedAccounts = [];
   ACCOUNTS.forEach((a,i) => {
     const chk = document.getElementById(`ac-chk-${i}`);
@@ -942,6 +951,10 @@ async function generateReceipt() {
     if (chk.checked) selectedAccounts.push({ name: a, amount: amt });
   });
   if (!selectedAccounts.length) { showToast('Select at least one donation account', 'error'); return; }
+
+  const invalidAmt = selectedAccounts.find(a => a.amount <= 0);
+  if (invalidAmt) { showToast(`Enter valid amount for ${invalidAmt.name}`, 'error'); return; }
+  
   const total = selectedAccounts.reduce((s,a) => s+a.amount, 0);
   if (!total) { showToast('Enter donation amount', 'error'); return; }
 
