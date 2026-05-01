@@ -1027,9 +1027,14 @@ function renderReceiptPreview(r) {
   // document.getElementById('r-ref').textContent = r.ref || '–';
   document.getElementById('r-remarks').textContent = r.remarks;
   document.getElementById('r-donor-sig').textContent = r.donor;
-  document.getElementById('r-accounts').innerHTML = r.accounts.map((a,i) =>
-    `<tr><td>${i+1}</td><td>${a.name}</td><td>₹${a.amount.toLocaleString('en-IN')}</td></tr>`
-  ).join('');
+  //document.getElementById('r-accounts').innerHTML = r.accounts.map((a,i) =>
+  //  `<tr><td>${i+1}</td><td>${a.name}</td><td>₹${a.amount.toLocaleString('en-IN')}</td></tr>`
+  //).join('');
+  document.getElementById('r-accounts').innerHTML = ACCOUNTS.map((a,i) => {
+    const found = r.accounts.find(x => x.name === a);
+    const amt = found ? found.amount : 0;
+    return `<tr><td>${i+1}</td><td>${a}</td><td>₹${amt.toLocaleString('en-IN')}</td></tr>`;
+  }).join('');
 }
 
 // ══════════════════════════════
