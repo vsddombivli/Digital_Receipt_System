@@ -1342,7 +1342,12 @@ async function onLoginSuccess(user) {
     .single();
 
   currentRole = profile ? profile.role : 'volunteer';
-
+  // Auto-fill volunteer name
+  const volInput = document.getElementById('volunteer-name');
+  if (volInput) {
+    volInput.value = profile?.full_name || user.email.split('@')[0];
+    volInput.disabled = true;
+  }
   hideLoginScreen();
   applyRoleAccess();
 
