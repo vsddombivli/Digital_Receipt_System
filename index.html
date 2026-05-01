@@ -151,8 +151,8 @@
   }
   .receipt-total .words { font-size: 0.82rem; color: var(--muted); font-style: italic; }
   .receipt-total .amount { font-size: 1.2rem; font-weight: 700; font-family: 'DM Mono', monospace; color: #c0306a; }
-  .receipt-footer { padding: 10px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem; color: var(--muted); border-top: 1px dashed var(--pink-border); }
-  .receipt-footer .sig-line { margin-top: 30px; border-top: 1px solid var(--pink-border); padding-top: 4px; text-align: center; }
+  .receipt-footer { padding: 10px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem; color: var(--muted); border-top: 1px dashed var(--pink-border); align-items: end; }
+  .receipt-footer .sig-line { margin-top: 8px; border-top: 1px solid var(--pink-border); padding-top: 4px; text-align: center; }
   .receipt-legal { background: var(--pink-light); border-top: 1px solid var(--pink-border); padding: 8px 20px; font-size: 0.7rem; color: var(--muted); text-align: center; line-height: 1.5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .receipt-watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-30deg); font-size: 4rem; color: rgba(231,84,128,0.05); font-weight: 900; pointer-events: none; white-space: nowrap; }
 
@@ -423,7 +423,7 @@
                 <span id="r-donor-sig" style="font-size:0.92rem;color:var(--ink);font-weight:600;display:block;margin-bottom:6px;"></span>
                 <div style="border-top:1px solid var(--pink-border);padding-top:4px;font-size:0.78rem;">નાણાં આપનારની સહીી</div>
               </div>
-              <div>Remarks: <span id="r-remarks">–</span></div>
+              <!-- <div>Remarks: <span id="r-remarks">–</span></div> -->
             </div>
             <div style="text-align:right">
               <div style="font-size:0.85rem;color:var(--ink);font-weight:600;">વર્ધમાન સંસ્કારધામ વતી</div>
@@ -432,7 +432,8 @@
                 <div style="border-top:1px solid var(--pink-border);padding-top:4px;font-size:0.78rem;">નાણાં લેનારની સહી</div>
               </div>
             </div>
-          </div>
+            <div style="grid-column:1/-1;padding-top:8px;border-top:1px dashed var(--pink-border);font-size:0.8rem;">Remarks: <span id="r-remarks">–</span></div>
+          </div>    
           <div class="receipt-legal">
             PUBLIC TRUST REG. NO. E-19790 (MUMBAI) DTD. 20-11-2001 &nbsp;|&nbsp;
             INCOME TAX EXEMPTION NO. DIT(E)/MC/80G/482/2009/10 &nbsp;|&nbsp; PAN NO. AAA-TV-2881J<br>
