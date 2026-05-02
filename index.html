@@ -996,6 +996,9 @@ async function generateReceipt() {
   if (selectedPayment !== 'Cash') {
     const ref = document.getElementById('payment-ref').value.trim();
     if (!ref) { showToast('Transaction / Ref No. is mandatory for ' + selectedPayment, 'error'); return; }
+
+    const fileInput = document.getElementById('payment-screenshot');
+    if (!fileInput.files.length) { showToast('Payment screenshot is mandatory for ' + selectedPayment, 'error'); btn.disabled = false; btn.innerHTML = '✨ Generate Receipt'; return; }
   }
 
   const btn = document.getElementById('generate-btn');
