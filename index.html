@@ -1043,6 +1043,7 @@ async function extractTransactionId(input) {
 
   try {
     const { data: { text: fullText } } = await Tesseract.recognize(input.files[0], 'eng');
+    console.log('Tesseract raw text:', fullText);
     const txnId = extractTxnFromText(fullText);
     // Also extract and verify amount
     const detectedAmt = extractAmountFromText(fullText);
@@ -1073,15 +1074,15 @@ async function extractTransactionId(input) {
 function extractTxnFromText(text) {
   // UPI Transaction ID patterns (covers GPay, PhonePe, Paytm, BHIM, Amazon Pay)
   const patterns = [
-    // Explicit labels first
-    /(?:transaction\s*id|txn\s*id|utr|ref(?:erence)?\s*(?:no|number|id)?)\s*[:#\s]\s*([A-Z0-9]{8,22})/gi,
-    // PhonePe/GPay format: T followed by digits
-    /T\d{10,15}/g,
-    // Standard UPI ref: 12 digit number
-    /(\d{12})/g,
-    // Alphanumeric 10-22 chars (common UPI format)
-    /([A-Z]{2,6}\d{8,18})/g,
-    /(\d{8,18}[A-Z]{2,6})/g,
+    // Label-based (most reliable) — covers "Transaction ID", "Transaction Id", "Txn ID", "UTR"
+    /(?:transaction\s*id|txn\s*id|utr\s*(?:no)?|ref(?:erence)?\s*(?:no|id)?)\s*[:\-\s]\s*([A-Z0-9]{8,22})/gi,
+    // 12 digit number (most common UPI ref)
+    /\b(\d{12})\b/g,
+    // 10-18 digit number
+    /\b(\d{10,18})\b/g,
+    // Alphanumeric UPI formats
+    /\b([A-Z]{2,6}\d{6,18})\b/g,
+    /\b(\d{6,18}[A-Z]{2,6})\b/g,
   ];
 
   for (const pattern of patterns) {
