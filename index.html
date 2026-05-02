@@ -764,6 +764,7 @@ function toReceipt(row) {
     total: parseFloat(row.total_amount), payment: row.payment_method,
     ref: row.payment_ref || '', volunteer: row.volunteer,
     remarks: row.remarks || '', waSent: row.wa_sent, createdAt: row.created_at,
+    screenshot_url: row.screenshot_url || '',
   };
 }
 
@@ -998,7 +999,7 @@ async function generateReceipt() {
     if (!ref) { showToast('Transaction / Ref No. is mandatory for ' + selectedPayment, 'error'); return; }
 
     const fileInput = document.getElementById('payment-screenshot');
-    if (!fileInput.files.length) { showToast('Payment screenshot is mandatory for ' + selectedPayment, 'error'); btn.disabled = false; btn.innerHTML = '✨ Generate Receipt'; return; }
+    if (!fileInput.files.length) { showToast('Payment screenshot is mandatory for ' + selectedPayment, 'error'); return; }
   }
 
   const btn = document.getElementById('generate-btn');
@@ -1231,7 +1232,7 @@ async function renderTable() {
       <td><span class="badge badge-${r.payment.toLowerCase().replace(/[^a-z]/g,'')}">${r.payment}</span></td>
       <td><div class="action-btns">
         <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
-        ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank"><button class="btn btn-secondary btn-sm">🖼️ SS</button></a>` : ''}
+        ${r.screenshot_url ? '<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>' : ''}
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button>
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
         ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬</button>` : ''}
@@ -1364,11 +1365,11 @@ function clearForm() {
 function newReceipt() { clearForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 function exportCSV() {
-  const records = localLoad();
-  const rows = [['Receipt No','Date','Donor Name','Mobile','PAN','Accounts','Total','Payment','Ref','Volunteer','Remarks','WA Sent']];
+  const records = await dbLoad();
+  const rows = [['Receipt No','Date','Donor Name','Mobile','PAN','Accounts','Total','Payment','Ref','Volunteer','Remarks','WA Sent','Screenshot URL']];
   records.forEach(r => rows.push([r.id,r.date,r.donor,r.mobile||'',r.pan||'',
     (r.accounts||[]).map(a=>`${a.name}:${a.amount}`).join('|'),
-    r.total,r.payment,r.ref||'',r.volunteer,r.remarks||'',r.waSent?'Yes':'No']));
+    r.total,r.payment,r.ref||'',r.volunteer,r.remarks||'',r.waSent?'Yes':'No',r.screenshot_url||'']));
   const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download = `VSD_Receipts_${todayStr()}.csv`; a.click();
