@@ -1046,13 +1046,7 @@ async function extractTransactionId(input) {
     console.log('Tesseract raw text:', fullText);
     const txnId = extractTxnFromText(fullText);
     // Also extract and verify amount
-    const detectedAmt = extractAmountFromText(fullText);
-    const enteredAmt  = parseFloat(document.getElementById('total-amount').value || 0);
-    if (detectedAmt && enteredAmt && detectedAmt !== enteredAmt) {
-      showToast(`⚠️ Screenshot amount ₹${detectedAmt} doesn't match entered ₹${enteredAmt} — please verify`, 'error');
-    } else if (detectedAmt && enteredAmt && detectedAmt === enteredAmt) {
-      showToast(`✅ Amount ₹${detectedAmt} verified from screenshot`, 'success');
-    }
+    window._detectedScreenshotAmt = extractAmountFromText(fullText);
     
     if (txnId) {
       refInput.value = txnId;
@@ -1098,9 +1092,14 @@ function extractTxnFromText(text) {
 
 function extractAmountFromText(text) {
   const patterns = [
-    /(?:amount|paid|total|debited|sent|deducted)\s*[:\-]?\s*(?:rs\.?|inr|₹)?\s*([\d,]+(?:\.\d{1,2})?)/gi,
+    // Standard labeled amount
+    /(?:amount|paid|total|debited|sent)\s*[:\-]?\s*(?:rs\.?|inr|₹)?\s*([\d,]+(?:\.\d{1,2})?)/gi,
+    // ₹ symbol followed by amount
     /(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{1,2})?)/gi,
-    /\b([\d,]+(?:\.\d{2})?)\s*(?:rs\.?|inr|₹)/gi,
+    // Amount before ₹
+    /([\d,]+(?:\.\d{2})?)\s*(?:rs\.?|inr|₹)/gi,
+    // Large standalone number that looks like amount (100-999999)
+    /\b(\d{3,6}(?:\.\d{2})?)\b/g,
   ];
   for (const pattern of patterns) {
     const matches = [...text.matchAll(pattern)];
@@ -1181,7 +1180,10 @@ async function generateReceipt() {
     const fileInput = document.getElementById('payment-screenshot');
     if (!fileInput.files.length) { showToast('Payment screenshot is mandatory for ' + selectedPayment, 'error'); return; }
   }
-
+  if (window._detectedScreenshotAmt && window._detectedScreenshotAmt !== total) {
+    showToast(`⚠️ Screenshot amount ₹${window._detectedScreenshotAmt} doesn't match entered ₹${total} — please verify`, 'error');
+    //return;
+  }
   const btn = document.getElementById('generate-btn');
   btn.disabled = true; btn.textContent = '⏳ Saving…';
 
