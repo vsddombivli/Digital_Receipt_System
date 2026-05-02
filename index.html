@@ -945,7 +945,7 @@ async function generateReceipt() {
   if (!mobile) { showToast('Mobile Number is required', 'error'); return; }
   if (mobile && !/^[6-9]\d{9}$/.test(mobile)) { showToast('Mobile must be 10 digits starting with 6-9', 'error'); return; }
   
-  const pan = document.getElementById('donor-pan').value.trim();
+  const pan = document.getElementById('donor-pan').value.trim().toUpperCase();
   if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) { showToast('Invalid PAN format (e.g. ABCDE1234F)', 'error'); return; }
   
   const email = document.getElementById('donor-email').value.trim();
