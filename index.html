@@ -731,7 +731,7 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
 // Every volunteer who opens the link will be auto-connected.
 const HARDCODED_URL = 'https://kofalhqgjuglfjcinwdh.supabase.co';   // e.g. https://xxxx.supabase.co
 const HARDCODED_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZmFsaHFnanVnbGZqY2lud2RoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDI2NzYsImV4cCI6MjA5MzExODY3Nn0.JDV29I2PL-Ps3r5ahgC7p9-lNhMztaVpf6N1c4oQ0c8'; // eyJhbGci…
-
+const GOOGLE_VISION_KEY = 'AIzaSyBz5ssy_J3j8j8W_shuMnP_FEjGkvmW4vI';
 // Also allow override via localStorage (for admin setup convenience)
 const _supaUrl = (HARDCODED_URL !== 'YOUR_SUPABASE_URL') ? HARDCODED_URL : (localStorage.getItem('vsd_supa_url') || '');
 const _supaKey = (HARDCODED_KEY !== 'YOUR_SUPABASE_ANON_KEY') ? HARDCODED_KEY : (localStorage.getItem('vsd_supa_key') || '');
@@ -1005,7 +1005,7 @@ async function extractTransactionId(input) {
   // Don't overwrite if already manually filled
   if (refInput.value.trim()) return;
 
-  if (!GOOGLE_VISION_KEY || GOOGLE_VISION_KEY === 'AIzaSyBz5ssy_J3j8j8W_shuMnP_FEjGkvmW4vI') {
+  if (!GOOGLE_VISION_KEY || GOOGLE_VISION_KEY === 'YOUR_GOOGLE_VISION_API_KEY' ) {
     statusDiv.textContent = 'Upload payment screenshot — Transaction ID will be auto-filled';
     return;
   }
