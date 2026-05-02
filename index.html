@@ -1077,32 +1077,30 @@ async function downloadReceiptPDF() {
     showToast('✅ PDF downloaded!', 'success');
   } catch(e) { showToast('Error generating PDF', 'error'); console.error(e); }
 }
-  async function downloadById(id, type) {
+
+async function downloadById(id, type) {
   const all = await dbLoad();
   const r = all.find(x => x.id === id);
   if (!r) { showToast('Receipt not found', 'error'); return; }
-  
+
+  // Switch to New Receipt tab so receipt-preview is visible
+  switchTab('new');
+  await new Promise(res => setTimeout(res, 100));
+
   const prev = lastReceipt;
-  const wrap = document.getElementById('receipt-wrap');
-  
-  // Render receipt and make visible in place
   lastReceipt = r;
   renderReceiptPreview(r);
+
+  const wrap = document.getElementById('receipt-wrap');
   wrap.classList.add('show');
-  wrap.style.visibility = 'visible';
-  wrap.style.display = 'block';
-  
-  // Scroll to it so html2canvas can see it
-  wrap.scrollIntoView();
-  
-  // Wait for fonts and images to render
-  await new Promise(res => setTimeout(res, 800));
-  
+
+  // Wait for full render including fonts/images
+  await new Promise(res => setTimeout(res, 1000));
+
   try {
     if (type === 'pdf') await downloadReceiptPDF();
     else await downloadReceiptImage();
   } finally {
-    // Restore previous state
     lastReceipt = prev;
     if (prev) {
       renderReceiptPreview(prev);
@@ -1110,6 +1108,8 @@ async function downloadReceiptPDF() {
     } else {
       wrap.classList.remove('show');
     }
+    // Switch back to records tab
+    switchTab('records');
   }
 }
   
