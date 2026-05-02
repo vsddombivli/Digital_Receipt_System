@@ -1046,7 +1046,7 @@ async function extractTransactionId(input) {
     console.log('Tesseract raw text:', fullText);
     const txnId = extractTxnFromText(fullText);
     // Also extract and verify amount
-    window._detectedScreenshotAmt = extractAmountFromText(fullText);
+   // window._detectedScreenshotAmt = extractAmountFromText(fullText);
     
     if (txnId) {
       refInput.value = txnId;
@@ -1180,10 +1180,10 @@ async function generateReceipt() {
     const fileInput = document.getElementById('payment-screenshot');
     if (!fileInput.files.length) { showToast('Payment screenshot is mandatory for ' + selectedPayment, 'error'); return; }
   }
-  if (window._detectedScreenshotAmt && window._detectedScreenshotAmt !== total) {
-    showToast(`⚠️ Screenshot amount ₹${window._detectedScreenshotAmt} doesn't match entered ₹${total} — please verify`, 'error');
+  //if (window._detectedScreenshotAmt && window._detectedScreenshotAmt !== total) {
+    //showToast(`⚠️ Screenshot amount ₹${window._detectedScreenshotAmt} doesn't match entered ₹${total} — please verify`, 'error');
     //return;
-  }
+  //}
   const btn = document.getElementById('generate-btn');
   btn.disabled = true; btn.textContent = '⏳ Saving…';
 
@@ -1210,6 +1210,7 @@ async function generateReceipt() {
     document.getElementById('receipt-wrap').scrollIntoView({ behavior: 'smooth' });
     showToast(`✅ Receipt ${receiptNo} generated!`, 'success');
     updateCounter();
+    clearform();
   } finally {
     btn.disabled = false; btn.innerHTML = '✨ Generate Receipt';
   }
