@@ -1069,9 +1069,9 @@ async function downloadReceiptPDF() {
     const canvas = await captureReceipt();
     const imgData = canvas.toDataURL('image/png');
     const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
-    const pdfW = pdf.internal.pageSize.getWidth();
+    const pdfW = 148; // A5 width in mm
     const pdfH = (canvas.height * pdfW) / canvas.width;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfW, pdfH] });
     pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
     pdf.save(`Receipt_${lastReceipt.id}_${lastReceipt.donor.replace(/\s+/g,'_')}.pdf`);
     showToast('✅ PDF downloaded!', 'success');
