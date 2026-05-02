@@ -1232,7 +1232,7 @@ async function renderTable() {
       <td><span class="badge badge-${r.payment.toLowerCase().replace(/[^a-z]/g,'')}">${r.payment}</span></td>
       <td><div class="action-btns">
         <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
-        ${r.screenshot_url ? '<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>' : ''}
+        ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button>
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
         ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬</button>` : ''}
