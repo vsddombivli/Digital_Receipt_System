@@ -1318,7 +1318,7 @@ async function renderStats() {
 //  HELPERS
 // ══════════════════════════════
 function clearForm() {
-  ['donor-name','donor-addr','donor-mobile','donor-email','payment-ref','volunteer-name'].forEach(id => document.getElementById(id).value = '');
+  ['donor-name','donor-addr','donor-mobile','donor-email','payment-ref'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('donor-pan').value = ''; document.getElementById('donor-pan').disabled = false;
   document.getElementById('donation-date').value = todayStr();
   document.getElementById('remarks').value = 'Thank you for your contribution and support';
