@@ -1364,7 +1364,7 @@ function clearForm() {
 
 function newReceipt() { clearForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
-function exportCSV() {
+async function exportCSV() {
   const records = await dbLoad();
   const rows = [['Receipt No','Date','Donor Name','Mobile','PAN','Accounts','Total','Payment','Ref','Volunteer','Remarks','WA Sent','Screenshot URL']];
   records.forEach(r => rows.push([r.id,r.date,r.donor,r.mobile||'',r.pan||'',
