@@ -1077,36 +1077,42 @@ async function downloadReceiptPDF() {
     showToast('✅ PDF downloaded!', 'success');
   } catch(e) { showToast('Error generating PDF', 'error'); console.error(e); }
 }
-  
-async function downloadById(id, type) {
+  async function downloadById(id, type) {
   const all = await dbLoad();
   const r = all.find(x => x.id === id);
   if (!r) { showToast('Receipt not found', 'error'); return; }
+  
   const prev = lastReceipt;
+  const wrap = document.getElementById('receipt-wrap');
+  
+  // Render receipt and make visible in place
   lastReceipt = r;
   renderReceiptPreview(r);
-  // Must be visible for html2canvas to capture
-  const wrap = document.getElementById('receipt-wrap');
-  const wasHidden = !wrap.classList.contains('show');
-  wrap.style.position = 'fixed';
-  wrap.style.left = '-9999px';
-  wrap.style.display = 'block';
   wrap.classList.add('show');
-  await new Promise(res => setTimeout(res, 400));
+  wrap.style.visibility = 'visible';
+  wrap.style.display = 'block';
+  
+  // Scroll to it so html2canvas can see it
+  wrap.scrollIntoView();
+  
+  // Wait for fonts and images to render
+  await new Promise(res => setTimeout(res, 800));
+  
   try {
     if (type === 'pdf') await downloadReceiptPDF();
     else await downloadReceiptImage();
   } finally {
-    if (wasHidden) {
-      wrap.classList.remove('show');
-      wrap.style.position = '';
-      wrap.style.left = '';
-      wrap.style.display = '';
-    }
+    // Restore previous state
     lastReceipt = prev;
-    if (prev) renderReceiptPreview(prev);
+    if (prev) {
+      renderReceiptPreview(prev);
+      wrap.classList.add('show');
+    } else {
+      wrap.classList.remove('show');
+    }
   }
 }
+  
 async function shareReceiptWhatsApp() {
   if (!lastReceipt) return;
   const r = lastReceipt;
