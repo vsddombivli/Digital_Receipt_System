@@ -29,13 +29,9 @@
   body { background: var(--cream); font-family: 'EB Garamond', serif; color: var(--ink); min-height: 100vh; }
 
   /* HEADER */
-  .app-header {
-    background: #fff;
-    padding: 8px 20px;
-    display: flex; align-items: center;
-    border-bottom: 4px solid var(--saffron);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  }
+  .app-header { background: #fff; padding: 8px 12px; display: flex; align-items: center; border-bottom: 4px solid var(--saffron); box-shadow: 0 2px 8px rgba(0,0,0,0.08); flex-wrap: wrap; gap: 4px; }
+  .header-right { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+  
   .app-header img { height: 64px; width: auto; }
   .header-right { margin-left: auto; }
   .receipt-counter {
