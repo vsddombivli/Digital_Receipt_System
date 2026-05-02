@@ -350,8 +350,8 @@
         <div class="form-group full">
           <label>Payment Screenshot <span class="required">*</span></label>
           <input type="file" id="payment-screenshot" accept="image/*" 
-            style="font-family:'EB Garamond',serif;padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
-          <div class="helper-text">Upload donor's UPI/payment screenshot for records</div>
+            style="font-family:'EB Garamond',serif;padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;"onchange="extractTransactionId(this)">
+          <div class="helper-text" id="vision-status">Upload payment screenshot — Transaction ID will be auto-filled</div>
         </div>
         <div class="form-group">
           <label>Date <span class="required">*</span></label>
@@ -994,6 +994,98 @@ function switchTab(id) {
   if (id === 'admin' && currentRole === 'admin') loadUsers();
 }
 //upload payment screenshot
+// ══════════════════════════════
+//  GOOGLE CLOUD VISION — Auto extract Transaction ID
+// ══════════════════════════════
+async function extractTransactionId(input) {
+  if (!input.files.length) return;
+  const refInput  = document.getElementById('payment-ref');
+  const statusDiv = document.getElementById('vision-status');
+
+  // Don't overwrite if already manually filled
+  if (refInput.value.trim()) return;
+
+  if (!GOOGLE_VISION_KEY || GOOGLE_VISION_KEY === 'AIzaSyBz5ssy_J3j8j8W_shuMnP_FEjGkvmW4vI') {
+    statusDiv.textContent = 'Upload payment screenshot — Transaction ID will be auto-filled';
+    return;
+  }
+
+  statusDiv.textContent = '🔍 Reading screenshot…';
+  statusDiv.style.color = 'var(--saffron)';
+
+  try {
+    // Convert image to base64
+    const base64 = await fileToBase64(input.files[0]);
+
+    // Call Google Vision API
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [{
+            image: { content: base64 },
+            features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
+          }]
+        })
+      }
+    );
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message || 'Vision API error');
+
+    const fullText = data.responses?.[0]?.fullTextAnnotation?.text || '';
+    const txnId = extractTxnFromText(fullText);
+
+    if (txnId) {
+      refInput.value = txnId;
+      statusDiv.textContent = '✅ Transaction ID auto-filled! Verify before submitting.';
+      statusDiv.style.color = 'var(--success)';
+    } else {
+      statusDiv.textContent = '⚠️ Could not detect Transaction ID — please fill manually.';
+      statusDiv.style.color = 'var(--danger)';
+    }
+  } catch(e) {
+    console.error('Vision error:', e);
+    statusDiv.textContent = '⚠️ Auto-detection failed — please fill Transaction ID manually.';
+    statusDiv.style.color = 'var(--danger)';
+  }
+}
+
+function extractTxnFromText(text) {
+  // UPI Transaction ID patterns (covers GPay, PhonePe, Paytm, BHIM, Amazon Pay)
+  const patterns = [
+    // Explicit labels first
+    /(?:transaction\s*id|txn\s*id|utr|ref(?:erence)?\s*(?:no|number|id)?)\s*[:#\s]\s*([A-Z0-9]{8,22})/gi,
+    // PhonePe/GPay format: T followed by digits
+    /T\d{10,15}/g,
+    // Standard UPI ref: 12 digit number
+    /(\d{12})/g,
+    // Alphanumeric 10-22 chars (common UPI format)
+    /([A-Z]{2,6}\d{8,18})/g,
+    /(\d{8,18}[A-Z]{2,6})/g,
+  ];
+
+  for (const pattern of patterns) {
+    const matches = [...text.matchAll(pattern)];
+    if (matches.length) {
+      // Return capture group 1 if exists, else full match
+      const match = matches[0];
+      return (match[1] || match[0]).trim();
+    }
+  }
+  return null;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
 async function uploadScreenshot(receiptId) {
   const fileInput = document.getElementById('payment-screenshot');
   if (!fileInput.files.length) return null;
