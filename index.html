@@ -731,7 +731,7 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
 // Every volunteer who opens the link will be auto-connected.
 const HARDCODED_URL = 'https://kofalhqgjuglfjcinwdh.supabase.co';   // e.g. https://xxxx.supabase.co
 const HARDCODED_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtvZmFsaHFnanVnbGZqY2lud2RoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDI2NzYsImV4cCI6MjA5MzExODY3Nn0.JDV29I2PL-Ps3r5ahgC7p9-lNhMztaVpf6N1c4oQ0c8'; // eyJhbGci…
-const GOOGLE_VISION_KEY = 'AIzaSyBz5ssy_J3j8j8W_shuMnP_FEjGkvmW4vI';
+// const GOOGLE_VISION_KEY = 'AIzaSyBz5ssy_J3j8j8W_shuMnP_FEjGkvmW4vI';
 // Also allow override via localStorage (for admin setup convenience)
 const _supaUrl = (HARDCODED_URL !== 'YOUR_SUPABASE_URL') ? HARDCODED_URL : (localStorage.getItem('vsd_supa_url') || '');
 const _supaKey = (HARDCODED_KEY !== 'YOUR_SUPABASE_ANON_KEY') ? HARDCODED_KEY : (localStorage.getItem('vsd_supa_key') || '');
@@ -1005,38 +1005,38 @@ async function extractTransactionId(input) {
   // Don't overwrite if already manually filled
   if (refInput.value.trim()) return;
 
-  if (!GOOGLE_VISION_KEY || GOOGLE_VISION_KEY === 'YOUR_GOOGLE_VISION_API_KEY' ) {
-    statusDiv.textContent = 'Upload payment screenshot — Transaction ID will be auto-filled';
-    return;
-  }
+ // if (!GOOGLE_VISION_KEY || GOOGLE_VISION_KEY === 'YOUR_GOOGLE_VISION_API_KEY' ) {
+ //   statusDiv.textContent = 'Upload payment screenshot — Transaction ID will be auto-filled';
+ //   return;
+ // }
 
-  statusDiv.textContent = '🔍 Reading screenshot…';
-  statusDiv.style.color = 'var(--saffron)';
+ // statusDiv.textContent = '🔍 Reading screenshot…';
+ // statusDiv.style.color = 'var(--saffron)';
 
-  try {
+  //try {
     // Convert image to base64
-    const base64 = await fileToBase64(input.files[0]);
+  //  const base64 = await fileToBase64(input.files[0]);
 
     // Call Google Vision API
-    const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requests: [{
-            image: { content: base64 },
-            features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
-          }]
-        })
-      }
-    );
+  //  const response = await fetch(
+   //   `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_KEY}`,
+   //   {
+  //      method: 'POST',
+  //      headers: { 'Content-Type': 'application/json' },
+  //      body: JSON.stringify({
+  //        requests: [{
+  //          image: { content: base64 },
+  //          features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
+  //        }]
+  //      })
+  //    }
+  //  );
 
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error?.message || 'Vision API error');
+  //  const data = await response.json();
+  //  if (!response.ok) throw new Error(data.error?.message || 'Vision API error');
 
-    const fullText = data.responses?.[0]?.fullTextAnnotation?.text || '';
-    const txnId = extractTxnFromText(fullText);
+  //  const fullText = data.responses?.[0]?.fullTextAnnotation?.text || '';
+  //  const txnId = extractTxnFromText(fullText);
 
     if (txnId) {
       refInput.value = txnId;
