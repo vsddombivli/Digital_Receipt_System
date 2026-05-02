@@ -1044,6 +1044,15 @@ async function extractTransactionId(input) {
   try {
     const { data: { text: fullText } } = await Tesseract.recognize(input.files[0], 'eng');
     const txnId = extractTxnFromText(fullText);
+    // Also extract and verify amount
+    const detectedAmt = extractAmountFromText(fullText);
+    const enteredAmt  = parseFloat(document.getElementById('total-amount').value || 0);
+    if (detectedAmt && enteredAmt && detectedAmt !== enteredAmt) {
+      showToast(`⚠️ Screenshot amount ₹${detectedAmt} doesn't match entered ₹${enteredAmt} — please verify`, 'error');
+    } else if (detectedAmt && enteredAmt && detectedAmt === enteredAmt) {
+      showToast(`✅ Amount ₹${detectedAmt} verified from screenshot`, 'success');
+    }
+    
     if (txnId) {
       refInput.value = txnId;
       statusDiv.textContent = '✅ Transaction ID auto-filled! Verify before submitting.';
@@ -1053,14 +1062,7 @@ async function extractTransactionId(input) {
       statusDiv.style.color = 'var(--danger)';
     }
 
-    // Also extract and verify amount
-    const detectedAmt = extractAmountFromText(fullText);
-    const enteredAmt  = parseFloat(document.getElementById('total-amount').value || 0);
-    if (detectedAmt && enteredAmt && detectedAmt !== enteredAmt) {
-      showToast(`⚠️ Screenshot amount ₹${detectedAmt} doesn't match entered ₹${enteredAmt} — please verify`, 'error');
-    } else if (detectedAmt && enteredAmt && detectedAmt === enteredAmt) {
-      showToast(`✅ Amount ₹${detectedAmt} verified from screenshot`, 'success');
-    }
+    
   } catch(e) {
     console.error('Vision error:', e);
     statusDiv.textContent = '⚠️ Auto-detection failed — please fill Transaction ID manually.';
