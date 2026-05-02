@@ -1697,27 +1697,26 @@ function numberToWords(n) {
 // ── CONFIG: Paste your template base64 or URL here once you have the image ──
 // To embed template: convert image to base64 and set POSTER_TEMPLATE_B64
 // OR set POSTER_TEMPLATE_URL to a hosted image URL
-const POSTER_TEMPLATE_URL = ''; // e.g. 'https://yourdomain.com/template.jpg'
+const POSTER_TEMPLATE_URL = 'https://vsddombivli.github.io/Digital_Receipt_System/template.jpg'; // e.g. 'https://yourdomain.com/template.jpg'
 const POSTER_TEMPLATE_B64 = ''; // base64 string of template image
 
 // ── Donor photo position on template (adjust after seeing result) ──
 // These are PERCENTAGE values of template dimensions for easy scaling
 const PHOTO_CONFIG = {
-  xPct:   0.695,   // horizontal center of photo box (69.5% from left)
-  yPct:   0.28,    // vertical center of photo box (28% from top)
-  wPct:   0.22,    // width of photo box (22% of template width)
-  hPct:   0.28,    // height of photo box (28% of template height)
-  radius: 8,       // corner radius in pixels
+  xPct:   0.79,   // photo center X
+  yPct:   0.42,   // photo center Y
+  wPct:   0.24,   // photo width
+  hPct:   0.30,   // photo height
+  radius: 6,
 };
 
-// ── Name position on template ──
 const NAME_CONFIG = {
-  xPct:    0.695,  // center aligned
-  yPct:    0.595,  // below photo
-  fontPct: 0.032,  // font size as % of template width
+  xPct:    0.79,  // name center X
+  yPct:    0.735, // below photo
+  fontPct: 0.028,
   color:   '#2d5016',
   font:    'bold {size}px "EB Garamond", serif',
-  maxWidthPct: 0.25,
+  maxWidthPct: 0.26,
 };
 
 let posterDonorPhoto = null;
