@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vardhmaan Sanskar Dham – Receipt System</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>  
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1037,7 +1038,12 @@ async function extractTransactionId(input) {
 
   //  const fullText = data.responses?.[0]?.fullTextAnnotation?.text || '';
   //  const txnId = extractTxnFromText(fullText);
+  statusDiv.textContent = '🔍 Reading screenshot…';
+  statusDiv.style.color = 'var(--saffron)';
 
+  try {
+    const { data: { text: fullText } } = await Tesseract.recognize(input.files[0], 'eng');
+    const txnId = extractTxnFromText(fullText);
     if (txnId) {
       refInput.value = txnId;
       statusDiv.textContent = '✅ Transaction ID auto-filled! Verify before submitting.';
@@ -1045,6 +1051,15 @@ async function extractTransactionId(input) {
     } else {
       statusDiv.textContent = '⚠️ Could not detect Transaction ID — please fill manually.';
       statusDiv.style.color = 'var(--danger)';
+    }
+
+    // Also extract and verify amount
+    const detectedAmt = extractAmountFromText(fullText);
+    const enteredAmt  = parseFloat(document.getElementById('total-amount').value || 0);
+    if (detectedAmt && enteredAmt && detectedAmt !== enteredAmt) {
+      showToast(`⚠️ Screenshot amount ₹${detectedAmt} doesn't match entered ₹${enteredAmt} — please verify`, 'error');
+    } else if (detectedAmt && enteredAmt && detectedAmt === enteredAmt) {
+      showToast(`✅ Amount ₹${detectedAmt} verified from screenshot`, 'success');
     }
   } catch(e) {
     console.error('Vision error:', e);
@@ -1073,6 +1088,23 @@ function extractTxnFromText(text) {
       // Return capture group 1 if exists, else full match
       const match = matches[0];
       return (match[1] || match[0]).trim();
+    }
+  }
+  return null;
+}
+
+function extractAmountFromText(text) {
+  const patterns = [
+    /(?:amount|paid|total|debited|sent|deducted)\s*[:\-]?\s*(?:rs\.?|inr|₹)?\s*([\d,]+(?:\.\d{1,2})?)/gi,
+    /(?:rs\.?|inr|₹)\s*([\d,]+(?:\.\d{1,2})?)/gi,
+    /\b([\d,]+(?:\.\d{2})?)\s*(?:rs\.?|inr|₹)/gi,
+  ];
+  for (const pattern of patterns) {
+    const matches = [...text.matchAll(pattern)];
+    if (matches.length) {
+      const val = matches[0][1].replace(/,/g, '');
+      const num = parseFloat(val);
+      if (num > 0 && num < 1000000) return num;
     }
   }
   return null;
