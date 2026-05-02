@@ -1703,16 +1703,16 @@ const POSTER_TEMPLATE_B64 = ''; // base64 string of template image
 // ── Donor photo position on template (adjust after seeing result) ──
 // These are PERCENTAGE values of template dimensions for easy scaling
 const PHOTO_CONFIG = {
-  xPct:   0.79,   // photo center X
-  yPct:   0.42,   // photo center Y
-  wPct:   0.24,   // photo width
-  hPct:   0.30,   // photo height
+  xPct:   0.79,
+  yPct:   0.36,   // was 0.42, move up
+  wPct:   0.28,   // was 0.24, wider
+  hPct:   0.32,   // was 0.30, taller
   radius: 6,
 };
 
 const NAME_CONFIG = {
-  xPct:    0.79,  // name center X
-  yPct:    0.735, // below photo
+  xPct:    0.79,
+  yPct:    0.645, // was 0.735, move up
   fontPct: 0.028,
   color:   '#2d5016',
   font:    'bold {size}px "EB Garamond", serif',
