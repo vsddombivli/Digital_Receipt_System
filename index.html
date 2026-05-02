@@ -773,8 +773,8 @@ async function dbInsert(r) {
     receipt_id: r.id, donor_name: r.donor, donor_address: r.address||null,
     donor_mobile: r.mobile||null, donor_email: r.email||null, donor_pan: r.pan||null,
     accounts: r.accounts, total_amount: r.total, payment_method: r.payment,
-    payment_ref: r.ref||null, donation_date: r.date, volunteer: r.volunteer,
-    remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
+    payment_ref: r.ref||null, screenshot_url: r.screenshot_url||null, donation_date: r.date, 
+    volunteer: r.volunteer, remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
   }]);
   if (error) { console.error('DB insert error:', error); localSave(r); showToast('⚠️ Saved locally (DB error)', 'error'); }
 }
@@ -939,7 +939,21 @@ function switchTab(id) {
   if (id === 'stats')   renderStats();
   if (id === 'admin' && currentRole === 'admin') loadUsers();
 }
-
+//upload payment screenshot
+async function uploadScreenshot(receiptId) {
+  const fileInput = document.getElementById('payment-screenshot');
+  if (!fileInput.files.length) return null;
+  const file = fileInput.files[0];
+  const ext = file.name.split('.').pop();
+  const path = `${receiptId}_${Date.now()}.${ext}`;
+  const { data, error } = await _supa.storage
+    .from('screenshots')
+    .upload(path, file, { contentType: file.type });
+  if (error) { console.error('Screenshot upload failed:', error); return null; }
+  const { data: urlData } = _supa.storage.from('screenshots').getPublicUrl(path);
+  return urlData.publicUrl;
+}
+  
 // ══════════════════════════════
 //  GENERATE RECEIPT
 // ══════════════════════════════
@@ -989,6 +1003,7 @@ async function generateReceipt() {
 
   try {
     const receiptNo = await getNextNo();
+    const screenshotUrl = await uploadScreenshot(receiptNo);
     const receipt = {
       id: receiptNo, date: ddate, donor: name,
       address: document.getElementById('donor-addr').value.trim(),
@@ -997,6 +1012,7 @@ async function generateReceipt() {
       pan: document.getElementById('donor-pan').value.trim().toUpperCase(),
       accounts: selectedAccounts, total, payment: selectedPayment,
       ref: document.getElementById('payment-ref').value.trim(),
+      screenshot_url: screenshotUrl,
       volunteer: vol,
       remarks: 'Thank you for your contribution and support',
       waSent: false, createdAt: new Date().toISOString(),
@@ -1212,6 +1228,7 @@ async function renderTable() {
       <td><span class="badge badge-${r.payment.toLowerCase().replace(/[^a-z]/g,'')}">${r.payment}</span></td>
       <td><div class="action-btns">
         <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
+        ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank"><button class="btn btn-secondary btn-sm">🖼️ SS</button></a>` : ''}
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button>
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
         ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬</button>` : ''}
@@ -1324,7 +1341,7 @@ async function renderStats() {
 //  HELPERS
 // ══════════════════════════════
 function clearForm() {
-  ['donor-name','donor-addr','donor-mobile','donor-email','payment-ref'].forEach(id => document.getElementById(id).value = '');
+  ['donor-name','donor-addr','donor-mobile','donor-email','payment-ref','payment-screenshot'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('donor-pan').value = ''; document.getElementById('donor-pan').disabled = false;
   document.getElementById('donation-date').value = todayStr();
   document.getElementById('remarks').value = 'Thank you for your contribution and support';
