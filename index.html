@@ -1214,7 +1214,10 @@ async function generateReceipt() {
     // Keep disabled — re-enabled only on New Receipt click
     btn.disabled = true;
   } finally {
-    btn.disabled = false; btn.innerHTML = '✨ Generate Receipt';
+    if (btn.innerHTML !== '✅ Receipt Generated') {
+        btn.disabled = false;
+        btn.innerHTML = '✨ Generate Receipt';
+    }
   }
 }
 
