@@ -1344,7 +1344,7 @@ function renderReceiptPreview(r) {
   document.getElementById('r-volunteer').textContent = r.volunteer;
   document.getElementById('r-amount').textContent = `₹${r.total.toLocaleString('en-IN')}`;
   document.getElementById('r-words').textContent = numberToWords(r.total) + ' Rupees Only';
-  // document.getElementById('r-ref').textContent = r.ref || '–';
+  document.getElementById('r-ref').textContent = r.ref || ' ';
   document.getElementById('r-remarks').textContent = r.remarks;
   document.getElementById('r-donor-sig').textContent = r.donor;
   //document.getElementById('r-accounts').innerHTML = r.accounts.map((a,i) =>
