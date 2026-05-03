@@ -452,7 +452,7 @@
       <div class="btn-row">
         <button class="btn btn-success" onclick="window.print()">🖨️ Print</button>
         <button class="btn btn-primary" onclick="downloadReceiptPDF()">📄 Download PDF</button>
-        <button class="btn btn-secondary" onclick="downloadReceiptImage()">🖼️ Download Image</button>
+        <!-- <button class="btn btn-secondary" onclick="downloadReceiptImage()">🖼️ Download Image</button> -->
         <button class="btn btn-whatsapp" onclick="shareReceiptWhatsApp()">💬 Share on WhatsApp</button>
         <button class="btn btn-secondary" onclick="newReceipt()">+ New Receipt</button>
       </div>
@@ -1282,7 +1282,86 @@ async function downloadReceiptPDF() {
     const pdfW = 148; // A5 width in mm
     const pdfH = (canvas.height * pdfW) / canvas.width;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfW, pdfH] });
+    // Page 1 — Receipt
     pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+     // Page 2 — 80G Certificate content
+    const p2H = 210; // A5 height
+    pdf.addPage([pdfW, p2H]);
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.text('FORM NO. 10AC', pdfW/2, 12, { align: 'center' });
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('(See rule 17A/11AA/2C)', pdfW/2, 17, { align: 'center' });
+    pdf.text('Order for provisional approval', pdfW/2, 21, { align: 'center' });
+
+    // Table data
+    const rows = [
+      ['1', 'PAN', 'AAATV2881J'],
+      ['2', 'Name', 'VARDHMAN SANSKAR DHAM'],
+      ['2a', 'Address', '122, Bhavani Krupa Bldg, 1st Floor,
+J.S.S Road, Opp Girgaon Church,
+Mumbai - 400004, Maharashtra, India'],
+      ['3', 'Document Identification Number', 'AAATV2881JP2021401'],
+      ['4', 'Application Number', '344607811240421'],
+      ['5', 'Provisional Approval Number', 'AAATV2881JP20214'],
+      ['6', 'Section/sub-section', '11-Clause (i) of first proviso to
+sub-section (5) of section 80G'],
+      ['7', 'Date of provisional approval', '28-05-2021'],
+      ['8', 'Assessment years approved', 'From AY 2022-23 to AY 2026-27'],
+    ];
+
+    let y = 27;
+    const col1 = 6, col2 = 14, col3 = 62, rowH = 7;
+    pdf.setFontSize(7);
+    pdf.setDrawColor(180);
+
+    rows.forEach(([no, label, val]) => {
+      const lines = pdf.splitTextToSize(val, 76);
+      const h = Math.max(rowH, lines.length * 4.5);
+      pdf.rect(col1, y, 8, h);
+      pdf.rect(col1+8, y, 48, h);
+      pdf.rect(col1+56, y, 82, h);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(no, col1+1, y+4);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(pdf.splitTextToSize(label, 46), col2+1, y+4);
+      pdf.text(lines, col3+1, y+4);
+      y += h;
+    });
+
+    // Conditions heading
+    y += 3;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7.5);
+    pdf.text('Conditions subject to which provisional approval is being granted', col1, y);
+    y += 5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(6.5);
+
+    const conditions = [
+      'a. No change in the deed of the applicant trust/society/non profit company or any of its bye-laws shall be affected without the due procedure of law.',
+      'b. Any change in the trustees or address shall be intimated forthwith to the Office of the Jurisdictional Commissioner of Income Tax.',
+      'c. The applicant trust shall maintain its accounts regularly and get them audited as per section 80G(5)(iv) read with section 12A(1)(b)/10(23C) of the Income Tax Act, 1961.',
+      'd. Certificate of donation shall be issued to the donor in form no 10BE as per the provisions of rule 18AB.',
+      'e. No cess or fee or any other consideration shall be received in violation of section 2(15) of the Income Tax Act, 1961.',
+      'f. The trust shall file the return of income as per provisions of section 139(1)/(4A)/(4C) of the Income Tax Act, 1961.',
+      'g. The approval shall apply to donations received only if the applicant trust fulfills the conditions of section 80G(5) of the Income Tax Act, 1961.',
+    ];
+
+    conditions.forEach((c, i) => {
+      const lines = pdf.splitTextToSize(c, pdfW - 14);
+      pdf.text(lines, col1, y);
+      y += lines.length * 4 + 2;
+      if (y > p2H - 20) { pdf.addPage([pdfW, p2H]); y = 12; }
+    });
+
+    y += 3;
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7);
+    pdf.text('Name and Designation of the Approving Authority:', col1, y);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Principal Commissioner of Income Tax / Commissioner of Income Tax', col1, y+5);
     pdf.save(`Receipt_${lastReceipt.id}_${lastReceipt.donor.replace(/\s+/g,'_')}.pdf`);
     showToast('✅ PDF downloaded!', 'success');
   } catch(e) { showToast('Error generating PDF', 'error'); console.error(e); }
@@ -1421,7 +1500,7 @@ async function renderTable() {
       <td><div class="action-btns">
         <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
         ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
-        <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button>
+        <!-- <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button> -->
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
         ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬</button>` : ''}
       </div></td>
