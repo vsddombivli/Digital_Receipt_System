@@ -1340,7 +1340,7 @@ function renderReceiptPreview(r) {
   document.getElementById('r-addr').textContent = r.address || '–';
   document.getElementById('r-mobile').textContent = r.mobile || '–';
   document.getElementById('r-pan').textContent = r.pan || 'Not provided';
-  document.getElementById('r-payment').textContent = r.payment + (r.ref ? ` — Ref: ${r.ref}` : '');
+  // document.getElementById('r-payment').textContent = r.payment + (r.ref ? ` — Ref: ${r.ref}` : '');
   document.getElementById('r-volunteer').textContent = r.volunteer;
   document.getElementById('r-amount').textContent = `₹${r.total.toLocaleString('en-IN')}`;
   document.getElementById('r-words').textContent = numberToWords(r.total) + ' Rupees Only';
