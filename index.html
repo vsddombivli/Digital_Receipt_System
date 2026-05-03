@@ -1365,7 +1365,7 @@ function renderReceiptPreview(r) {
 
   // Generate QR code on receipt canvas
   try {
-    const qrCanvas = document.getElementById('receipt-qr-canvas');
+    var qrCanvas = document.getElementById('receipt-qr-canvas');
     if (qrCanvas && typeof QRious !== 'undefined') {
       new QRious({
         element: qrCanvas,
