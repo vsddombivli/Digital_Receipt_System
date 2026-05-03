@@ -1210,7 +1210,9 @@ async function generateReceipt() {
     document.getElementById('receipt-wrap').scrollIntoView({ behavior: 'smooth' });
     showToast(`✅ Receipt ${receiptNo} generated!`, 'success');
     updateCounter();
-    clearForm();
+    btn.innerHTML = '✅ Receipt Generated';
+    // Keep disabled — re-enabled only on New Receipt click
+    btn.disabled = true;
   } finally {
     btn.disabled = false; btn.innerHTML = '✨ Generate Receipt';
   }
@@ -1545,7 +1547,13 @@ function clearForm() {
   document.getElementById('receipt-wrap').classList.remove('show');
 }
 
-function newReceipt() { clearForm(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+function newReceipt() { 
+  clearForm(); 
+  const btn = document.getElementById('generate-btn');
+  btn.disabled = false;
+  btn.innerHTML = '✨ Generate Receipt';
+  window.scrollTo({ top: 0, behavior: 'smooth' }); 
+}
 
 async function exportCSV() {
   const records = await dbLoad();
