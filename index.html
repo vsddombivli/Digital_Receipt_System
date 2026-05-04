@@ -64,7 +64,7 @@
 
   /* FORM */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .form-group { display: flex; flex-direction: column; gap: 30px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
   .form-group.full { grid-column: 1 / -1; }
   label { font-size: 0.82rem; color: var(--muted); font-weight: 600; letter-spacing: 0.3px; text-transform: uppercase; }
   input, select, textarea {
@@ -481,7 +481,7 @@
                 <td style="color:var(--muted);padding:2px 0;">Phone / Mobile</td>
                 <td>
                   <span id="r-mobile">–</span>
-                  <span style="margin-left:20px;color:var(--muted);">PAN NO.</span>
+                  <span style="margin-left:60px;color:var(--muted);">PAN NO.</span>
                   <span id="r-pan" style="margin-left:6px;">–</span>
                 </td>
               </tr>
@@ -520,8 +520,8 @@
 
           <!-- BANK -->
           <div style="padding:6px 16px;border-bottom:1px dashed var(--pink-border);font-size:0.88rem;display:flex;gap:40px;">
-            <div><span style="color:var(--muted);">Bank </span><span style="display:inline-block;width:140px;border-bottom:1px solid #ccc;"></span></div>
-            <div><span style="color:var(--muted);">Branch </span><span style="display:inline-block;width:100px;border-bottom:1px solid #ccc;"></span></div>
+            <div style="flex:1"><span style="color:var(--muted);">Bank </span><span style="display:inline-block;width:200px;border-bottom:1px solid #ccc;"></span></div>
+            <div style="flex:1"><span style="color:var(--muted);">Branch </span><span style="display:inline-block;width:180px;border-bottom:1px solid #ccc;"></span></div>
           </div>
 
           <!-- SIGNATURES + QR -->
@@ -533,7 +533,7 @@
             </div>
             <!-- QR Code center -->
             <div style="text-align:center;">
-              <canvas id="receipt-qr-canvas" width="120" height="120"></canvas>
+              <canvas id="receipt-qr-canvas" width="160" height="160" style="width:160px;height:160px;"></canvas>
               <!-- <div style="font-size:0.65rem;color:var(--muted);font-weight:600;margin-top:2px;">VARDHMAN SANSKAR DHAM</div> -->
             </div>
             <!-- Receiver sig -->
@@ -1371,7 +1371,7 @@ function renderReceiptPreview(r) {
       new QRious({
         element: qrCanvas,
         value: 'upi://pay?pa=MSVARDHAMANSANSKARDHAM.eazypay2@icici&pn=M/S.VARDHAMAN SANSKAR DHAM&tr=EZYS9323199325&cu=INR&mc=',
-        size: 80,
+        size: 160,
         backgroundAlpha: 1,
       });
     }
