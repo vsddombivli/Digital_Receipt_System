@@ -1032,34 +1032,18 @@ function fmtDate(s) { if (!s) return '–'; const [y,m,d] = s.split('-'); return
 // ══════════════════════════════
 function buildAccountsGrid() {
   document.getElementById('accounts-grid').innerHTML = ACCOUNTS.map((a,i) => `
-    <label class="account-row" id="acrow-${i}" onclick="handleRowClick(event,${i})">
-      <input type="checkbox" id="ac-chk-${i}" onchange="toggleAccount(${i})">
+    <div class="account-row selected" id="acrow-${i}">
       <span class="account-label">${a}</span>
-      <input class="amt-input" type="number" id="ac-amt-${i}" min="1" placeholder="₹"
-        oninput="recalcTotal()" onclick="event.stopPropagation()">
-    </label>
+      <input class="amt-input" type="number" id="ac-amt-${i}" min="0" placeholder="0"
+        oninput="recalcTotal()" style="display:block;">
+    </div>
   `).join('');
 }
-
-function handleRowClick(e, i) {
-  if (e.target.type === 'checkbox' || e.target.classList.contains('amt-input')) return;
-  const chk = document.getElementById(`ac-chk-${i}`);
-  chk.checked = !chk.checked;
-  toggleAccount(i);
-}
-
-function toggleAccount(i) {
-  const chk = document.getElementById(`ac-chk-${i}`);
-  document.getElementById(`acrow-${i}`).classList.toggle('selected', chk.checked);
-  if (!chk.checked) document.getElementById(`ac-amt-${i}`).value = '';
-  recalcTotal();
-}
-
+  
 function recalcTotal() {
   let total = 0;
   ACCOUNTS.forEach((_,i) => {
-    const chk = document.getElementById(`ac-chk-${i}`);
-    if (chk.checked) total += parseFloat(document.getElementById(`ac-amt-${i}`).value || 0);
+    total += parseFloat(document.getElementById(`ac-amt-${i}`).value || 0);
   });
   document.getElementById('total-amount').value = total || '';
   // Change 3: Cash max ₹2000
@@ -1273,11 +1257,10 @@ async function generateReceipt() {
   
   const selectedAccounts = [];
   ACCOUNTS.forEach((a,i) => {
-    const chk = document.getElementById(`ac-chk-${i}`);
     const amt = parseFloat(document.getElementById(`ac-amt-${i}`).value || 0);
-    if (chk.checked) selectedAccounts.push({ name: a, amount: amt });
+    if (amt > 0) selectedAccounts.push({ name: a, amount: amt });
   });
-  if (!selectedAccounts.length) { showToast('Select at least one donation account', 'error'); return; }
+  if (!selectedAccounts.length) { showToast('Enter amount in at least one account', 'error'); return; }
 
   const invalidAmt = selectedAccounts.find(a => a.amount <= 0);
   if (invalidAmt) { showToast(`Enter valid amount for ${invalidAmt.name}`, 'error'); return; }
@@ -1686,9 +1669,7 @@ function clearForm() {
   document.getElementById('remarks').value = 'Thank you for your contribution and support';
   document.getElementById('total-amount').value = '';
   ACCOUNTS.forEach((_,i) => {
-    document.getElementById(`ac-chk-${i}`).checked = false;
     document.getElementById(`ac-amt-${i}`).value = '';
-    document.getElementById(`acrow-${i}`).classList.remove('selected');
   });
   document.querySelectorAll('.payment-pills .pill').forEach(p => p.classList.remove('active'));
   document.querySelector('.payment-pills .pill').classList.add('active');
