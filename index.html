@@ -340,7 +340,7 @@
           <label>Payment Method <span class="required">*</span></label>
           <div class="payment-pills">
             <button class="pill active" onclick="selectPayment(this,'UPI/QR')">📱 UPI / QR</button>
-            <button class="pill" onclick="selectPayment(this,'Cash')">💵 Cash</button>
+            <!-- <button class="pill" onclick="selectPayment(this,'Cash')">💵 Cash</button> -->
             <button class="pill" onclick="selectPayment(this,'Cheque')">🏦 Cheque</button>
             <button class="pill" onclick="selectPayment(this,'Bank Transfer')">🔁 Bank Transfer</button>
           </div>
@@ -1068,10 +1068,10 @@ function selectPayment(el, val) {
   const panInput = document.getElementById('donor-pan');
 
   if (val === 'Cash') {
-    panInput.disabled = true; panInput.value = ''; panInput.placeholder = 'Not required for Cash';
-    refGroup.style.display = 'none'; refInput.value = '';
-    document.getElementById('screenshot-group').style.display = 'none';
-    document.getElementById('payment-screenshot').value = '';
+    //panInput.disabled = true; panInput.value = ''; panInput.placeholder = 'Not required for Cash';
+    //refGroup.style.display = 'none'; refInput.value = '';
+    //document.getElementById('screenshot-group').style.display = 'none';
+    //document.getElementById('payment-screenshot').value = '';
   } else {
     panInput.disabled = false; panInput.placeholder = 'ABCDE1234F';
     refGroup.style.display = '';
@@ -1273,9 +1273,9 @@ async function generateReceipt() {
   const ddate = document.getElementById('donation-date').value;
   if (!ddate) { showToast('Select donation date', 'error'); return; }
 
-  if (selectedPayment === 'Cash' && total > 2000) {
-    showToast('Cash donations cannot exceed ₹2,000 as per Income Tax rules', 'error'); return;
-  }
+  //if (selectedPayment === 'Cash' && total > 2000) {
+  //  showToast('Cash donations cannot exceed ₹2,000 as per Income Tax rules', 'error'); return;
+  //}
   if (selectedPayment !== 'Cash') {
     const ref = document.getElementById('payment-ref').value.trim();
     if (!ref) { showToast('Transaction / Ref No. is mandatory for ' + selectedPayment, 'error'); return; }
