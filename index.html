@@ -646,6 +646,10 @@
             <input type="text" id="new-user-name" placeholder="Volunteer Name">
           </div>
           <div class="form-group">
+            <label>Location / Branch</label>
+            <input type="text" id="new-user-location" placeholder="e.g. Dombivli, Ghatkopar">
+          </div>
+          <div class="form-group">
             <label>Role <span class="required">*</span></label>
             <select id="new-user-role">
               <option value="volunteer">Volunteer</option>
@@ -1871,7 +1875,8 @@ async function createUser() {
   const password = document.getElementById('new-user-password').value;
   const name     = document.getElementById('new-user-name').value.trim();
   const role     = document.getElementById('new-user-role').value;
-
+  const loc      = document.getElementById('new-user-location').value.trim();
+  
   if (!email || !password) { showToast('Email and password required', 'error'); return; }
   if (password.length < 6)  { showToast('Password must be at least 6 characters', 'error'); return; }
 
@@ -1894,7 +1899,7 @@ async function createUser() {
     // Insert profile
     if (su.user) {
       await _supa.from('user_profiles').upsert({
-        id: su.user.id, email, full_name: name || email.split('@')[0], role
+        id: su.user.id, email, full_name: name || email.split('@')[0], role, location: loc || null
       });
     }
     showToast(`✅ User created! They must confirm email before logging in.`, 'success');
@@ -1902,7 +1907,7 @@ async function createUser() {
     // admin.createUser succeeded
     if (data.user) {
       await _supa.from('user_profiles').upsert({
-        id: data.user.id, email, full_name: name || email.split('@')[0], role
+        id: data.user.id, email, full_name: name || email.split('@')[0], role, location: loc || null
       });
     }
     showToast(`✅ User ${email} created as ${role}!`, 'success');
@@ -1911,6 +1916,7 @@ async function createUser() {
   document.getElementById('new-user-email').value = '';
   document.getElementById('new-user-password').value = '';
   document.getElementById('new-user-name').value = '';
+  document.getElementById('new-user-location').value = '';
   loadUsers();
 }
 
