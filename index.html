@@ -1880,44 +1880,32 @@ async function createUser() {
   const password = document.getElementById('new-user-password').value;
   const name     = document.getElementById('new-user-name').value.trim();
   const role     = document.getElementById('new-user-role').value;
-  const loc      = document.getElementById('new-user-location').value.trim();
-  
+  const loc      = document.getElementById('new-user-location').value.trim().toUpperCase();
+
   if (!email || !password) { showToast('Email and password required', 'error'); return; }
   if (password.length < 6)  { showToast('Password must be at least 6 characters', 'error'); return; }
 
   showToast('Creating user…');
 
-  // Use Supabase Admin API via service role — but we only have anon key here.
-  // So we use signUp which creates the user; admin inserts profile manually.
-  const { data, error } = await _supa.auth.admin.createUser({
+  const { data: su, error: se } = await _supa.auth.signUp({
     email, password,
-    email_confirm: true,  // auto-confirm, no email verification needed
-    user_metadata: { full_name: name }
+    options: { data: { full_name: name } }
   });
 
-  if (error) {
-    // admin.createUser needs service role key — fallback: use signUp
-    // We'll insert profile after signUp
-    const { data: su, error: se } = await _supa.auth.signUp({ email, password });
-    if (se) { showToast('Error: ' + se.message, 'error'); return; }
+  if (se) { showToast('Error: ' + se.message, 'error'); return; }
 
-    // Insert profile
-    if (su.user) {
-      await _supa.from('user_profiles').upsert({
-        id: su.user.id, email, full_name: name || email.split('@')[0], role, location: loc || null
-      });
-    }
-    showToast(`✅ User created! They must confirm email before logging in.`, 'success');
-  } else {
-    // admin.createUser succeeded
-    if (data.user) {
-      await _supa.from('user_profiles').upsert({
-        id: data.user.id, email, full_name: name || email.split('@')[0], role, location: loc || null
-      });
-    }
-    showToast(`✅ User ${email} created as ${role}!`, 'success');
+  if (su.user) {
+    const { error: pe } = await _supa.from('user_profiles').upsert({
+      id: su.user.id,
+      email,
+      full_name: name || email.split('@')[0],
+      role,
+      location: loc || null
+    });
+    if (pe) { showToast('User created but profile save failed: ' + pe.message, 'error'); return; }
   }
 
+  showToast(`✅ User ${email} created as ${role}!`, 'success');
   document.getElementById('new-user-email').value = '';
   document.getElementById('new-user-password').value = '';
   document.getElementById('new-user-name').value = '';
