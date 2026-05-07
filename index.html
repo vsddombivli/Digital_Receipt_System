@@ -279,7 +279,7 @@
   <button class="tab-btn" onclick="switchTab('records')">📋 All Records</button>
   <button class="tab-btn" onclick="switchTab('bulk')">📤 Bulk WhatsApp</button>
   <button class="tab-btn" onclick="switchTab('stats')">📊 Summary</button>
-  <button class="tab-btn" onclick="switchTab('poster')">🖼️ Poster</button>
+  <!-- <button class="tab-btn" onclick="switchTab('poster')">🖼️ Poster</button> -->
   <button class="tab-btn admin-only" id="tab-btn-admin" onclick="switchTab('admin')" style="display:none">⚙️ Admin</button>
 </div>
 
@@ -1107,7 +1107,7 @@ function switchTab(id) {
 //  GOOGLE CLOUD VISION — Auto extract Transaction ID
 // ══════════════════════════════
 async function extractTransactionId(input) {
-  if (!input.files.length) return;
+  // if (!input.files.length) return;
   const refInput  = document.getElementById('payment-ref');
   const statusDiv = document.getElementById('vision-status');
 
@@ -1176,6 +1176,8 @@ async function extractTransactionId(input) {
 function extractTxnFromText(text) {
   // UPI Transaction ID patterns (covers GPay, PhonePe, Paytm, BHIM, Amazon Pay)
   const patterns = [
+    /(?:transaction\s*id|txn\s*id|reference\s*(?:number|no)?|ref\.?\s*no)\s*[:\s]\s*([A-Z0-9]{6,20})/gi,
+    /\b([A-Z]\d{7,12})\b/g,
     // Label-based (most reliable) — covers "Transaction ID", "Transaction Id", "Txn ID", "UTR"
     /(?:transaction\s*id|txn\s*id|utr\s*(?:no)?|ref(?:erence)?\s*(?:no|id)?)\s*[:\-\s]\s*([A-Z0-9]{8,22})/gi,
     // 12 digit number (most common UPI ref)
