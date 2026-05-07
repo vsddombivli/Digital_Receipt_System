@@ -584,7 +584,7 @@
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Location</th><th>Actions</th></tr></thead>
           <tbody id="records-tbody"></tbody>
         </table>
       </div>
@@ -667,7 +667,7 @@
         <div style="font-weight:600;font-size:1rem;color:var(--saffron);margin-bottom:12px;padding-bottom:8px;border-bottom:1px dashed var(--border);">👥 All Users</div>
         <div class="table-wrap">
           <table class="data-table">
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Action</th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Location</th><th>Created</th><th>Action</th></tr></thead>
             <tbody id="users-tbody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Loading…</td></tr></tbody>
           </table>
         </div>
@@ -931,6 +931,7 @@ function toReceipt(row) {
     ref: row.payment_ref || '', volunteer: row.volunteer,
     remarks: row.remarks || '', waSent: row.wa_sent, createdAt: row.created_at,
     screenshot_url: row.screenshot_url || '',
+    volunteer_location: row.volunteer_location || '',
   };
 }
 
@@ -941,7 +942,8 @@ async function dbInsert(r) {
     donor_mobile: r.mobile||null, donor_email: r.email||null, donor_pan: r.pan||null,
     accounts: r.accounts, total_amount: r.total, payment_method: r.payment,
     payment_ref: r.ref||null, screenshot_url: r.screenshot_url||null, donation_date: r.date, 
-    volunteer: r.volunteer, remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
+    volunteer: r.volunteer, volunteer_location: r.volunteer_location || null,
+    remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
   }]);
   if (error) { console.error('DB insert error:', error); localSave(r); showToast('⚠️ Saved locally (DB error)', 'error'); }
 }
@@ -1307,6 +1309,7 @@ async function generateReceipt() {
       ref: document.getElementById('payment-ref').value.trim(),
       screenshot_url: screenshotUrl,
       volunteer: vol,
+      volunteer_location: window._volunteerLocation || '',
       remarks: 'Thank you for your contribution and support',
       waSent: false, createdAt: new Date().toISOString(),
     };
@@ -1552,6 +1555,7 @@ async function renderTable() {
       <td style="font-size:0.82rem">${(r.accounts||[]).map(a=>a.name).join('<br>')}</td>
       <td><strong>₹${r.total.toLocaleString('en-IN')}</strong></td>
       <td><span class="badge badge-${r.payment.toLowerCase().replace(/[^a-z]/g,'')}">${r.payment}</span></td>
+      <td style="font-size:0.82rem">${r.volunteer_location || '–'}</td>
       <td><div class="action-btns">
         <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
         ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
@@ -1759,6 +1763,7 @@ async function onLoginSuccess(user) {
 
   currentRole = profile ? profile.role : 'volunteer';
   // Auto-fill volunteer name
+  window._volunteerLocation = profile ? (profile.location || '') : '';
   const volInput = document.getElementById('volunteer-name');
   if (volInput) {
     volInput.value = profile?.full_name || user.email.split('@')[0];
@@ -1936,6 +1941,7 @@ async function loadUsers() {
       <td>${u.full_name || '–'}</td>
       <td>${u.email}</td>
       <td><span class="badge" style="background:${u.role==='admin'?'#fde8e8':'#e6f4ea'};color:${u.role==='admin'?'#c0392b':'#2D7A3A'}">${u.role}</span></td>
+      <td>${u.location || '–'}</td>
       <td style="font-size:0.8rem">${u.created_at ? u.created_at.slice(0,10) : '–'}</td>
       <td>
         ${u.id !== currentUser?.id ? `
