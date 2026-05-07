@@ -584,7 +584,7 @@
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Location</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="records-tbody"></tbody>
         </table>
       </div>
@@ -833,7 +833,30 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
     </div>
   </div>
 </div>
-
+<div class="modal-overlay" id="edit-receipt-modal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-head">
+      <h3>✏️ Edit Receipt <span id="edit-receipt-id" style="font-family:'DM Mono',monospace;color:var(--saffron)"></span></h3>
+      <button class="close-btn" onclick="document.getElementById('edit-receipt-modal').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.85rem;">
+        ⚠️ Only non-financial fields can be edited. Amount and receipt number cannot be changed.
+      </div>
+      <div class="form-grid">
+        <div class="form-group full"><label>Donor Name</label><input type="text" id="edit-donor-name"></div>
+        <div class="form-group full"><label>Address</label><input type="text" id="edit-donor-addr"></div>
+        <div class="form-group"><label>Mobile</label><input type="tel" id="edit-donor-mobile" maxlength="10"></div>
+        <div class="form-group"><label>PAN</label><input type="text" id="edit-donor-pan" maxlength="10" style="text-transform:uppercase"></div>
+        <div class="form-group full"><label>Remarks</label><input type="text" id="edit-remarks"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveEditReceipt()">💾 Save Changes</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('edit-receipt-modal').classList.remove('show')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="toast-container"></div>
 
 <script>
@@ -931,6 +954,7 @@ function toReceipt(row) {
     ref: row.payment_ref || '', volunteer: row.volunteer,
     remarks: row.remarks || '', waSent: row.wa_sent, createdAt: row.created_at,
     screenshot_url: row.screenshot_url || '',
+    status: row.status || 'valid',
     volunteer_location: row.volunteer_location || '',
   };
 }
@@ -1558,8 +1582,12 @@ async function renderTable() {
       <td><strong>₹${r.total.toLocaleString('en-IN')}</strong></td>
       <td><span class="badge badge-${r.payment.toLowerCase().replace(/[^a-z]/g,'')}">${r.payment}</span></td>
       <td style="font-size:0.82rem">${r.volunteer_location || '–'}</td>
+      <td>${r.status==='invalid' ? '<span class="badge" style="background:#fdecea;color:var(--danger)">❌ Invalid</span>' : r.status==='duplicate' ? '<span class="badge" style="background:#fff3e0;color:#f39c12">⚠️ Dup</span>' : '<span class="badge" style="background:#e6f4ea;color:var(--success)">✅</span>'}</td>
       <td><div class="action-btns">
         <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
+        ${currentRole==='admin' ? `<button class="btn btn-secondary btn-sm" onclick="editReceipt('${r.id}')">✏️</button>` : ''}
+        ${currentRole==='admin' ? `<button class="btn btn-sm" style="background:${r.status==='invalid'?'#888':'var(--danger)'};color:#fff;" onclick="markReceiptStatus('${r.id}','${r.status==='invalid'?'valid':'invalid'}')">${r.status==='invalid'?'↩️':'❌'}</button>` : ''}
+        ${currentRole==='admin' ? `<button class="btn btn-sm" style="background:${r.status==='duplicate'?'#888':'#f39c12'};color:#fff;" onclick="markReceiptStatus('${r.id}','${r.status==='duplicate'?'valid':'duplicate'}')">${r.status==='duplicate'?'↩️':'⚠️'}</button>` : ''}
         ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
         <!-- <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button> -->
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
@@ -1948,6 +1976,50 @@ async function deleteUser(uid, email) {
   loadUsers();
 }
 
+let _editingReceiptId = null;
+
+async function editReceipt(id) {
+  const all = await dbLoad();
+  const r = all.find(x => x.id === id);
+  if (!r) return;
+  _editingReceiptId = id;
+  document.getElementById('edit-receipt-id').textContent = id;
+  document.getElementById('edit-donor-name').value   = r.donor || '';
+  document.getElementById('edit-donor-addr').value   = r.address || '';
+  document.getElementById('edit-donor-mobile').value = r.mobile || '';
+  document.getElementById('edit-donor-pan').value    = r.pan || '';
+  document.getElementById('edit-remarks').value      = r.remarks || '';
+  document.getElementById('edit-receipt-modal').classList.add('show');
+}
+
+async function saveEditReceipt() {
+  if (!_editingReceiptId) return;
+  const pan = document.getElementById('edit-donor-pan').value.trim().toUpperCase();
+  if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) { showToast('Invalid PAN format', 'error'); return; }
+  const mobile = document.getElementById('edit-donor-mobile').value.trim();
+  if (mobile && !/^[6-9]\d{9}$/.test(mobile)) { showToast('Invalid mobile number', 'error'); return; }
+  const { error } = await _supa.from('receipts').update({
+    donor_name:    document.getElementById('edit-donor-name').value.trim(),
+    donor_address: document.getElementById('edit-donor-addr').value.trim() || null,
+    donor_mobile:  mobile || null,
+    donor_pan:     pan || null,
+    remarks:       document.getElementById('edit-remarks').value.trim() || null,
+  }).eq('receipt_id', _editingReceiptId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('✅ Receipt updated!', 'success');
+  document.getElementById('edit-receipt-modal').classList.remove('show');
+  _editingReceiptId = null;
+  renderTable();
+}
+
+async function markReceiptStatus(id, status) {
+  if (!confirm(`Mark receipt ${id} as ${status}?`)) return;
+  const { error } = await _supa.from('receipts').update({ status }).eq('receipt_id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast(`✅ Marked as ${status}`, 'success');
+  renderTable();
+}
+  
 function numberToWords(n) {
   if (!n) return 'Zero';
   const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
