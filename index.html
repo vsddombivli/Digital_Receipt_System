@@ -1321,7 +1321,23 @@ async function generateReceipt() {
   //}
   const btn = document.getElementById('generate-btn');
   btn.disabled = true; btn.textContent = '⏳ Saving…';
-
+  // Block generation if DB not connected
+  if (!isDB()) {
+    showToast('❌ No database connection. Please check your internet and try again.', 'error');
+    btn.disabled = false; btn.innerHTML = '✨ Generate Receipt';
+    return;
+  }
+  
+  // Also verify live connection before proceeding
+  try {
+    const { error: pingError } = await _supa.from('receipt_counter').select('financial_year').limit(1);
+    if (pingError) throw pingError;
+  } catch(e) {
+    showToast('❌ Cannot reach database. Check internet connection and try again.', 'error');
+    btn.disabled = false; btn.innerHTML = '✨ Generate Receipt';
+    return;
+  }
+  
   try {
     const receiptNo = await getNextNo();
     const screenshotUrl = await uploadScreenshot(receiptNo);
