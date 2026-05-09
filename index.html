@@ -1201,6 +1201,7 @@ async function extractTransactionId(input) {
       statusDiv.textContent = '✅ Transaction ID auto-filled! Verify before submitting.';
       statusDiv.style.color = 'var(--success)';
     } else {
+      refInput.value = '';
       statusDiv.textContent = '⚠️ Could not detect Transaction ID — please fill manually.';
       statusDiv.style.color = 'var(--danger)';
     }
