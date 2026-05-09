@@ -959,7 +959,10 @@ function toReceipt(row) {
     mobile: row.donor_mobile || '', email: row.donor_email || '',
     pan: row.donor_pan || '', accounts: row.accounts,
     total: parseFloat(row.total_amount), payment: row.payment_method,
-    ref: row.payment_ref || '', volunteer: row.volunteer,
+    ref: row.payment_ref || '', 
+    bank_name: row.bank_name || '',
+    branch_name: row.branch_name || '',
+    volunteer: row.volunteer,
     remarks: row.remarks || '', waSent: row.wa_sent, createdAt: row.created_at,
     screenshot_url: row.screenshot_url || '',
     status: row.status || 'valid',
@@ -973,7 +976,8 @@ async function dbInsert(r) {
     receipt_id: r.id, donor_name: r.donor, donor_address: r.address||null,
     donor_mobile: r.mobile||null, donor_email: r.email||null, donor_pan: r.pan||null,
     accounts: r.accounts, total_amount: r.total, payment_method: r.payment,
-    payment_ref: r.ref||null, screenshot_url: r.screenshot_url||null, donation_date: r.date, 
+    payment_ref: r.ref||null, bank_name: r.bank_name||null, branch_name: r.branch_name||null,
+    screenshot_url: r.screenshot_url||null, donation_date: r.date, 
     volunteer: r.volunteer, volunteer_location: r.volunteer_location || null,
     remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
   }]);
@@ -1118,6 +1122,8 @@ function selectPayment(el, val) {
     document.getElementById('screenshot-group').style.display = '';
     refInput.placeholder = val === 'Cheque' ? 'Cheque No. (mandatory)' : 'Transaction / UTR No. (mandatory)';
     refGroup.querySelector('label').innerHTML = (val === 'Cheque' ? 'Cheque No.' : 'UPI / Transaction / Ref No.') + ' <span class="required">*</span>';
+    const bankStar = document.getElementById('bank-required-star');  
+    if (bankStar) bankStar.innerHTML = val === 'Cheque' ? '<span class="required">*</span>' : '';
   }
 }
 
@@ -1293,6 +1299,7 @@ async function generateReceipt() {
   
   const pan = document.getElementById('donor-pan').value.trim().toUpperCase();
   if (pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(pan)) { showToast('Invalid PAN format (e.g. ABCDE1234F)', 'error'); return; }
+  if (!pan && total > 20000) { showToast('PAN number is mandatory for donations above ₹20,000', 'error'); return; }
   
   const email = document.getElementById('donor-email').value.trim();
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Invalid email address', 'error'); return; }
@@ -1324,6 +1331,10 @@ async function generateReceipt() {
 
     const fileInput = document.getElementById('payment-screenshot');
     if (!fileInput.files.length) { showToast('Payment screenshot is mandatory for ' + selectedPayment, 'error'); return; }
+  }
+  if (selectedPayment === 'Cheque') {
+    const bank = document.getElementById('bank-name').value.trim();
+    if (!bank) { showToast('Bank Name is mandatory for Cheque payments', 'error'); return; }
   }
   //if (window._detectedScreenshotAmt && window._detectedScreenshotAmt !== total) {
     //showToast(`⚠️ Screenshot amount ₹${window._detectedScreenshotAmt} doesn't match entered ₹${total} — please verify`, 'error');
@@ -1359,6 +1370,8 @@ async function generateReceipt() {
       pan: document.getElementById('donor-pan').value.trim().toUpperCase(),
       accounts: selectedAccounts, total, payment: selectedPayment,
       ref: document.getElementById('payment-ref').value.trim(),
+      bank_name: document.getElementById('bank-name').value.trim(),
+      branch_name: document.getElementById('branch-name').value.trim(),
       screenshot_url: screenshotUrl,
       volunteer: vol,
       volunteer_location: window._volunteerLocation || '',
@@ -1728,7 +1741,7 @@ async function renderStats() {
 //  HELPERS
 // ══════════════════════════════
 function clearForm() {
-  ['donor-name','donor-addr','donor-mobile','donor-email','payment-ref','payment-screenshot'].forEach(id => document.getElementById(id).value = '');
+  ['donor-name','donor-addr','donor-mobile','donor-email','payment-ref','bank-name','branch-name','payment-screenshot'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('donor-pan').value = ''; document.getElementById('donor-pan').disabled = false;
   document.getElementById('donation-date').value = todayStr();
   document.getElementById('remarks').value = 'Thank you for your contribution and support';
@@ -1754,10 +1767,10 @@ function newReceipt() {
 
 async function exportCSV() {
   const records = await dbLoad();
-  const rows = [['Receipt No','Date','Donor Name','Mobile','PAN','Accounts','Total','Payment','Ref','Volunteer','Remarks','WA Sent','Screenshot URL']];
+  const rows = [['Receipt No','Date','Donor Name','Mobile','PAN','Accounts','Total','Payment','Ref','Bank','Branch','Volunteer','Location','Remarks','Status','WA Sent','Screenshot URL']];
   records.forEach(r => rows.push([r.id,r.date,r.donor,r.mobile||'',r.pan||'',
     (r.accounts||[]).map(a=>`${a.name}:${a.amount}`).join('|'),
-    r.total,r.payment,r.ref||'',r.volunteer,r.remarks||'',r.waSent?'Yes':'No',r.screenshot_url||'']));
+    r.total,r.payment,r.ref||'',r.bank_name||'',r.branch_name||'',r.volunteer,r.volunteer_location||'',r.remarks||'',r.waSent?'Yes':'No',r.screenshot_url||'']));
   const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download = `VSD_Receipts_${todayStr()}.csv`; a.click();
