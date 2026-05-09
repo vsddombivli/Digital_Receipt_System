@@ -592,7 +592,7 @@
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Volunteer</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
           <tbody id="records-tbody"></tbody>
         </table>
       </div>
@@ -1621,6 +1621,7 @@ async function renderTable() {
       <td style="font-size:0.82rem">${(r.accounts||[]).map(a=>a.name).join('<br>')}</td>
       <td><strong>₹${r.total.toLocaleString('en-IN')}</strong></td>
       <td><span class="badge badge-${r.payment.toLowerCase().replace(/[^a-z]/g,'')}">${r.payment}</span></td>
+      <td style="font-size:0.82rem">${r.volunteer || '–'}</td>
       <td style="font-size:0.82rem">${r.volunteer_location || '–'}</td>
       <td>${r.status==='invalid' ? '<span class="badge" style="background:#fdecea;color:var(--danger)">❌ Invalid</span>' : r.status==='duplicate' ? '<span class="badge" style="background:#fff3e0;color:#f39c12">⚠️ Dup</span>' : '<span class="badge" style="background:#e6f4ea;color:var(--success)">✅</span>'}</td>
       <td><div class="action-btns">
@@ -1886,6 +1887,10 @@ function applyRoleAccess() {
   //document.getElementById('tab-btn-admin').style.display = isAdmin ? '' : 'none';
 
   ['bulk','stats','admin'].forEach(id => {
+    // Hide export buttons from volunteers
+    const exportBtns = document.querySelectorAll('[onclick="exportCSV()"]');
+    exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
+    
     const btn = document.querySelector(`[onclick="switchTab('${id}')"]`);
     if (btn) btn.style.display = isAdmin ? '' : 'none';
   });
