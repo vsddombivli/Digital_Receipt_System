@@ -349,6 +349,14 @@
           <label>UPI / Transaction / Ref No. <span class="required">*</span></label>
           <input type="text" id="payment-ref" placeholder="e.g. 424423202250">
         </div>
+        <div class="form-group" id="bank-group">
+          <label>Bank Name <span id="bank-required-star"></span></label>
+          <input type="text" id="bank-name" placeholder="e.g. ICICI Bank, HDFC Bank">
+        </div>
+        <div class="form-group">
+          <label>Branch Name</label>
+          <input type="text" id="branch-name" placeholder="e.g. Dombivli">
+        </div>
         <div class="form-group full" id="screenshot-group">
           <label>Payment Screenshot <span class="required">*</span></label>
           <input type="file" id="payment-screenshot" accept="image/*" 
@@ -978,10 +986,12 @@ async function dbLoad(filters = {}) {
     if (filters.date)    arr = arr.filter(r => r.date === filters.date);
     if (filters.search)  arr = arr.filter(r => r.donor.toLowerCase().includes(filters.search) || r.id.toLowerCase().includes(filters.search) || (r.pan||'').toLowerCase().includes(filters.search));
     if (filters.payment) arr = arr.filter(r => r.payment === filters.payment);
+    if (filters.volunteer) arr = arr.filter(r => r.volunteer === filters.volunteer);
     return arr;
   }
   let q = _supa.from('receipts').select('*').order('created_at', { ascending: false });
   if (filters.date)    q = q.eq('donation_date', filters.date);
+  if (filters.volunteer) q = q.eq('volunteer', filters.volunteer);
   if (filters.search)  q = q.or(`donor_name.ilike.%${filters.search}%,receipt_id.ilike.%${filters.search}%,donor_pan.ilike.%${filters.search}%`);
   if (filters.payment) q = q.eq('payment_method', filters.payment);
   const { data, error } = await q;
@@ -1584,6 +1594,7 @@ async function renderTable() {
   const filters = {};
   if (q)  filters.search  = q;
   if (fp) filters.payment = fp;
+  if (currentRole !== 'admin' && currentUser) filters.volunteer = window._volunteerFullName || '';
 
   const records = await dbLoad(filters);
   if (!records.length) { tbody.innerHTML = ''; document.getElementById('no-records').style.display = 'block'; return; }
@@ -1810,6 +1821,7 @@ async function onLoginSuccess(user) {
   currentRole = profile ? profile.role : 'volunteer';
   // Auto-fill volunteer name
   window._volunteerLocation = profile ? (profile.location || '') : '';
+  window._volunteerFullName = profile ? (profile.full_name || '') : '';
   const volInput = document.getElementById('volunteer-name');
   if (volInput) {
     volInput.value = profile?.full_name || user.email.split('@')[0];
