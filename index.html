@@ -561,7 +561,7 @@
           <div style="background:var(--pink-light);border-top:1px solid var(--pink-border);padding:7px 16px;font-size:0.68rem;color:var(--muted);text-align:center;line-height:1.6;-webkit-print-color-adjust:exact;print-color-adjust:exact;">
             <div><strong>PUBLIC TRUST REG. NO. E-19790 (MUMBAI) DTD. 20-11-2001</strong></div>
             <div><strong>INCOME TAX EXEMPTION NO. (80G) AAATV2881J25MB02 &nbsp;●&nbsp; PAN NO. AAA-TV-2881J</strong></div>
-            <div style="margin-top:3px;">Note: &nbsp; Cheque / Draft is subject to realisation</div>
+            <div style="margin-top:3px;">Note: &nbsp; Online Payment / Cheque / Draft is subject to realisation</div>
           </div> 
         </div>
       </div>
@@ -1934,6 +1934,15 @@ function showLoginError(msg) {
 async function doLogout() {
   await _supa.auth.signOut();
   currentUser = null; currentRole = null;
+  
+  clearForm();
+  window._volunteerLocation = '';
+  window._volunteerFullName = '';
+  lastReceipt = null;
+  document.getElementById('receipt-wrap').classList.remove('show');
+  const btn1 = document.getElementById('generate-btn');
+  if (btn1) { btn1.disabled = false; btn1.innerHTML = '✨ Generate Receipt'; }
+  
   // Remove logout button
   const lb = document.getElementById('header-logout');
   if (lb) lb.remove();
