@@ -1409,6 +1409,8 @@ function renderReceiptPreview(r) {
   document.getElementById('r-amount').textContent = `₹${r.total.toLocaleString('en-IN')}`;
   document.getElementById('r-words').textContent = numberToWords(r.total) + ' Rupees Only';
   document.getElementById('r-ref').textContent = r.ref || ' ';
+  document.getElementById('bank-name').textContent = r.bank_name || ' ';
+  document.getElementById('branch-name').textContent = r.branch_name || ' ';
   document.getElementById('r-remarks').textContent = r.remarks;
   document.getElementById('r-donor-sig').textContent = r.donor;
   //document.getElementById('r-accounts').innerHTML = r.accounts.map((a,i) =>
