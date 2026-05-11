@@ -1439,7 +1439,7 @@ function renderReceiptPreview(r) {
   document.getElementById('r-volunteer').textContent = refName || loggedInName;
   //document.getElementById('r-volunteer').textContent = r.volunteer;
   
-  do cument.getElementById('r-amount').textContent = `₹${r.total.toLocaleString('en-IN')}`;
+  document.getElementById('r-amount').textContent = `₹${r.total.toLocaleString('en-IN')}`;
   document.getElementById('r-words').textContent = numberToWords(r.total) + ' Rupees Only';
   document.getElementById('r-ref').textContent = r.ref || ' ';
   document.getElementById('r-bank-name').textContent = r.bank_name || ' ';
