@@ -1337,7 +1337,7 @@ async function generateReceipt() {
     document.getElementById('ref-volunteer-name')?.value || document.getElementById('volunteer-name')?.value || ""
   ).trim();
   const generated_by = document.getElementById('vol-name')?.value.trim() || "";
-  generated_by_location: /* your existing location field */ currentUserLocation || '',
+  const generated_by_location: /* your existing location field */ currentUserLocation || '';
   if (!vol) { showToast('Volunteer name is required', 'error'); return; }
   const ddate = document.getElementById('donation-date').value;
   if (!ddate) { showToast('Select donation date', 'error'); return; }
