@@ -1333,12 +1333,18 @@ async function generateReceipt() {
   if (!total) { showToast('Enter donation amount', 'error'); return; }
   if (!pan && total > 20000) { showToast('PAN number is mandatory for donations above ₹20,000', 'error'); return; }
 
+  
+  
   const vol = (
     document.getElementById('ref-volunteer-name')?.value || document.getElementById('volunteer-name')?.value || ""
   ).trim();
-  const generated_by = document.getElementById('vol-name')?.value.trim() || "";
-  const generated_by_location: /* your existing location field */ currentUserLocation || '';
   if (!vol) { showToast('Volunteer name is required', 'error'); return; }
+  
+  const generated_by = document.getElementById('volunteer-name')?.value.trim() || "";
+  if (!generated_by) { showToast('Volunteer name is required', 'error'); return; }
+  
+  //const generated_by_location: /* your existing location field */ currentUserLocation || '';
+  
   const ddate = document.getElementById('donation-date').value;
   if (!ddate) { showToast('Select donation date', 'error'); return; }
 
@@ -1395,6 +1401,8 @@ async function generateReceipt() {
       screenshot_url: screenshotUrl,
       volunteer: vol,
       volunteer_location: window._volunteerLocation || '',
+      generated_by: generated_by,
+      generated_by_location: window._volunteerLocation || '',
       remarks: 'Thank you for your contribution and support',
       waSent: false, createdAt: new Date().toISOString(),
     };
