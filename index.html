@@ -1332,9 +1332,11 @@ async function generateReceipt() {
   const total = selectedAccounts.reduce((s,a) => s+a.amount, 0);
   if (!total) { showToast('Enter donation amount', 'error'); return; }
   if (!pan && total > 20000) { showToast('PAN number is mandatory for donations above ₹20,000', 'error'); return; }
-  
-  const vol : (document.getElementById('ref-volunteer-name').value || document.getElementById('volunteer-name').value).trim(),
-  generated_by: document.getElementById('vol-name').value.trim(),
+
+  const vol = (
+    document.getElementById('ref-volunteer-name')?.value || document.getElementById('volunteer-name')?.value || ""
+  ).trim();
+  const generated_by = document.getElementById('vol-name')?.value.trim() || "";
   generated_by_location: /* your existing location field */ currentUserLocation || '',
   if (!vol) { showToast('Volunteer name is required', 'error'); return; }
   const ddate = document.getElementById('donation-date').value;
