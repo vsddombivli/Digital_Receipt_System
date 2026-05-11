@@ -993,6 +993,7 @@ async function dbInsert(r) {
     payment_ref: r.ref||null, bank_name: r.bank_name||null, branch_name: r.branch_name||null,
     screenshot_url: r.screenshot_url||null, donation_date: r.date, 
     volunteer: r.volunteer, volunteer_location: r.volunteer_location || null,
+    generated_by: r.generated_by, generated_by_location: r.generated_by_location || null,
     remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
   }]);
   if (error) { console.error('DB insert error:', error); localSave(r); showToast('⚠️ Saved locally (DB error)', 'error'); }
