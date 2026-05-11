@@ -1660,7 +1660,6 @@ async function renderTable() {
       <td style="font-size:0.82rem">${(r.accounts||[]).map(a=>a.name).join('<br>')}</td>
       <td><strong>₹${r.total.toLocaleString('en-IN')}</strong></td>
       <td><span class="badge badge-${r.payment.toLowerCase().replace(/[^a-z]/g,'')}">${r.payment}</span></td>
-      //<td style="font-size:0.82rem">${r.volunteer || '–'}</td>
       <td>
         ${r.volunteer || '–'}
         ${r.generated_by && r.generated_by !== r.volunteer
