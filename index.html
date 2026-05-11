@@ -1020,24 +1020,24 @@ function currentFY() {
 async function getNextNo() {
   if (isDB()) {
     const { data, error } = await _supa.rpc('increment_receipt_counter', { fy: currentFY() });
-    if (!error && data) return `D${String(data).padStart(5,'0')}`;
+    if (!error && data) return `OR${String(data).padStart(5,'0')}`;
   }
   // local fallback
   const fy = currentFY();
   if (localStorage.getItem(FY_KEY) !== fy) { localStorage.setItem(FY_KEY, fy); localStorage.setItem(COUNTER_KEY,'0'); }
   const n = parseInt(localStorage.getItem(COUNTER_KEY)||'0') + 1;
   localStorage.setItem(COUNTER_KEY, String(n));
-  return `D${String(n).padStart(5,'0')}`;
+  return `OR${String(n).padStart(5,'0')}`;
 }
 
 async function peekNo() {
   if (isDB()) {
     const { data } = await _supa.from('receipt_counter').select('current_value').eq('financial_year', currentFY()).maybeSingle();
-    return `D${String(((data && data.current_value) || 0) + 1).padStart(5,'0')}`;
+    return `OR${String(((data && data.current_value) || 0) + 1).padStart(5,'0')}`;
   }
   const fy = currentFY();
-  if (localStorage.getItem(FY_KEY) !== fy) return 'D00001';
-  return `D${String(parseInt(localStorage.getItem(COUNTER_KEY)||'0')+1).padStart(5,'0')}`;
+  if (localStorage.getItem(FY_KEY) !== fy) return 'OR00001';
+  return `OR${String(parseInt(localStorage.getItem(COUNTER_KEY)||'0')+1).padStart(5,'0')}`;
 }
 
 async function updateCounter() {
