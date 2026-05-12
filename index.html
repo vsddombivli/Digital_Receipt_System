@@ -2344,9 +2344,13 @@ function clearPoster() {
 // ── Load volunteers from user_profiles ─────────────────────
 async function loadVolunteerDropdown() {
   if (!isDB()) return;
+  const myLocation = (window._volunteerLocation || '').trim().toUpperCase();
+  if (!myLocation) return;
+  
   const { data, error } = await _supa
     .from('user_profiles')
     .select('id, full_name, location')
+    .ilike('location', myLocation)  // same location, case-insensitive
     .order('full_name');
   if (error || !data) return;
 
