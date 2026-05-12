@@ -672,6 +672,10 @@
             <input type="text" id="new-user-location" placeholder="e.g. Dombivli, Ghatkopar">
           </div>
           <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="new-user-phone" placeholder="10 digit mobile number">
+          </div>
+          <div class="form-group">
             <label>Role <span class="required">*</span></label>
             <select id="new-user-role">
               <option value="volunteer">Volunteer</option>
@@ -2011,10 +2015,13 @@ async function createUser() {
   const name     = document.getElementById('new-user-name').value.trim();
   const role     = document.getElementById('new-user-role').value;
   const loc      = document.getElementById('new-user-location').value.trim().toUpperCase();
+  const phone    = document.getElementById('new-user-phone').value.trim();
 
   if (!email || !password) { showToast('Email and password required', 'error'); return; }
   if (password.length < 6)  { showToast('Password must be at least 6 characters', 'error'); return; }
-
+  if (!loc)  { showToast('Volunteers Location required', 'error'); return; }
+  if (!phone)  { showToast('Mobile Number required', 'error'); return; }
+  
   showToast('Creating user…');
 
   const { data: su, error: se } = await _supa.auth.signUp({
@@ -2030,7 +2037,8 @@ async function createUser() {
       email,
       full_name: name || email.split('@')[0],
       role,
-      location: loc || null
+      location: loc || null,
+      phone: phone
     });
     if (pe) { showToast('User created but profile save failed: ' + pe.message, 'error'); return; }
   }
