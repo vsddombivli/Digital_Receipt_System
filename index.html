@@ -2243,17 +2243,23 @@ function sendThankYouWA(name, phone, count, total) {
   const mobile = phone.replace(/\D/g,'');
   const num    = mobile.startsWith('91') ? mobile : '91' + mobile;
   const fy     = currentFY();
-  const msg = encodeURIComponent(
-  `\uD83D\uDE4F *Vardhman Sanskar Dham*\n` +
-  `Dear ${name},\n\n` +
-  `On behalf of the entire Vardhman Sanskar Dham team, we express our heartfelt gratitude for your dedicated service during Jivdaya Abhiyan ${fy}.\n\n` +
-  `\uD83D\uDCCB *Your Contribution Summary:*\n` +
-  `- Receipts Generated: *${count}*\n` +
-  `- Total Collection: *\u20B9${parseFloat(total).toLocaleString('en-IN')}*\n` +
-  `- Financial Year: *${fy}*\n\n` +
-  `Your efforts are helping voiceless animals and spreading the message of compassion. \uD83D\uDC04\n\n` +
-  `May your seva be rewarded abundantly. \uD83C\uDF38\n\n` +
-  `_Vardhman Sanskar Dham, Mumbai_`
+ const msg = encodeURIComponent(
+    `🙏 *Vardhman Sanskar Dham*
+    
+    Dear ${name},
+    
+    On behalf of the entire Vardhman Sanskar Dham team, we express our heartfelt gratitude for your dedicated service during Jivdaya Abhiyan ${fy}.
+    
+    📋 Your Contribution Summary:
+    - Receipts Generated: *${count}*
+    - Total Collection: *₹${parseFloat(total).toLocaleString('en-IN')}*
+    - Financial Year: *${fy}*
+    
+    Your efforts are helping voiceless animals and spreading the message of compassion. 🐄
+    
+    May your seva be rewarded abundantly. 🌸
+    
+    _Vardhman Sanskar Dham, Mumbai_`
   );
   window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
   showToast(`WhatsApp opened for ${name}`, 'success');
