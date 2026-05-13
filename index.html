@@ -2106,10 +2106,11 @@ async function loadUsers() {
       <td><span class="badge" style="background:${u.role==='admin'?'#fde8e8':'#e6f4ea'};color:${u.role==='admin'?'#c0392b':'#2D7A3A'}">${u.role}</span></td>
       <td>${u.location || '–'}</td>
       <td style="font-size:0.8rem">${u.created_at ? u.created_at.slice(0,10) : '–'}</td>
-      <td>${u.role === 'superuser' && u.id !== currentUser.id 
-        ? `<button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}','${u.email}')">🗑️</button>` 
-        : (u.id === currentUser.id ? '<span style="font-size:0.78rem;color:var(--muted)">You</span>' : '')
-      }</td>
+      <td>
+        ${u.id !== currentUser?.id ? `
+          <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}','${u.email}')">🗑️</button>
+        ` : '<span style="font-size:0.78rem;color:var(--muted)">You</span>'}
+      </td>
     </tr>`).join('');
 }
 
