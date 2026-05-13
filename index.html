@@ -1330,11 +1330,22 @@ async function uploadScreenshot(receiptId) {
   const { data: urlData } = _supa.storage.from('screenshots').getPublicUrl(path);
   return urlData.publicUrl;
 }
-  
+
+function isAllowedOrigin() {
+  const origin = window.location.origin;
+  const allowed = [
+    'https://vsddombivli.github.io',      // your hosted URL
+  ];
+  return allowed.includes(origin);
+}
 // ══════════════════════════════
 //  GENERATE RECEIPT
 // ══════════════════════════════
 async function generateReceipt() {
+  if (!isAllowedOrigin()) {
+    alert('Receipt generation is only allowed from the official portal.');
+    return;
+  }
   if (!confirm('Please verify all details before confirming.\n\nClick OK to generate receipt or Cancel to go back and edit.')) return;
   
   const name = document.getElementById('donor-name').value.trim();
