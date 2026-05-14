@@ -9,6 +9,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -287,6 +288,7 @@
   <button class="tab-btn" onclick="switchTab('stats')">📊 Summary</button>
   <!-- <button class="tab-btn" onclick="switchTab('poster')">🖼️ Poster</button> -->
   <button class="tab-btn admin-only" id="tab-btn-admin" onclick="switchTab('admin')" style="display:none">⚙️ Admin</button>
+  <button class="tab-btn admin-only" id="tab-btn-recon" onclick="switchTab('recon')" style="display:none">🔍 Reconcile</button>
 </div>
 
 <div class="main">
@@ -583,7 +585,7 @@
         <button class="btn btn-success" onclick="window.print()">🖨️ Print</button>
         <button class="btn btn-primary" onclick="downloadReceiptPDF()">📄 Download PDF</button>
         <!-- <button class="btn btn-secondary" onclick="downloadReceiptImage()">🖼️ Download Image</button> -->
-        <button class="btn btn-whatsapp" onclick="shareReceiptWhatsApp()">💬 Share on WhatsApp</button>
+        <!-- <button class="btn btn-whatsapp" onclick="shareReceiptWhatsApp()">💬 Share on WhatsApp</button> -->
         <button class="btn btn-secondary" onclick="newReceipt()">+ New Receipt</button>
       </div>
       <div class="whatsapp-tip" id="wa-tip">
@@ -785,6 +787,100 @@
       <div style="font-size:2rem;margin-bottom:8px;">⚠️</div>
       <div style="color:var(--danger);font-weight:600;">Template image not configured.</div>
       <div style="color:var(--muted);font-size:0.88rem;margin-top:6px;">Ask admin to upload the poster template.</div>
+    </div>
+  </div>
+  <!-- RECONCILIATION TAB -->
+  <div class="panel" id="tab-recon">
+    <div class="card">
+      <div class="card-title">🔍 Bank Statement Reconciliation</div>
+      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px;">
+        Upload your bank statement in Excel format. System will match each transaction against generated receipts using UTR/Reference number.
+      </p>
+
+      <!-- Format guide -->
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px;font-size:0.85rem;">
+        <strong>Required Excel columns (exact names):</strong><br>
+        <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:0.82rem;">Date, Description, Amount, Reference</code><br>
+        <span style="color:var(--muted);font-size:0.8rem;">The "Reference" column should contain UTR/Transaction/Cheque number. Download sample below.</span>
+        <div style="margin-top:8px;">
+          <button class="btn btn-secondary btn-sm" onclick="downloadSampleStatement()">⬇️ Download Sample Format</button>
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Bank Statement Excel File</label>
+          <input type="file" id="bank-statement-file" accept=".xlsx,.xls,.csv"
+            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+        </div>
+        <div class="form-group">
+          <label>Filter by Date Range (optional)</label>
+          <div style="display:flex;gap:8px;">
+            <input type="date" id="recon-from" style="flex:1;">
+            <input type="date" id="recon-to" style="flex:1;">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="runReconciliation()">🔍 Run Reconciliation</button>
+    </div>
+
+    <!-- Results -->
+    <div id="recon-results" style="display:none;margin-top:20px;">
+
+      <!-- Summary cards -->
+      <div class="stats-grid" id="recon-stats" style="margin-bottom:20px;"></div>
+
+      <!-- Matched -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="color:var(--success);">✅ Matched Transactions (<span id="matched-count">0</span>)</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Reference</th><th>Bank Amount</th><th>Receipt No</th><th>Receipt Amount</th><th>Donor</th><th>Date</th><th>Match</th></tr></thead>
+            <tbody id="matched-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Unmatched Bank -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="color:var(--danger);">❌ In Bank but No Receipt (<span id="unmatched-bank-count">0</span>)</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">These transactions appear in bank statement but no matching receipt found. Possible missing receipts.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Date</th><th>Reference</th><th>Amount</th><th>Description</th></tr></thead>
+          <tbody id="unmatched-bank-tbody"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <!-- Unmatched Receipts -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title" style="color:#f39c12;">⚠️ Receipt but No Bank Entry (<span id="unmatched-receipt-count">0</span>)</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">These receipts exist in system but no matching bank transaction. Possible pending or incorrect UTR.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Receipt No</th><th>Date</th><th>Donor</th><th>Amount</th><th>Ref No</th><th>Payment</th></tr></thead>
+          <tbody id="unmatched-receipt-tbody"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <!-- Amount mismatch -->
+      <div class="card">
+        <div class="card-title" style="color:#9b59b6;">💰 Amount Mismatch (<span id="mismatch-count">0</span>)</div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Reference matched but amounts differ. Needs investigation.</p>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Reference</th><th>Bank Amount</th><th>Receipt Amount</th><th>Difference</th><th>Donor</th><th>Receipt No</th></tr></thead>
+          <tbody id="mismatch-tbody"></tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:16px;">
+        <button class="btn btn-secondary" onclick="exportReconExcel()">📊 Export Reconciliation Report</button>
+      </div>
     </div>
   </div>
 </div><!-- /main -->
@@ -1187,6 +1283,7 @@ function switchTab(id) {
   if (id === 'bulk')    renderBulk();
   if (id === 'stats')   renderStats();
   if (id === 'admin' && currentRole === 'admin') { loadUsers(); loadVolunteerSummary(); }
+  if (id === 'recon') { document.getElementById('recon-results').style.display='none'; }
 }
 //upload payment screenshot
 // ══════════════════════════════
@@ -1971,15 +2068,18 @@ function applyRoleAccess() {
   //});
   //document.getElementById('tab-btn-admin').style.display = isAdmin ? '' : 'none';
 
-  ['bulk','stats','admin'].forEach(id => {
+  ['bulk','stats','recon','admin'].forEach(id => {
     // Hide export buttons from volunteers
     const exportBtns = document.querySelectorAll('[onclick="exportCSV()"]');
     exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
     
     const btn = document.querySelector(`[onclick="switchTab('${id}')"]`);
     if (btn) btn.style.display = isAdmin ? '' : 'none';
-  });
 
+    const reconBtn = document.getElementById('tab-btn-recon');
+    if (reconBtn) reconBtn.style.display = isAdmin ? '' : 'none';
+  });
+  
   // Volunteer profile card (logout) visible in admin tab for volunteers
   if (!isAdmin) {
     document.getElementById('volunteer-profile-card').style.display = 'block';
@@ -2263,6 +2363,245 @@ function sendThankYouWA(name, phone, count, total) {
   );
   window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
   showToast(`WhatsApp opened for ${name}`, 'success');
+}
+
+// ══════════════════════════════
+//  BANK RECONCILIATION
+// ══════════════════════════════
+let _reconData = { matched: [], unmatchedBank: [], unmatchedReceipt: [], mismatch: [] };
+
+function downloadSampleStatement() {
+  if (typeof XLSX === 'undefined') { showToast('Loading library…'); return; }
+  const sample = [
+    { Date: '01/05/2026', Description: 'UPI Transfer from John', Amount: 5000, Reference: '424423202250' },
+    { Date: '02/05/2026', Description: 'NEFT from Jane Doe',     Amount: 10000, Reference: '339912345678' },
+    { Date: '03/05/2026', Description: 'Cheque deposit',         Amount: 2000,  Reference: '123456' },
+  ];
+  const ws = XLSX.utils.json_to_sheet(sample);
+  ws['!cols'] = [{wch:12},{wch:30},{wch:12},{wch:20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'BankStatement');
+  XLSX.writeFile(wb, 'VSD_BankStatement_Sample.xlsx');
+}
+
+async function runReconciliation() {
+  const fileInput = document.getElementById('bank-statement-file');
+  if (!fileInput.files.length) { showToast('Please upload bank statement file', 'error'); return; }
+
+  showToast('Processing…');
+
+  // Parse bank statement
+  const bankRows = await parseExcelFile(fileInput.files[0]);
+  if (!bankRows.length) { showToast('No data found in file', 'error'); return; }
+
+  // Validate columns
+  const required = ['Date','Description','Amount','Reference'];
+  const headers  = Object.keys(bankRows[0]);
+  const missing  = required.filter(r => !headers.includes(r));
+  if (missing.length) {
+    showToast(`Missing columns: ${missing.join(', ')}. Check format.`, 'error');
+    return;
+  }
+
+  // Load receipts from DB
+  const fromDate = document.getElementById('recon-from').value;
+  const toDate   = document.getElementById('recon-to').value;
+
+  let query = _supa.from('receipts')
+    .select('receipt_id, donor_name, total_amount, payment_ref, donation_date, payment_method, status')
+    .neq('status', 'invalid')
+    .not('payment_ref', 'is', null);
+
+  if (fromDate) query = query.gte('donation_date', fromDate);
+  if (toDate)   query = query.lte('donation_date', toDate);
+
+  const { data: receipts, error } = await query;
+  if (error) { showToast('Error loading receipts: ' + error.message, 'error'); return; }
+
+  // Build lookup maps
+  const receiptByRef = {};
+  (receipts || []).forEach(r => {
+    const ref = (r.payment_ref || '').toString().trim().toLowerCase();
+    if (ref) receiptByRef[ref] = r;
+  });
+
+  const bankByRef = {};
+  bankRows.forEach(row => {
+    const ref = (row.Reference || '').toString().trim().toLowerCase();
+    if (ref) bankByRef[ref] = row;
+  });
+
+  // Run matching
+  const matched          = [];
+  const unmatchedBank    = [];
+  const unmatchedReceipt = [];
+  const mismatch         = [];
+  const matchedRefs      = new Set();
+
+  // Check each bank transaction
+  bankRows.forEach(row => {
+    const ref     = (row.Reference || '').toString().trim().toLowerCase();
+    const bankAmt = parseFloat(row.Amount || 0);
+    if (!ref) { unmatchedBank.push({ ...row, reason: 'No reference number' }); return; }
+
+    const receipt = receiptByRef[ref];
+    if (!receipt) {
+      unmatchedBank.push(row);
+      return;
+    }
+
+    matchedRefs.add(ref);
+    const receiptAmt = parseFloat(receipt.total_amount || 0);
+    const diff = Math.abs(bankAmt - receiptAmt);
+
+    if (diff > 1) { // allow ₹1 rounding tolerance
+      mismatch.push({ row, receipt, bankAmt, receiptAmt, diff });
+    } else {
+      matched.push({ row, receipt, bankAmt, receiptAmt });
+    }
+  });
+
+  // Check receipts not in bank
+  (receipts || []).forEach(r => {
+    const ref = (r.payment_ref || '').toString().trim().toLowerCase();
+    if (ref && !matchedRefs.has(ref)) {
+      unmatchedReceipt.push(r);
+    }
+  });
+
+  _reconData = { matched, unmatchedBank, unmatchedReceipt, mismatch };
+  renderReconResults();
+  showToast('✅ Reconciliation complete!', 'success');
+}
+
+function parseExcelFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb   = XLSX.read(e.target.result, { type: 'array' });
+        const ws   = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws);
+        resolve(data);
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function renderReconResults() {
+  const { matched, unmatchedBank, unmatchedReceipt, mismatch } = _reconData;
+  document.getElementById('recon-results').style.display = 'block';
+  document.getElementById('recon-results').scrollIntoView({ behavior: 'smooth' });
+
+  // Summary stats
+  const totalBankAmt    = matched.reduce((s,r) => s + r.bankAmt, 0);
+  const totalReceiptAmt = matched.reduce((s,r) => s + r.receiptAmt, 0);
+  document.getElementById('recon-stats').innerHTML = [
+    ['Matched',          matched.length,          '#e6f4ea', 'var(--success)', '✅'],
+    ['Bank Only',        unmatchedBank.length,     '#fdecea', 'var(--danger)',  '❌'],
+    ['Receipt Only',     unmatchedReceipt.length,  '#fff3e0', '#f39c12',       '⚠️'],
+    ['Amount Mismatch',  mismatch.length,           '#f3e5f5', '#9b59b6',       '💰'],
+  ].map(([lbl,val,bg,color,ico]) => `
+    <div class="stat-card" style="background:${bg};border-color:${color}">
+      <div style="font-size:1.5rem">${ico}</div>
+      <div class="stat-val" style="color:${color}">${val}</div>
+      <div class="stat-label">${lbl}</div>
+    </div>`).join('');
+
+  // Counts
+  document.getElementById('matched-count').textContent          = matched.length;
+  document.getElementById('unmatched-bank-count').textContent   = unmatchedBank.length;
+  document.getElementById('unmatched-receipt-count').textContent = unmatchedReceipt.length;
+  document.getElementById('mismatch-count').textContent         = mismatch.length;
+
+  // Matched table
+  document.getElementById('matched-tbody').innerHTML = matched.length
+    ? matched.map(({row,receipt,bankAmt,receiptAmt}) => `<tr>
+        <td class="mono">${row.Reference}</td>
+        <td>₹${bankAmt.toLocaleString('en-IN')}</td>
+        <td class="mono">${receipt.receipt_id}</td>
+        <td>₹${receiptAmt.toLocaleString('en-IN')}</td>
+        <td>${receipt.donor_name}</td>
+        <td>${fmtDate(receipt.donation_date)}</td>
+        <td><span class="badge" style="background:#e6f4ea;color:var(--success)">✅ Match</span></td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;color:var(--muted)">No matched transactions</td></tr>';
+
+  // Unmatched bank
+  document.getElementById('unmatched-bank-tbody').innerHTML = unmatchedBank.length
+    ? unmatchedBank.map(row => `<tr>
+        <td>${row.Date || '–'}</td>
+        <td class="mono">${row.Reference || '–'}</td>
+        <td>₹${parseFloat(row.Amount||0).toLocaleString('en-IN')}</td>
+        <td style="font-size:0.82rem">${row.Description || '–'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="text-align:center;color:var(--success)">All bank transactions matched! 🎉</td></tr>';
+
+  // Unmatched receipts
+  document.getElementById('unmatched-receipt-tbody').innerHTML = unmatchedReceipt.length
+    ? unmatchedReceipt.map(r => `<tr>
+        <td class="mono">${r.receipt_id}</td>
+        <td>${fmtDate(r.donation_date)}</td>
+        <td>${r.donor_name}</td>
+        <td>₹${parseFloat(r.total_amount||0).toLocaleString('en-IN')}</td>
+        <td class="mono">${r.payment_ref || '–'}</td>
+        <td>${r.payment_method}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:var(--success)">All receipts matched! 🎉</td></tr>';
+
+  // Mismatch
+  document.getElementById('mismatch-tbody').innerHTML = mismatch.length
+    ? mismatch.map(({row,receipt,bankAmt,receiptAmt,diff}) => `<tr>
+        <td class="mono">${row.Reference}</td>
+        <td>₹${bankAmt.toLocaleString('en-IN')}</td>
+        <td>₹${receiptAmt.toLocaleString('en-IN')}</td>
+        <td style="color:var(--danger);font-weight:600">₹${diff.toLocaleString('en-IN')}</td>
+        <td>${receipt.donor_name}</td>
+        <td class="mono">${receipt.receipt_id}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;color:var(--success)">No amount mismatches! 🎉</td></tr>';
+}
+
+function exportReconExcel() {
+  if (typeof XLSX === 'undefined') { showToast('Loading library…'); return; }
+  const { matched, unmatchedBank, unmatchedReceipt, mismatch } = _reconData;
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1 — Matched
+  const matchedRows = matched.map(({row,receipt,bankAmt,receiptAmt}) => ({
+    'Reference': row.Reference, 'Bank Amount': bankAmt,
+    'Receipt No': receipt.receipt_id, 'Receipt Amount': receiptAmt,
+    'Donor': receipt.donor_name, 'Date': fmtDate(receipt.donation_date), 'Status': 'MATCHED'
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(matchedRows), 'Matched');
+
+  // Sheet 2 — Unmatched Bank
+  const ubRows = unmatchedBank.map(row => ({
+    'Date': row.Date, 'Reference': row.Reference,
+    'Amount': row.Amount, 'Description': row.Description, 'Status': 'NO RECEIPT FOUND'
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ubRows.length ? ubRows : [{'Note':'All matched'}]), 'Bank Only');
+
+  // Sheet 3 — Unmatched Receipts
+  const urRows = unmatchedReceipt.map(r => ({
+    'Receipt No': r.receipt_id, 'Date': fmtDate(r.donation_date),
+    'Donor': r.donor_name, 'Amount': r.total_amount,
+    'Ref No': r.payment_ref, 'Payment': r.payment_method, 'Status': 'NOT IN BANK'
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(urRows.length ? urRows : [{'Note':'All matched'}]), 'Receipt Only');
+
+  // Sheet 4 — Mismatch
+  const mmRows = mismatch.map(({row,receipt,bankAmt,receiptAmt,diff}) => ({
+    'Reference': row.Reference, 'Bank Amount': bankAmt,
+    'Receipt Amount': receiptAmt, 'Difference': diff,
+    'Donor': receipt.donor_name, 'Receipt No': receipt.receipt_id
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mmRows.length ? mmRows : [{'Note':'No mismatches'}]), 'Mismatch');
+
+  XLSX.writeFile(wb, `VSD_Reconciliation_${todayStr()}.xlsx`);
+  showToast('✅ Report exported!', 'success');
 }
   
 function numberToWords(n) {
