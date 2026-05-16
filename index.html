@@ -2423,7 +2423,15 @@ async function runReconciliation() {
   const receiptByRef = {};
   (receipts || []).forEach(r => {
     const ref = (r.payment_ref || '').toString().trim().toLowerCase();
-    if (ref) receiptByRef[ref] = r;
+    if (!ref) return;
+    if (!receiptByRef[ref]) {
+      receiptByRef[ref] = { ...r, total_amount: parseFloat(r.total_amount||0), receipt_ids: [r.receipt_id] };
+    } else {
+      // Club multiple receipts with same UTR
+      receiptByRef[ref].total_amount += parseFloat(r.total_amount||0);
+      receiptByRef[ref].receipt_ids.push(r.receipt_id);
+      receiptByRef[ref].receipt_id = receiptByRef[ref].receipt_ids.join(', ');
+    }
   });
 
   const bankByRef = {};
