@@ -1865,7 +1865,7 @@ async function renderBulk() {
       <thead><tr><th>Receipt</th><th>Donor</th><th>Mobile</th><th>Amount</th><th>Action</th></tr></thead>
       <tbody>${records.map(r=>`
         <tr>
-          <td class="mono">${r.id}</td><td>${r.donor}</td><td>${r.mobile}</td>
+          <td class="mono">${r.id}</td><td>${r.donor}</td><td>${r.mobile || '–'}</td>
           <td>₹${r.total.toLocaleString('en-IN')}</td>
           <td><button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬 Send</button></td>
         </tr>`).join('')}
