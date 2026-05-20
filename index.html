@@ -1529,6 +1529,11 @@ async function generateReceipt() {
   try {
     const receiptNo = await getNextNo();
     const screenshotUrl = await uploadScreenshot(receiptNo);
+    if (!screenshotUrl && selectedPayment !== 'Cash') {
+      showToast('⚠️ Screenshot upload failed. Please try again.', 'error');
+      btn.disabled = false; btn.innerHTML = '✨ Generate Receipt';
+      return;
+    }
     const receipt = {
       id: receiptNo, date: ddate, donor: name,
       address: document.getElementById('donor-addr').value.trim(),
