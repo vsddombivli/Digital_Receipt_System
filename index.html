@@ -1133,12 +1133,18 @@ async function dbLoad(filters = {}) {
     if (filters.date)    arr = arr.filter(r => r.date === filters.date);
     if (filters.search)  arr = arr.filter(r => r.donor.toLowerCase().includes(filters.search) || r.id.toLowerCase().includes(filters.search) || (r.pan||'').toLowerCase().includes(filters.search));
     if (filters.payment) arr = arr.filter(r => r.payment === filters.payment);
-    if (filters.volunteer) arr = arr.filter(r => r.volunteer === filters.volunteer);
+    if (filters.volunteerOrGeneratedBy) {
+      const name = filters.volunteerOrGeneratedBy;
+      arr = arr.filter(r => r.volunteer === name || r.generated_by === name);
+    }
     return arr;
   }
   let q = _supa.from('receipts').select('*').order('created_at', { ascending: false });
   if (filters.date)    q = q.eq('donation_date', filters.date);
-  if (filters.volunteer) q = q.eq('volunteer', filters.volunteer);
+  if (filters.volunteerOrGeneratedBy) {
+    const name = filters.volunteerOrGeneratedBy;
+    q = q.or(`volunteer.eq.${name},generated_by.eq.${name}`);
+  }
   if (filters.search)  q = q.or(`donor_name.ilike.%${filters.search}%,receipt_id.ilike.%${filters.search}%,donor_pan.ilike.%${filters.search}%`);
   if (filters.payment) q = q.eq('payment_method', filters.payment);
   const { data, error } = await q;
@@ -1882,7 +1888,7 @@ async function renderTable() {
   const filters = {};
   if (q)  filters.search  = q;
   if (fp) filters.payment = fp;
-  if (currentRole !== 'admin' && currentUser) filters.volunteer = window._volunteerFullName || '';
+  if (currentRole !== 'admin' && currentUser) filters.volunteerOrGeneratedBy = window._volunteerFullName || '';
 
   const records = await dbLoad(filters);
   if (!records.length) { tbody.innerHTML = ''; document.getElementById('no-records').style.display = 'block'; return; }
