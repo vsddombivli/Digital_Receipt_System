@@ -1109,6 +1109,7 @@ function toReceipt(row) {
     volunteer_location: row.volunteer_location || '',
     generated_by: row.generated_by || '',
     generated_by_location: row.volunteer_location || '',
+    share_token: row.share_token || '',
   };
 }
 
@@ -1122,7 +1123,7 @@ async function dbInsert(r) {
     screenshot_url: r.screenshot_url||null, donation_date: r.date, 
     volunteer: r.volunteer, volunteer_location: r.volunteer_location || null,
     generated_by: r.generated_by, generated_by_location: r.generated_by_location || null,
-    remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
+    share_token: r.share_token || null, remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
   }]);
   if (error) { console.error('DB insert error:', error); localSave(r); showToast('⚠️ Saved locally (DB error)', 'error'); }
 }
@@ -1555,6 +1556,7 @@ async function generateReceipt() {
       volunteer_location: window._volunteerLocation || '',
       generated_by: generated_by,
       generated_by_location: window._volunteerLocation || '',
+      share_token: Math.random().toString(36).slice(2) + Date.now().toString(36),
       remarks: 'Thank you for your contribution and support',
       waSent: false, createdAt: new Date().toISOString(),
     };
