@@ -1725,55 +1725,45 @@ async function downloadById(id, type) {
 async function shareReceiptForRecord(r) {
   const msg = `🙏 *Vardhmaan Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}\n_Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
 
-  if (!navigator.share) { fallbackWhatsApp(r, msg); return; }
-
-  // Try PDF first
+  // Pre-build image before share call
+  let imgFile = null;
   try {
-    await new Promise(res => setTimeout(res, 800));
     const canvas = await captureReceipt();
     const imgData = canvas.toDataURL('image/png');
-    const { jsPDF } = window.jspdf;
-    const pdfW = 148;
-    const pdfH = (canvas.height * pdfW) / canvas.width;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfW, pdfH] });
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
-    const pdfBlob = pdf.output('blob');
-    const pdfFile = new File([pdfBlob], `Receipt_${r.id}.pdf`, { type: 'application/pdf' });
-
-    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-      await navigator.share({ files: [pdfFile], text: msg, title: `Receipt ${r.id}` });
-      await dbMarkWA(r.id);
-      showToast('✅ Shared as PDF!', 'success');
-      return;
+    if (imgData && imgData !== 'data:,') {
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      imgFile = new File([blob], `Receipt_${r.id}.png`, { type: 'image/png' });
     }
   } catch(e) {
-    if (e.name === 'AbortError') return;
-    console.warn('PDF share failed, trying image…', e);
+    console.warn('Image build failed:', e);
   }
 
-  // Fallback to image
-  try {
-    const canvas = await captureReceipt();
-    canvas.toBlob(async (blob) => {
-      const imgFile = new File([blob], `Receipt_${r.id}.png`, { type: 'image/png' });
-      try {
-        if (navigator.canShare && navigator.canShare({ files: [imgFile] })) {
-          await navigator.share({ files: [imgFile], text: msg, title: `Receipt ${r.id}` });
-          await dbMarkWA(r.id);
-          showToast('✅ Shared as image!', 'success');
-        } else {
-          await navigator.share({ text: msg, title: `Receipt ${r.id}` });
-          await dbMarkWA(r.id);
-          showToast('✅ Shared as text!', 'success');
-        }
-      } catch(e) {
-        if (e.name !== 'AbortError') fallbackWhatsApp(r, msg);
-      }
-    }, 'image/png');
-  } catch(e) {
-    if (e.name !== 'AbortError') fallbackWhatsApp(r, msg);
+  // Try native share with image + text
+  if (navigator.share && imgFile && navigator.canShare && navigator.canShare({ files: [imgFile] })) {
+    try {
+      await navigator.share({ files: [imgFile], text: msg, title: `Receipt ${r.id}` });
+      await dbMarkWA(r.id);
+      showToast('✅ Receipt shared!', 'success');
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return;
+    }
   }
+
+  // Fallback — WhatsApp URL with text only
+  if (r.mobile) {
+    const mobile = r.mobile.replace(/\D/g,'');
+    const num = mobile.startsWith('91') ? mobile : '91' + mobile;
+    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+    await dbMarkWA(r.id);
+    showToast('WhatsApp opened — attach receipt image manually', 'success');
+  } else {
+    showToast('No mobile number for this donor', 'error');
+  }
+  const tip = document.getElementById('wa-tip');
+  if (tip) tip.classList.add('show');
 }
+  
 async function shareReceiptWhatsApp() {
   if (!lastReceipt) return;
   const r = lastReceipt;
