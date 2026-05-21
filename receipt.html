@@ -587,13 +587,13 @@
       document.getElementById('r-mobile').textContent = r.donor_mobile || '–';
       document.getElementById('r-pan').textContent = r.donor_pan || 'Not provided';
       document.getElementById('r-ref').textContent = r.payment_ref || '–';
-      document.getElementById('r-bank').textContent = r.bank_name || '';
-      document.getElementById('r-branch').textContent = r.branch_name || '';
+      document.getElementById('r-bank-name').textContent = r.bank_name || '';
+      document.getElementById('r-branch-name').textContent = r.branch_name || '';
       document.getElementById('r-volunteer').textContent = r.volunteer || '';
       document.getElementById('r-donor-sig').textContent = r.donor_name || '';
       document.getElementById('r-amount').textContent = `₹${parseFloat(r.total_amount || 0).toLocaleString('en-IN')}`;
       document.getElementById('r-words').textContent = numberToWords(parseFloat(r.total_amount || 0)) + ' Rupees Only';
-      if (r.remarks) document.getElementById('r-remarks-wrap').textContent = 'Remarks: ' + r.remarks;
+      if (r.remarks) document.getElementById('r-remarks').textContent = 'Remarks: ' + r.remarks;
 
       // Accounts
       const accounts = r.accounts || [];
