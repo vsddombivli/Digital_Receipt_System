@@ -1706,7 +1706,58 @@ async function downloadById(id, type) {
     switchTab('records');
   }
 }
-  
+
+async function shareReceiptForRecord(r) {
+  const msg = `🙏 *Vardhmaan Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}\n_Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
+
+  if (!navigator.share) { fallbackWhatsApp(r, msg); return; }
+
+  // Try PDF first
+  try {
+    const canvas = await captureReceipt();
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdfW = 148;
+    const pdfH = (canvas.height * pdfW) / canvas.width;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfW, pdfH] });
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH);
+    const pdfBlob = pdf.output('blob');
+    const pdfFile = new File([pdfBlob], `Receipt_${r.id}.pdf`, { type: 'application/pdf' });
+
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      await navigator.share({ files: [pdfFile], text: msg, title: `Receipt ${r.id}` });
+      await dbMarkWA(r.id);
+      showToast('✅ Shared as PDF!', 'success');
+      return;
+    }
+  } catch(e) {
+    if (e.name === 'AbortError') return;
+    console.warn('PDF share failed, trying image…', e);
+  }
+
+  // Fallback to image
+  try {
+    const canvas = await captureReceipt();
+    canvas.toBlob(async (blob) => {
+      const imgFile = new File([blob], `Receipt_${r.id}.png`, { type: 'image/png' });
+      try {
+        if (navigator.canShare && navigator.canShare({ files: [imgFile] })) {
+          await navigator.share({ files: [imgFile], text: msg, title: `Receipt ${r.id}` });
+          await dbMarkWA(r.id);
+          showToast('✅ Shared as image!', 'success');
+        } else {
+          await navigator.share({ text: msg, title: `Receipt ${r.id}` });
+          await dbMarkWA(r.id);
+          showToast('✅ Shared as text!', 'success');
+        }
+      } catch(e) {
+        if (e.name !== 'AbortError') fallbackWhatsApp(r, msg);
+      }
+    }, 'image/png');
+  } catch(e) {
+    if (e.name !== 'AbortError') fallbackWhatsApp(r, msg);
+  }
+}
 async function shareReceiptWhatsApp() {
   if (!lastReceipt) return;
   const r = lastReceipt;
@@ -1745,7 +1796,7 @@ _Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`);
 }
 
 function sendWhatsApp() { shareReceiptWhatsApp(); }
-
+/*
 async function sendWAById(id) {
   const all = await dbLoad();
   const r = all.find(x => x.id === id);
@@ -1753,7 +1804,29 @@ async function sendWAById(id) {
   await sendWAFor(r);
   renderTable(); renderBulk();
 }
+*/
+async function sendWAById(id) {
+  const all = await dbLoad();
+  const r = all.find(x => x.id === id);
+  if (!r) { showToast('Receipt not found', 'error'); return; }
 
+  // Need receipt visible for captureReceipt to work
+  const prev = lastReceipt;
+  lastReceipt = r;
+  renderReceiptPreview(r);
+  const wrap = document.getElementById('receipt-wrap');
+  wrap.classList.add('show');
+  await new Promise(res => setTimeout(res, 600));
+
+  await shareReceiptForRecord(r);
+
+  // Restore
+  lastReceipt = prev;
+  if (prev) renderReceiptPreview(prev);
+  else wrap.classList.remove('show');
+  renderTable(); renderBulk();
+}
+  
 async function sendWAFor(r) {
   if (!r.mobile) { showToast('No mobile number for this donor', 'error'); return; }
   const mobile = r.mobile.replace(/\D/g,'');
