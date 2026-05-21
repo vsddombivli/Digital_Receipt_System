@@ -1832,10 +1832,24 @@ async function sendWAById(id) {
   renderReceiptPreview(r);
   const wrap = document.getElementById('receipt-wrap');
   wrap.classList.add('show');
-  await new Promise(res => setTimeout(res, 600));
+  // Force receipt visible and in viewport
+  wrap.style.position = 'fixed';
+  wrap.style.top = '0';
+  wrap.style.left = '0';
+  wrap.style.zIndex = '1';
+  wrap.style.opacity = '0';
+  document.body.appendChild(wrap);
+  await new Promise(res => setTimeout(res, 1000));
 
   await shareReceiptForRecord(r);
 
+  // Restore wrap position
+  wrap.style.position = '';
+  wrap.style.top = '';
+  wrap.style.left = '';
+  wrap.style.zIndex = '';
+  wrap.style.opacity = '';
+  document.querySelector('.main').appendChild(wrap);
   // Restore
   lastReceipt = prev;
   if (prev) renderReceiptPreview(prev);
