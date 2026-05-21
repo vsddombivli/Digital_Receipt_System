@@ -586,7 +586,7 @@
         <button class="btn btn-success" onclick="window.print()">🖨️ Print</button>
         <button class="btn btn-primary" onclick="downloadReceiptPDF()">📄 Download PDF</button>
         <!-- <button class="btn btn-secondary" onclick="downloadReceiptImage()">🖼️ Download Image</button> -->
-        <!-- <button class="btn btn-whatsapp" onclick="shareReceiptWhatsApp()">💬 Share on WhatsApp</button> -->
+        <button class="btn btn-whatsapp" onclick="if(lastReceipt)shareReceiptForRecord(lastReceipt)">💬 Share on WhatsApp</button>
         <button class="btn btn-secondary" onclick="newReceipt()">+ New Receipt</button>
       </div>
       <div class="whatsapp-tip" id="wa-tip">
@@ -1801,7 +1801,7 @@ _Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`);
   document.getElementById('wa-tip').classList.add('show');
 }
 
-function sendWhatsApp() { shareReceiptWhatsApp(); }
+function sendWhatsApp() { if (lastReceipt) shareReceiptForRecord(lastReceipt); }
 /*
 async function sendWAById(id) {
   const all = await dbLoad();
