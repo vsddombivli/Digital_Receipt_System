@@ -382,12 +382,12 @@
         </div>
         <div class="form-group">
           <label>Reference Volunteer <span style="color:var(--muted)">(donor brought by)</span></label>
-          <select id="ref-volunteer-select" onchange="onRefVolunteerChange()">
-            <option value="">— None (self) —</option>
-          </select>
+          <input type="text" id="ref-volunteer-select" placeholder="Type name if different volunteer brought this donor (optional)"
+            oninput="this.value=this.value.toUpperCase()"
+            style="font-family:'EB Garamond',serif;font-size:1rem;padding:10px 12px;border:1.5px solid var(--border);border-radius:7px;outline:none;width:100%;">
         </div>
-        <input type="hidden" id="ref-volunteer-name">
-        <input type="hidden" id="ref-volunteer-location">
+       <!-- <input type="hidden" id="ref-volunteer-name"> -->
+       <!-- <input type="hidden" id="ref-volunteer-location"> -->
         <div class="form-group full">
           <label>Remarks</label>
           <input type="text" id="remarks" value="Thank you for your contribution and support" disabled>
@@ -1483,7 +1483,7 @@ async function generateReceipt() {
   
   
   const vol = (
-    document.getElementById('ref-volunteer-name')?.value || document.getElementById('volunteer-name')?.value || ""
+    document.getElementById('ref-volunteer-select')?.value || document.getElementById('volunteer-name')?.value || ""
   ).trim();
   if (!vol) { showToast('Volunteer name is required', 'error'); return; }
   
@@ -1586,7 +1586,7 @@ function renderReceiptPreview(r) {
   // document.getElementById('r-payment').textContent = r.payment + (r.ref ? ` — Ref: ${r.ref}` : '');
   // Determine display name for receipt footer
   
-  const refName = document.getElementById('ref-volunteer-name').value.trim();
+  const refName = document.getElementById('ref-volunteer-select').value.trim();
   const loggedInName = document.getElementById('volunteer-name').value.trim();
   document.getElementById('r-volunteer').textContent = refName || loggedInName;
   //document.getElementById('r-volunteer').textContent = r.volunteer;
@@ -2957,13 +2957,14 @@ async function loadVolunteerDropdown() {
     sel.appendChild(opt);
   });
 }
-
+/*
 function onRefVolunteerChange() {
   const sel = document.getElementById('ref-volunteer-select');
   const opt = sel.options[sel.selectedIndex];
   document.getElementById('ref-volunteer-name').value = opt.dataset.name || '';
   document.getElementById('ref-volunteer-location').value = opt.dataset.location || '';
 }
+*/
 </script>
 </body>
 </html>
