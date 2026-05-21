@@ -1731,8 +1731,11 @@ async function downloadById(id, type) {
 }
 
 async function shareReceiptForRecord(r) {
-  const msg = `🙏 *Vardhman Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear *${r.donor}*,\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}\n_Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
-
+  const shareLink = r.share_token 
+    ? `\n\n📥 Download your receipt anytime:\nhttps://vsddombivli.github.io/Digital_Receipt_System/receipt.html?id=${r.id}&token=${r.share_token}`
+    : '';
+  const msg = `🙏 *Vardhmaan Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}${shareLink}\n_Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
+  
   // Pre-build image before share call
   let imgFile = null;
   try {
