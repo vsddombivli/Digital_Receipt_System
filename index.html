@@ -1924,7 +1924,7 @@ async function renderTable() {
         ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
         <!-- <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button> -->
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
-        ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬</button>` : ''}
+        <button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬</button>
       </div></td>
     </tr>`).join('');
 }
@@ -1948,7 +1948,7 @@ async function viewReceipt(id) {
           <td style="padding:8px">${v}</td></tr>`).join('')}
     </table>
     <div class="btn-row" style="margin-top:16px">
-      ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}');closeModal()">💬 Send WhatsApp</button>` : ''}
+      <button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}');closeModal()">💬 Send WhatsApp</button>
     </div>`;
   document.getElementById('view-modal').classList.add('show');
 }
