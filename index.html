@@ -1337,6 +1337,10 @@ async function extractTransactionId(input) {
 
   //  const fullText = data.responses?.[0]?.fullTextAnnotation?.text || '';
   //  const txnId = extractTxnFromText(fullText);
+  if (selectedPayment === 'Cheque') {
+    statusDiv.textContent = 'Enter cheque number manually above.';
+    return;
+  }
   statusDiv.textContent = '🔍 Reading screenshot…';
   statusDiv.style.color = 'var(--saffron)';
 
