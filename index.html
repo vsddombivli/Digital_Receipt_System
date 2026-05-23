@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vardhmaan Sanskar Dham – Receipt System</title>
+<title>Vardhman Sanskar Dham – Receipt System</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>  
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
@@ -413,7 +413,7 @@
             </div>
             <div class="org-top">પં. પૂ. પંન્યાસશ્રી ચન્દ્રશેખર વિજયજી મ. સા. પ્રેરીત</div>
             <div class="org-main" style="font-family:'Noto Sans Gujarati',sans-serif;font-size:1.4rem;">વર્ધમાન સંસ્કાર ધામ</div> -->
-           <!-- <div class="org-main" style="font-size:1rem;opacity:0.9;">VARDHMAAN SANSKAR DHAM</div> -->
+           <!-- <div class="org-main" style="font-size:1rem;opacity:0.9;">VARDHMAN SANSKAR DHAM</div> -->
            <!--
            <div class="org-addr" style="font-size:0.7rem;opacity:0.85;margin-top:4px;line-height:1.4;">
               શ્રીમતી નિર્મળાબેન હીરજીભાઇ સાવલા સંસ્કાર ભવન, 
@@ -1739,7 +1739,7 @@ async function shareReceiptForRecord(r) {
   const shareLink = r.share_token 
     ? `\n\n📥 Download your receipt anytime:\nhttps://vsddombivli.github.io/Digital_Receipt_System/receipt.html?id=${r.id}&token=${r.share_token}`
     : '';
-  const msg = `🙏 *Vardhmaan Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}${shareLink}\n_Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
+  const msg = `🙏 *Vardhman Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}${shareLink}\n_Vardhman Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
   
   // Pre-build image before share call
   let imgFile = null;
@@ -1799,7 +1799,7 @@ async function shareReceiptWhatsApp() {
     const mobile = r.mobile.replace(/\D/g,'');
     const num = mobile.startsWith('91') ? mobile : '91' + mobile;
     const msg = encodeURIComponent(
-`🙏 *Vardhmaan Sanskar Dham* 🙏
+`🙏 *Vardhman Sanskar Dham* 🙏
 Receipt No.: *${r.id}*
 Date: ${fmtDate(r.date)}
 
@@ -1809,7 +1809,7 @@ Payment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}
 ${r.pan ? `PAN: ${r.pan}` : ''}
 
 ${r.remarks}
-_Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`);
+_Vardhman Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`);
     await dbMarkWA(r.id);
     setTimeout(() => window.open(`https://wa.me/${num}?text=${msg}`, '_blank'), 800);
   }
@@ -1868,7 +1868,7 @@ async function sendWAFor(r) {
   const mobile = r.mobile.replace(/\D/g,'');
   const num = mobile.startsWith('91') ? mobile : '91' + mobile;
   const msg = encodeURIComponent(
-`🙏 *Vardhmaan Sanskar Dham* 🙏
+`🙏 *Vardhman Sanskar Dham* 🙏
 Receipt No.: *${r.id}*
 Date: ${fmtDate(r.date)}
 
@@ -1878,7 +1878,7 @@ Payment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}
 ${r.pan ? `PAN: ${r.pan}` : ''}
 
 ${r.remarks}
-_Vardhmaan Sanskar Dham, Mumbai_
+_Vardhman Sanskar Dham, Mumbai_
 _PAN: AAA-TV-2881J | 80G Exemption Available_`);
   await dbMarkWA(r.id);
   window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
