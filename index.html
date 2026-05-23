@@ -1589,7 +1589,7 @@ function renderReceiptPreview(r) {
   document.getElementById('r-name').textContent = r.donor;
   document.getElementById('r-addr').textContent = r.address || '–';
   document.getElementById('r-mobile').textContent = r.mobile || '–';
-  document.getElementById('r-pan').textContent = r.pan || 'Not provided';
+  document.getElementById('r-pan').textContent = r.pan || '';
   // document.getElementById('r-payment').textContent = r.payment + (r.ref ? ` — Ref: ${r.ref}` : '');
   // Determine display name for receipt footer
   
@@ -2146,7 +2146,8 @@ async function onLoginSuccess(user) {
     logoutBtn.id = 'header-logout';
     logoutBtn.className = 'btn btn-secondary btn-sm';
     logoutBtn.style.marginLeft = '12px';
-    logoutBtn.innerHTML = `👤 ${profile?.full_name || user.email.split('@')[0]} &nbsp;|&nbsp; 🚪`;
+    //logoutBtn.innerHTML = `👤 ${profile?.full_name || user.email.split('@')[0]} &nbsp;|&nbsp; 🚪`;
+    logoutBtn.innerHTML = `👤 ${profile?.full_name || user.email.split('@')[0]} &nbsp;|&nbsp; Log Out 🚪`;
     logoutBtn.onclick = doLogout;
     document.querySelector('.header-right').prepend(logoutBtn);
   }
