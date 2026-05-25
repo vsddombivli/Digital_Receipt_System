@@ -586,7 +586,7 @@
         <button class="btn btn-success" onclick="window.print()">🖨️ Print</button>
         <button class="btn btn-primary" onclick="downloadReceiptPDF()">📄 Download PDF</button>
         <!-- <button class="btn btn-secondary" onclick="downloadReceiptImage()">🖼️ Download Image</button> -->
-        <button class="btn btn-whatsapp" onclick="if(lastReceipt)shareReceiptForRecord(lastReceipt)">💬 Share on WhatsApp</button>
+        <div id="share-btn-wrap" class="btn-row" style="margin-top:0;gap:8px;"></div>
         <button class="btn btn-secondary" onclick="newReceipt()">+ New Receipt</button>
       </div>
       <div class="whatsapp-tip" id="wa-tip">
@@ -1605,6 +1605,7 @@ function renderReceiptPreview(r) {
   document.getElementById('r-branch-name').textContent = r.branch_name || ' ';
   document.getElementById('r-remarks').textContent = r.remarks;
   document.getElementById('r-donor-sig').textContent = r.donor;
+  renderShareButtons(r);
   //document.getElementById('r-accounts').innerHTML = r.accounts.map((a,i) =>
   //  `<tr><td>${i+1}</td><td>${a.name}</td><td>₹${a.amount.toLocaleString('en-IN')}</td></tr>`
   //).join('');
@@ -1739,7 +1740,7 @@ async function shareReceiptForRecord(r) {
   const shareLink = r.share_token 
     ? `\n\n📥 Download your receipt anytime:\nhttps://vsddombivli.github.io/Digital_Receipt_System/receipt.html?id=${r.id}&token=${r.share_token}`
     : '';
-  const msg = `🙏 *Vardhman Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}${shareLink}\n_Vardhman Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
+  const msg = buildWAMessage(r);
   
   // Pre-build image before share call
   let imgFile = null;
@@ -1827,6 +1828,14 @@ async function sendWAById(id) {
   renderTable(); renderBulk();
 }
 */
+async function sendTextById(id) {
+  const all = await dbLoad();
+  const r = all.find(x => x.id === id);
+  if (!r || !r.mobile) { showToast('No mobile number', 'error'); return; }
+  await sendTextToMobile(r);
+  renderTable();
+}
+  
 async function sendWAById(id) {
   const all = await dbLoad();
   const r = all.find(x => x.id === id);
@@ -1928,7 +1937,8 @@ async function renderTable() {
         ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
         <!-- <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button> -->
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
-        <button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')">💬</button>
+        ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendTextById('${r.id}')" title="Send message to donor">💬</button>
+          <button class="btn btn-secondary btn-sm" onclick="sendWAById('${r.id}')" title="Share image">🖼️</button>` : ''}
       </div></td>
     </tr>`).join('');
 }
@@ -2741,6 +2751,56 @@ function numberToWords(n) {
   if(cr) r+=three(cr)+' Crore '; if(lk) r+=two(lk)+' Lakh ';
   if(th) r+=two(th)+' Thousand '; if(x)  r+=three(x);
   return r.trim();
+}
+
+function renderShareButtons(r) {
+  const wrap = document.getElementById('share-btn-wrap');
+  if (!wrap) return;
+  if (r && r.mobile) {
+    wrap.innerHTML = `
+      <button class="btn btn-whatsapp" onclick="if(lastReceipt)sendTextToMobile(lastReceipt)">💬 Send Message</button>
+      <button class="btn btn-secondary" onclick="if(lastReceipt)shareImageOnly(lastReceipt)">🖼️ Share Image</button>`;
+  } else {
+    wrap.innerHTML = `
+      <button class="btn btn-whatsapp" onclick="if(lastReceipt)shareReceiptForRecord(lastReceipt)">💬 Share Image + Text</button>`;
+  }
+}
+
+async function sendTextToMobile(r) {
+  const msg = buildWAMessage(r);
+  const mobile = r.mobile.replace(/\D/g,'');
+  const num = mobile.startsWith('91') ? mobile : '91' + mobile;
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+  await dbMarkWA(r.id);
+  showToast('✅ WhatsApp opened to donor!', 'success');
+}
+
+async function shareImageOnly(r) {
+  const canvas = await captureReceipt();
+  const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+  const imgFile = new File([blob], `Receipt_${r.id}.png`, { type: 'image/png' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [imgFile] })) {
+    try {
+      await navigator.share({ files: [imgFile], title: `Receipt ${r.id}` });
+      showToast('✅ Image shared!', 'success');
+      return;
+    } catch(e) {
+      if (e.name === 'AbortError') return;
+    }
+  }
+  // Fallback download
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Receipt_${r.id}.png`;
+  a.click();
+  showToast('✅ Image downloaded!', 'success');
+}
+
+function buildWAMessage(r) {
+  const shareLink = r.share_token
+    ? `\n\n📥 Download your receipt anytime:\nhttps://vsddombivli.github.io/Digital_Receipt_System/receipt.html?id=${r.id}&token=${r.share_token}`
+    : '';
+  return `🙏 *Vardhman Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}${shareLink}\n_Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
 }
 // ══════════════════════════════
 //  POSTER GENERATOR
