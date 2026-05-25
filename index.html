@@ -1938,7 +1938,8 @@ async function renderTable() {
         <!-- <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button> -->
         <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
         ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendTextById('${r.id}')" title="Send message to donor">💬</button>
-          <button class="btn btn-secondary btn-sm" onclick="sendWAById('${r.id}')" title="Share image">🖼️</button>` : ''}
+          <button class="btn btn-secondary btn-sm" onclick="sendWAById('${r.id}')" title="Share image">🖼️</button>`
+          : `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')" title="Share image + text">💬🖼️</button>`}
       </div></td>
     </tr>`).join('');
 }
@@ -2800,7 +2801,7 @@ function buildWAMessage(r) {
   const shareLink = r.share_token
     ? `\n\n📥 Download your receipt anytime:\nhttps://vsddombivli.github.io/Digital_Receipt_System/receipt.html?id=${r.id}&token=${r.share_token}`
     : '';
-  return `🙏 *Vardhman Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}${shareLink}\n_Vardhmaan Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
+  return `🙏 *Vardhman Sanskar Dham* 🙏\nReceipt No.: *${r.id}*\nDate: ${fmtDate(r.date)}\n\nDear ${r.donor},\nWe gratefully acknowledge your donation of *₹${r.total.toLocaleString('en-IN')}* towards *${(r.accounts||[]).map(a=>a.name).join(', ')}*.\nPayment: ${r.payment}${r.ref ? ` (Ref: ${r.ref})` : ''}\n${r.pan ? `PAN: ${r.pan}` : ''}\n\n${r.remarks}${shareLink}\n_Vardhman Sanskar Dham | PAN: AAA-TV-2881J | 80G Exemption_`;
 }
 // ══════════════════════════════
 //  POSTER GENERATOR
