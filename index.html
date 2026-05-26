@@ -1138,6 +1138,7 @@ async function dbLoad(filters = {}) {
       const name = filters.volunteerOrGeneratedBy;
       arr = arr.filter(r => r.volunteer === name || r.generated_by === name);
     }
+    if (filters.excludeInvalidDuplicate) q = q.not('status', 'in', '("invalid","duplicate")');
     return arr;
   }
   let q = _supa.from('receipts').select('*').order('created_at', { ascending: false });
@@ -1146,6 +1147,7 @@ async function dbLoad(filters = {}) {
     const name = filters.volunteerOrGeneratedBy;
     q = q.or(`volunteer.eq.${name},generated_by.eq.${name}`);
   }
+  if (filters.excludeInvalidDuplicate) q = q.not('status', 'in', '("invalid","duplicate")');
   if (filters.search)  q = q.or(`donor_name.ilike.%${filters.search}%,receipt_id.ilike.%${filters.search}%,donor_pan.ilike.%${filters.search}%`);
   if (filters.payment) q = q.eq('payment_method', filters.payment);
   const { data, error } = await q;
@@ -2011,7 +2013,8 @@ async function sendAllWA() {
 // ══════════════════════════════
 async function renderStats() {
   document.getElementById('stats-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted)">⏳ Loading…</div>';
-  const records   = await dbLoad();
+  //const records   = await dbLoad();
+  const records = await dbLoad({ excludeInvalidDuplicate: true });
   const today     = todayStr();
   const todayRec  = records.filter(r => r.date === today);
   const thisMonth = records.filter(r => r.date && r.date.startsWith(new Date().toISOString().slice(0,7)));
