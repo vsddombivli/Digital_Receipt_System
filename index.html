@@ -2413,7 +2413,7 @@ async function loadVolunteerSummary() {
     .from('receipts')
     .select('volunteer, volunteer_location, total_amount, donation_date, status')
     .eq('financial_year', currentFY())
-    .neq('status', 'invalid');
+    .not('status', 'in', '("invalid","duplicate")');
 
   if (error || !data) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--danger)">Error loading data</td></tr>';
