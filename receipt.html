@@ -129,7 +129,7 @@
       left: 50%;
       transform: translate(-50%, -50%) rotate(-30deg);
       font-size: 4rem;
-      color: rgba(231, 84, 128, 0.05);
+      color: rgba(231, 84, 128, 0.25);
       font-weight: 900;
       pointer-events: none;
       white-space: nowrap;
@@ -594,7 +594,8 @@
       document.getElementById('r-amount').textContent = `₹${parseFloat(r.total_amount || 0).toLocaleString('en-IN')}`;
       document.getElementById('r-words').textContent = numberToWords(parseFloat(r.total_amount || 0)) + ' Rupees Only';
       if (r.remarks) document.getElementById('r-remarks').textContent = 'Remarks: ' + r.remarks;
-
+      const watermark = document.querySelector('.receipt-watermark');
+      if (watermark) watermark.textContent = r.status === 'invalid' ? 'CANCELLED' : r.status === 'duplicate' ? 'DUPLICATE' : 'VSD';
       // Accounts
       const accounts = r.accounts || [];
       document.getElementById('r-accounts').innerHTML = ACCOUNTS.map((a, i) => {
