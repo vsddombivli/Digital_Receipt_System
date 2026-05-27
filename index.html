@@ -2414,7 +2414,7 @@ async function editReceipt(id) {
   document.getElementById('edit-donor-pan').value    = r.pan || '';
   document.getElementById('edit-ref-volunteer').value = r.volunteer || '';
   document.getElementById('edit-ref-volunteer').dataset.generatedBy = r.generated_by || '';
-  document.getElementById('edit-notes').value = receipt.notes || '';
+  document.getElementById('edit-notes').value = r.notes || '';
   //document.getElementById('edit-remarks').value      = r.remarks || '';
   document.getElementById('edit-receipt-modal').classList.add('show');
 }
