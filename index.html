@@ -1004,7 +1004,13 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
         <div class="form-group"><label>Mobile</label><input type="tel" id="edit-donor-mobile" maxlength="10"></div>
         <div class="form-group"><label>PAN</label><input type="text" id="edit-donor-pan" maxlength="10" style="text-transform:uppercase"></div>
         <div class="form-group full"><label>Reference Volunteer</label><input type="text" id="edit-ref-volunteer" placeholder="Leave blank if none" oninput="this.value=this.value.toUpperCase()"></div>
-        ${r.notes ? `<div style="margin-top:10px;padding:10px 12px;background:#fff8f0;border-left:3px solid #c49a5a;border-radius:0 6px 6px 0;font-size:0.85rem;"><strong style="color:#8b0000;">📝 Notes:</strong> ${r.notes}</div>` : ''}
+        <div class="form-group full">
+          <label>Internal Notes <span style="color:var(--muted);font-weight:400">(optional — not sent to donor)</span></label>
+          <textarea id="edit-notes" rows="2"
+            style="width:100%;padding:10px 12px;border:1.5px solid #d4b896;border-radius:7px;
+            font-family:inherit;font-size:0.95rem;resize:vertical"
+            placeholder="Internal note for admin reference only...">${r.notes || ''}</textarea>
+        </div>
         <!-- <div class="form-group full"><label>Remarks</label><input type="text" id="edit-remarks"></div> -->
       </div>
       <div class="btn-row">
@@ -2007,7 +2013,7 @@ async function viewReceipt(id) {
          ['Accounts', (r.accounts||[]).map(a=>`${a.name}: ₹${a.amount.toLocaleString('en-IN')}`).join('<br>')],
          ['Total', `<strong>₹${r.total.toLocaleString('en-IN')}</strong>`],
          ['In Words', numberToWords(r.total)+' Rupees Only'],
-         ['Volunteer', r.volunteer],['Remarks', r.remarks||'–'],
+         ['Volunteer', r.volunteer],['Remarks', r.remarks||'–'],['Notes', r.notes||'–'],
          ['WA Sent', r.waSent ? '✅ Yes' : '❌ No']
         ].map(([k,v])=>`<tr style="border-bottom:1px solid #f0e8d8">
           <td style="padding:8px;color:var(--muted);width:130px;font-size:0.8rem;text-transform:uppercase">${k}</td>
