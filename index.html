@@ -392,6 +392,13 @@
           <label>Remarks</label>
           <input type="text" id="remarks" value="Thank you for your contribution and support" disabled>
         </div>
+        <div class="form-group">
+          <label>Internal Notes <span style="color:var(--muted);font-weight:400">(optional — not sent to donor)</span></label>
+          <textarea id="notes" rows="2"
+            style="width:100%;padding:10px 12px;border:1.5px solid #d4b896;border-radius:7px;
+            font-family:inherit;font-size:0.95rem;resize:vertical"
+            placeholder="Internal note for future reference only..."></textarea>
+        </div>
       </div>
     </div>
 
@@ -997,7 +1004,8 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
         <div class="form-group"><label>Mobile</label><input type="tel" id="edit-donor-mobile" maxlength="10"></div>
         <div class="form-group"><label>PAN</label><input type="text" id="edit-donor-pan" maxlength="10" style="text-transform:uppercase"></div>
         <div class="form-group full"><label>Reference Volunteer</label><input type="text" id="edit-ref-volunteer" placeholder="Leave blank if none" oninput="this.value=this.value.toUpperCase()"></div>
-       <!-- <div class="form-group full"><label>Remarks</label><input type="text" id="edit-remarks"></div> -->
+        ${r.notes ? `<div style="margin-top:10px;padding:10px 12px;background:#fff8f0;border-left:3px solid #c49a5a;border-radius:0 6px 6px 0;font-size:0.85rem;"><strong style="color:#8b0000;">📝 Notes:</strong> ${r.notes}</div>` : ''}
+        <!-- <div class="form-group full"><label>Remarks</label><input type="text" id="edit-remarks"></div> -->
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="saveEditReceipt()">💾 Save Changes</button>
@@ -1125,6 +1133,7 @@ async function dbInsert(r) {
     volunteer: r.volunteer, volunteer_location: r.volunteer_location || null,
     generated_by: r.generated_by, generated_by_location: r.generated_by_location || null,
     share_token: r.share_token || null, remarks: r.remarks||null, wa_sent: false, financial_year: currentFY(),
+    notes: document.getElementById('notes').value.trim() || null,
   }]);
   if (error) { console.error('DB insert error:', error); localSave(r); showToast('⚠️ Saved locally (DB error)', 'error'); }
 }
@@ -2405,6 +2414,7 @@ async function editReceipt(id) {
   document.getElementById('edit-donor-pan').value    = r.pan || '';
   document.getElementById('edit-ref-volunteer').value = r.volunteer || '';
   document.getElementById('edit-ref-volunteer').dataset.generatedBy = r.generated_by || '';
+  document.getElementById('edit-notes').value = receipt.notes || '';
   //document.getElementById('edit-remarks').value      = r.remarks || '';
   document.getElementById('edit-receipt-modal').classList.add('show');
 }
@@ -2421,6 +2431,7 @@ async function saveEditReceipt() {
     donor_mobile:  mobile || null,
     donor_pan:     pan || null,
     volunteer:     document.getElementById('edit-ref-volunteer').value.trim() || document.getElementById('edit-ref-volunteer').dataset.generatedBy || null,
+    notes: document.getElementById('edit-notes').value.trim() || null,
     //remarks:       document.getElementById('edit-remarks').value.trim() || null,
   }).eq('receipt_id', _editingReceiptId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
