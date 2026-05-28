@@ -618,16 +618,16 @@
       <!-- Action toolbar -->
       <div id="record-action-bar" style="display:none;margin-bottom:12px;padding:10px 14px;background:#fff8f0;border:1.5px solid var(--gold);border-radius:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
         <span style="font-size:0.82rem;color:var(--muted);margin-right:4px;">Selected: <strong id="selected-receipt-label">–</strong></span>
-        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('view')">👁 View</button>
-        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('edit')">✏️ Edit</button>
-        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('pdf')">📄 PDF</button>
-        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('screenshot')">📸 Screenshot</button>
-        <button class="btn btn-whatsapp btn-sm" onclick="actionOnSelected('text')">💬 Message</button>
-        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('image')">🖼️ Image</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('view')">👁 View</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('edit')">✏️ Edit</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('pdf')">📄 PDF</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('screenshot')">📸 SS</button>
+        <button class="btn btn-whatsapp" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('text')">💬 Msg</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('image')">🖼️ Img</button>
         <span id="admin-action-btns" style="display:none;gap:8px;display:flex;flex-wrap:wrap;">
-          <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="actionOnSelected('invalid')">❌ Invalid</button>
-          <button class="btn btn-sm" style="background:#f39c12;color:#fff" onclick="actionOnSelected('duplicate')">⚠️ Duplicate</button>
-          <button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="actionOnSelected('valid')">↩️ Valid</button>
+          <button class="btn" style="padding:4px 10px;font-size:0.78rem;background:var(--danger);color:#fff" onclick="actionOnSelected('invalid')">❌ Inv</button>
+          <button class="btn" style="padding:4px 10px;font-size:0.78rem;background:#f39c12;color:#fff" onclick="actionOnSelected('duplicate')">⚠️ Dup</button>
+          <button class="btn" style="padding:4px 10px;font-size:0.78rem;background:var(--success);color:#fff" onclick="actionOnSelected('valid')">↩️ Val</button>
         </span>
       </div>
       <div class="table-wrap">
