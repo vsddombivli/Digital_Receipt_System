@@ -72,6 +72,8 @@
     font-family: 'EB Garamond', serif; font-size: 1rem;
     padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 7px;
     background: #fff; color: var(--ink); transition: border-color 0.2s; outline: none;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   input:focus, select:focus { border-color: var(--saffron); box-shadow: 0 0 0 3px rgba(232,103,26,0.10); }
   input:disabled { background: #f5f0e8; color: var(--muted); cursor: not-allowed; }
@@ -164,8 +166,16 @@
   /* RECORDS TABLE */
   .records-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
   .records-toolbar input { flex: 1; min-width: 180px; }
-  .table-wrap { overflow-x: auto; }
+  .table-wrap {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch; /* smooth scroll on mobile */
+  }
   table.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .data-table {
+    min-width: 700px; /* forces scroll instead of squishing */
+    width: 100%;
+  }
   .data-table thead tr { background: var(--saffron); color: #fff; }
   .data-table th:nth-child(1),
   .data-table td:nth-child(1) {
@@ -182,13 +192,13 @@
   .data-table th:nth-child(2),
   .data-table td:nth-child(2) {
     position: sticky;
-    left: 0;
+    left: 36px; /* match the width of your radio column */
     background: #fff;
     z-index: 2;
     box-shadow: 2px 0 4px rgba(0,0,0,0.06);
   }
   .data-table thead th:nth-child(2) {
-    background: #8b0000; /* match your header color */
+    background: #8b0000;
     z-index: 3;
   }
   .data-table th { padding: 10px 12px; text-align: left; font-weight: 600; }
@@ -859,13 +869,13 @@
         <div class="form-group">
           <label>Bank Statement Excel File</label>
           <input type="file" id="bank-statement-file" accept=".xlsx,.xls,.csv"
-            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;box-sizing:border-box;">
         </div>
         <div class="form-group">
           <label>Filter by Date Range (optional)</label>
-          <div style="display:flex;gap:8px;">
-            <input type="date" id="recon-from" style="flex:1;">
-            <input type="date" id="recon-to" style="flex:1;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="date" id="recon-from" style="flex:1;min-width:120px;box-sizing:border-box;">
+            <input type="date" id="recon-to" style="flex:1;min-width:120px;box-sizing:border-box;">
           </div>
         </div>
       </div>
