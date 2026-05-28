@@ -1989,7 +1989,7 @@ async function renderTable() {
       <td>${r.status==='invalid' ? '<span class="badge" style="background:#fdecea;color:var(--danger)">❌ Invalid</span>' : r.status==='duplicate' ? '<span class="badge" style="background:#fff3e0;color:#f39c12">⚠️ Dup</span>' : '<span class="badge" style="background:#e6f4ea;color:var(--success)">✅</span>'}</td>
       <td><div class="action-btns">
         <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
-        ${currentRole==='admin' ? `<button class="btn btn-secondary btn-sm" onclick="editReceipt('${r.id}')">✏️</button>` : ''}
+        <button class="btn btn-secondary btn-sm" onclick="editReceipt('${r.id}')">✏️</button>
         ${currentRole==='admin' ? `<button class="btn btn-sm" style="background:${r.status==='invalid'?'#888':'var(--danger)'};color:#fff;" onclick="markReceiptStatus('${r.id}','${r.status==='invalid'?'valid':'invalid'}')">${r.status==='invalid'?'↩️':'❌'}</button>` : ''}
         ${currentRole==='admin' ? `<button class="btn btn-sm" style="background:${r.status==='duplicate'?'#888':'#f39c12'};color:#fff;" onclick="markReceiptStatus('${r.id}','${r.status==='duplicate'?'valid':'duplicate'}')">${r.status==='duplicate'?'↩️':'⚠️'}</button>` : ''}
         ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
@@ -2122,6 +2122,15 @@ function clearForm() {
   document.getElementById('ref-group').style.display = '';
   document.getElementById('receipt-wrap').classList.remove('show');
   document.getElementById('screenshot-group').style.display = '';
+  document.getElementById('ref-volunteer-select').value = '';
+  const badge = document.getElementById('donor-returning-badge');
+  if (badge) badge.style.display = 'none';
+  const statusDiv = document.getElementById('vision-status');
+  if (statusDiv) statusDiv.textContent = 'Upload payment screenshot — Transaction ID will be auto-filled';
+  if (statusDiv) statusDiv.style.color = '';
+  window._detectedScreenshotAmt = null;
+  document.getElementById('notes').value = '';
+  
 }
 
 function newReceipt() { 
