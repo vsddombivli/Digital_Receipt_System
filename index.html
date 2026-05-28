@@ -2905,6 +2905,10 @@ function selectRecord(id) {
   _selectedRecordId = id;
   // Highlight row
   document.querySelectorAll('#records-tbody tr').forEach(tr => tr.style.background = '');
+  // Sync radio button
+  document.querySelectorAll('input[name="record-select"]').forEach(r => r.checked = false);
+  const radio = document.querySelector(`input[name="record-select"][value="${id}"]`);
+  if (radio) radio.checked = true;
   const row = document.getElementById(`row-${id}`);
   if (row) row.style.background = '#fff3e0';
   // Update label
