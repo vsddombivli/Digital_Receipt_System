@@ -1040,6 +1040,32 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="edit-user-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <h3>✏️ Edit Volunteer</h3>
+      <button class="close-btn" onclick="document.getElementById('edit-user-modal').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-user-id">
+      <div class="form-grid">
+        <div class="form-group full"><label>Full Name</label><input type="text" id="edit-user-name"></div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="edit-user-phone" maxlength="10"></div>
+        <div class="form-group"><label>Location</label><input type="text" id="edit-user-location" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="form-group full"><label>Role</label>
+          <select id="edit-user-role">
+            <option value="volunteer">Volunteer</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveEditUser()">💾 Save</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('edit-user-modal').classList.remove('show')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div id="toast-container"></div>
 
 <script>
@@ -2414,13 +2440,37 @@ async function loadUsers() {
       <td>${u.location || '–'}</td>
       <td style="font-size:0.8rem">${u.created_at ? u.created_at.slice(0,10) : '–'}</td>
       <td>
+        <button class="btn btn-secondary btn-sm" onclick="editUser('${u.id}','${u.full_name}','${u.phone||''}','${u.location||''}','${u.role}')">✏️</button>
         ${u.id !== currentUser?.id ? `
           <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}','${u.email}')">🗑️</button>
         ` : '<span style="font-size:0.78rem;color:var(--muted)">You</span>'}
       </td>
     </tr>`).join('');
 }
+function editUser(id, name, phone, location, role) {
+  document.getElementById('edit-user-id').value = id;
+  document.getElementById('edit-user-name').value = name || '';
+  document.getElementById('edit-user-phone').value = phone || '';
+  document.getElementById('edit-user-location').value = location || '';
+  document.getElementById('edit-user-role').value = role || 'volunteer';
+  document.getElementById('edit-user-modal').classList.add('show');
+}
 
+async function saveEditUser() {
+  const id       = document.getElementById('edit-user-id').value;
+  const name     = document.getElementById('edit-user-name').value.trim();
+  const phone    = document.getElementById('edit-user-phone').value.trim();
+  const location = document.getElementById('edit-user-location').value.trim();
+  const role     = document.getElementById('edit-user-role').value;
+  if (!name) { showToast('Name is required', 'error'); return; }
+  const { error } = await _supa.from('user_profiles').update({
+    full_name: name, phone: phone||null, location: location||null, role
+  }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('✅ Volunteer updated!', 'success');
+  document.getElementById('edit-user-modal').classList.remove('show');
+  loadUsers();
+}
 async function deleteUser(uid, email) {
   if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
   await _supa.from('user_profiles').delete().eq('id', uid);
