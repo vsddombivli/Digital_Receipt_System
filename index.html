@@ -72,6 +72,8 @@
     font-family: 'EB Garamond', serif; font-size: 1rem;
     padding: 9px 12px; border: 1.5px solid var(--border); border-radius: 7px;
     background: #fff; color: var(--ink); transition: border-color 0.2s; outline: none;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   input:focus, select:focus { border-color: var(--saffron); box-shadow: 0 0 0 3px rgba(232,103,26,0.10); }
   input:disabled { background: #f5f0e8; color: var(--muted); cursor: not-allowed; }
@@ -164,8 +166,34 @@
   /* RECORDS TABLE */
   .records-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
   .records-toolbar input { flex: 1; min-width: 180px; }
-  .table-wrap { overflow-x: auto; }
-  table.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .records-table th:nth-child(1),
+  .records-table td:nth-child(1) {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 2;
+    box-shadow: none;
+  }
+  .records-table thead th:nth-child(1) {
+    background: #8b0000;
+    z-index: 3;
+  }
+  .records-table th:nth-child(2),
+  .records-table td:nth-child(2) {
+    position: sticky;
+    left: 36px;
+    background: #fff;
+    z-index: 2;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+  }
+  .records-table thead th:nth-child(2) {
+    background: #8b0000;
+    z-index: 3;
+  }
+  .table-wrap {
+    overflow-x: auto;
+  }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem;}
   .data-table thead tr { background: var(--saffron); color: #fff; }
   .data-table th { padding: 10px 12px; text-align: left; font-weight: 600; }
   .data-table tbody tr { border-bottom: 1px solid #f0e8d8; transition: background 0.1s; }
@@ -284,7 +312,7 @@
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('new')">📝 New Receipt</button>
   <button class="tab-btn" onclick="switchTab('records')">📋 All Records</button>
-  <button class="tab-btn" onclick="switchTab('bulk')">📤 Bulk WhatsApp</button>
+  <button class="tab-btn" onclick="switchTab('bulk')">📤 Bulk WA</button>
   <button class="tab-btn" onclick="switchTab('stats')">📊 Summary</button>
   <!-- <button class="tab-btn" onclick="switchTab('poster')">🖼️ Poster</button> -->
   <button class="tab-btn admin-only" id="tab-btn-admin" onclick="switchTab('admin')" style="display:none">⚙️ Admin</button>
@@ -610,13 +638,29 @@
         <input type="text" placeholder="🔍 Search by name, receipt no., PAN…" id="search-input" oninput="renderTable()">
         <select id="filter-payment" onchange="renderTable()">
           <option value="">All Payments</option>
-          <option>UPI/QR</option><option>Cheque</option><option>Bank Transfer</option>
+          <option>UPI/QR</option><option>Cash</option><option>Cheque</option><option>Bank Transfer</option>
         </select>
         <button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇️ Export CSV</button>
       </div>
+
+      <!-- Action toolbar -->
+      <div id="record-action-bar" style="display:none;margin-bottom:12px;padding:10px 14px;background:#fff8f0;border:1.5px solid var(--gold);border-radius:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <span style="font-size:0.82rem;color:var(--muted);margin-right:4px;">Selected: <strong id="selected-receipt-label">–</strong></span>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('view')">👁 View</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('edit')">✏️ Edit</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('pdf')">📄 PDF</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('screenshot')">📸 SS</button>
+        <button class="btn btn-whatsapp" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('text')">💬 Msg</button>
+        <button class="btn btn-secondary" style="padding:4px 10px;font-size:0.78rem;" onclick="actionOnSelected('image')">🖼️ Img</button>
+        <span id="admin-action-btns" style="display:none;gap:8px;display:flex;flex-wrap:wrap;">
+          <button class="btn" style="padding:4px 10px;font-size:0.78rem;background:var(--danger);color:#fff" onclick="actionOnSelected('invalid')">❌ Inv</button>
+          <button class="btn" style="padding:4px 10px;font-size:0.78rem;background:#f39c12;color:#fff" onclick="actionOnSelected('duplicate')">⚠️ Dup</button>
+          <button class="btn" style="padding:4px 10px;font-size:0.78rem;background:var(--success);color:#fff" onclick="actionOnSelected('valid')">↩️ Val</button>
+        </span>
+      </div>
       <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Volunteer</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
+        <table class="data-table records-table">
+          <thead><tr><th style="width:36px"></th><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Volunteer</th><th>Location</th><th>Status</th></tr></thead>
           <tbody id="records-tbody"></tbody>
         </table>
       </div>
@@ -819,13 +863,13 @@
         <div class="form-group">
           <label>Bank Statement Excel File</label>
           <input type="file" id="bank-statement-file" accept=".xlsx,.xls,.csv"
-            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;box-sizing:border-box;">
         </div>
         <div class="form-group">
           <label>Filter by Date Range (optional)</label>
-          <div style="display:flex;gap:8px;">
-            <input type="date" id="recon-from" style="flex:1;">
-            <input type="date" id="recon-to" style="flex:1;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <input type="date" id="recon-from" style="flex:1;min-width:120px;box-sizing:border-box;">
+            <input type="date" id="recon-to" style="flex:1;min-width:120px;box-sizing:border-box;">
           </div>
         </div>
       </div>
@@ -1016,6 +1060,32 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
       <div class="btn-row">
         <button class="btn btn-primary" onclick="saveEditReceipt()">💾 Save Changes</button>
         <button class="btn btn-secondary" onclick="document.getElementById('edit-receipt-modal').classList.remove('show')">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="edit-user-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <h3>✏️ Edit Volunteer</h3>
+      <button class="close-btn" onclick="document.getElementById('edit-user-modal').classList.remove('show')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-user-id">
+      <div class="form-grid">
+        <div class="form-group full"><label>Full Name</label><input type="text" id="edit-user-name"></div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="edit-user-phone" maxlength="10"></div>
+        <div class="form-group"><label>Location</label><input type="text" id="edit-user-location" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="form-group full"><label>Role</label>
+          <select id="edit-user-role">
+            <option value="volunteer">Volunteer</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveEditUser()">💾 Save</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('edit-user-modal').classList.remove('show')">Cancel</button>
       </div>
     </div>
   </div>
@@ -1968,10 +2038,14 @@ async function renderTable() {
   if (currentRole !== 'admin' && currentUser) filters.volunteerOrGeneratedBy = window._volunteerFullName || '';
 
   const records = await dbLoad(filters);
+  _selectedRecordData = records;
+  _selectedRecordId = null;
+  document.getElementById('record-action-bar').style.display = 'none';
   if (!records.length) { tbody.innerHTML = ''; document.getElementById('no-records').style.display = 'block'; return; }
 
   tbody.innerHTML = records.map(r => `
-    <tr>
+    <tr id="row-${r.id}" onclick="selectRecord('${r.id}')" style="cursor:pointer;">
+      <td><input type="radio" name="record-select" value="${r.id}" onclick="event.stopPropagation();selectRecord('${r.id}')"></td>
       <td class="mono">${r.id}</td>
       <td>${fmtDate(r.date)}</td>
       <td><strong>${r.donor}</strong>${r.mobile ? `<br><span style="font-size:0.78rem;color:var(--muted)">${r.mobile}</span>` : ''}</td>
@@ -1987,18 +2061,6 @@ async function renderTable() {
       </td>
       <td style="font-size:0.82rem">${r.volunteer_location || '–'}</td>
       <td>${r.status==='invalid' ? '<span class="badge" style="background:#fdecea;color:var(--danger)">❌ Invalid</span>' : r.status==='duplicate' ? '<span class="badge" style="background:#fff3e0;color:#f39c12">⚠️ Dup</span>' : '<span class="badge" style="background:#e6f4ea;color:var(--success)">✅</span>'}</td>
-      <td><div class="action-btns">
-        <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
-        <button class="btn btn-secondary btn-sm" onclick="editReceipt('${r.id}')">✏️</button>
-        ${currentRole==='admin' ? `<button class="btn btn-sm" style="background:${r.status==='invalid'?'#888':'var(--danger)'};color:#fff;" onclick="markReceiptStatus('${r.id}','${r.status==='invalid'?'valid':'invalid'}')">${r.status==='invalid'?'↩️':'❌'}</button>` : ''}
-        ${currentRole==='admin' ? `<button class="btn btn-sm" style="background:${r.status==='duplicate'?'#888':'#f39c12'};color:#fff;" onclick="markReceiptStatus('${r.id}','${r.status==='duplicate'?'valid':'duplicate'}')">${r.status==='duplicate'?'↩️':'⚠️'}</button>` : ''}
-        ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
-        <!-- <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button> -->
-        <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
-        ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendTextById('${r.id}')" title="Send message to donor">💬</button>
-          <button class="btn btn-secondary btn-sm" onclick="sendImageById('${r.id}')" title="Share image">🖼️</button>`
-          : `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')" title="Share image + text">💬🖼️</button>`}
-      </div></td>
     </tr>`).join('');
 }
 
@@ -2094,12 +2156,12 @@ async function renderStats() {
   records.forEach(r => (r.accounts||[]).forEach(a => { fw[a.name] = (fw[a.name]||0)+a.amount; }));
   const fwRows = ACCOUNTS.filter(a=>fw[a]>0).map(a=>`<tr><td>${a}</td><td>₹${fw[a].toLocaleString('en-IN')}</td></tr>`).join('');
   document.getElementById('fundwise-table').innerHTML = fwRows
-    ? `<table class="data-table"><thead><tr><th>Fund Account</th><th>Total Collected</th></tr></thead><tbody>${fwRows}</tbody></table>`
+    ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>Fund Account</th><th>Total Collected</th></tr></thead><tbody>${fwRows}</tbody></table>`
     : '<p style="color:var(--muted)">No data yet.</p>';
 
   document.getElementById('today-table').innerHTML = !todayRec.length
     ? '<p style="color:var(--muted)">No receipts today.</p>'
-    : `<table class="data-table"><thead><tr><th>Receipt</th><th>Donor</th><th>Amount</th><th>Payment</th><th>WA</th></tr></thead><tbody>
+    : `<div class="table-wrap"><table class="data-table"><thead><tr><th>Receipt</th><th>Donor</th><th>Amount</th><th>Payment</th><th>WA</th></tr></thead><tbody>
         ${todayRec.map(r=>`<tr><td class="mono">${r.id}</td><td>${r.donor}</td><td>₹${r.total.toLocaleString('en-IN')}</td><td>${r.payment}</td><td>${r.waSent?'✅':'⏳'}</td></tr>`).join('')}
       </tbody></table>`;
 }
@@ -2402,13 +2464,37 @@ async function loadUsers() {
       <td>${u.location || '–'}</td>
       <td style="font-size:0.8rem">${u.created_at ? u.created_at.slice(0,10) : '–'}</td>
       <td>
+        <button class="btn btn-secondary btn-sm" onclick="editUser('${u.id}','${u.full_name}','${u.phone||''}','${u.location||''}','${u.role}')">✏️</button>
         ${u.id !== currentUser?.id ? `
           <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}','${u.email}')">🗑️</button>
         ` : '<span style="font-size:0.78rem;color:var(--muted)">You</span>'}
       </td>
     </tr>`).join('');
 }
+function editUser(id, name, phone, location, role) {
+  document.getElementById('edit-user-id').value = id;
+  document.getElementById('edit-user-name').value = name || '';
+  document.getElementById('edit-user-phone').value = phone || '';
+  document.getElementById('edit-user-location').value = location || '';
+  document.getElementById('edit-user-role').value = role || 'volunteer';
+  document.getElementById('edit-user-modal').classList.add('show');
+}
 
+async function saveEditUser() {
+  const id       = document.getElementById('edit-user-id').value;
+  const name     = document.getElementById('edit-user-name').value.trim();
+  const phone    = document.getElementById('edit-user-phone').value.trim();
+  const location = document.getElementById('edit-user-location').value.trim();
+  const role     = document.getElementById('edit-user-role').value;
+  if (!name) { showToast('Name is required', 'error'); return; }
+  const { error } = await _supa.from('user_profiles').update({
+    full_name: name, phone: phone||null, location: location||null, role
+  }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('✅ Volunteer updated!', 'success');
+  document.getElementById('edit-user-modal').classList.remove('show');
+  loadUsers();
+}
 async function deleteUser(uid, email) {
   if (!confirm(`Delete user ${email}? This cannot be undone.`)) return;
   await _supa.from('user_profiles').delete().eq('id', uid);
@@ -2811,7 +2897,48 @@ function exportReconExcel() {
   XLSX.writeFile(wb, `VSD_Reconciliation_${todayStr()}.xlsx`);
   showToast('✅ Report exported!', 'success');
 }
-  
+
+let _selectedRecordId = null;
+let _selectedRecordData = null;
+
+function selectRecord(id) {
+  _selectedRecordId = id;
+  // Highlight row
+  document.querySelectorAll('#records-tbody tr').forEach(tr => tr.style.background = '');
+  const row = document.getElementById(`row-${id}`);
+  if (row) row.style.background = '#fff3e0';
+  // Update label
+  const r = _selectedRecordData && _selectedRecordData.find(x => x.id === id);
+  document.getElementById('selected-receipt-label').textContent = r ? `${id} — ${r.donor}` : id;
+  // Show action bar
+  document.getElementById('record-action-bar').style.display = 'flex';
+  // Show admin buttons
+  const adminBtns = document.getElementById('admin-action-btns');
+  if (adminBtns) adminBtns.style.display = currentRole === 'admin' ? 'flex' : 'none';
+  // Scroll to action bar
+  document.getElementById('record-action-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function actionOnSelected(action) {
+  const id = _selectedRecordId;
+  if (!id) { showToast('Select a receipt first', 'error'); return; }
+  const all = _selectedRecordData || await dbLoad();
+  const r = all.find(x => x.id === id);
+  if (!r && action !== 'invalid' && action !== 'duplicate' && action !== 'valid') {
+    showToast('Receipt not found', 'error'); return;
+  }
+  switch(action) {
+    case 'view':        viewReceipt(id); break;
+    case 'edit':        editReceipt(id); break;
+    case 'pdf':         downloadById(id, 'pdf'); break;
+    case 'screenshot':  r && r.screenshot_url ? window.open(r.screenshot_url, '_blank') : showToast('No screenshot', 'error'); break;
+    case 'text':        r && r.mobile ? sendTextById(id) : showToast('No mobile number', 'error'); break;
+    case 'image':       sendWAById(id); break;
+    case 'invalid':     markReceiptStatus(id, 'invalid'); break;
+    case 'duplicate':   markReceiptStatus(id, 'duplicate'); break;
+    case 'valid':       markReceiptStatus(id, 'valid'); break;
+  }
+}
 function numberToWords(n) {
   if (!n) return 'Zero';
   const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
