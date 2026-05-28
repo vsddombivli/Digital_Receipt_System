@@ -168,39 +168,9 @@
   .records-toolbar input { flex: 1; min-width: 180px; }
   .table-wrap {
     overflow-x: auto;
-    width: 100%;
-    -webkit-overflow-scrolling: touch; /* smooth scroll on mobile */
   }
-  table.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
-  .data-table {
-    min-width: 700px; /* forces scroll instead of squishing */
-    width: 100%;
-  }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 700px;}
   .data-table thead tr { background: var(--saffron); color: #fff; }
-  .data-table th:nth-child(1),
-  .data-table td:nth-child(1) {
-    position: sticky;
-    left: 0;
-    background: #fff;
-    z-index: 2;
-    box-shadow: none;
-  }
-  .data-table thead th:nth-child(1) {
-    background: #8b0000;
-    z-index: 3;
-  }
-  .data-table th:nth-child(2),
-  .data-table td:nth-child(2) {
-    position: sticky;
-    left: 36px; /* match the width of your radio column */
-    background: #fff;
-    z-index: 2;
-    box-shadow: 2px 0 4px rgba(0,0,0,0.06);
-  }
-  .data-table thead th:nth-child(2) {
-    background: #8b0000;
-    z-index: 3;
-  }
   .data-table th { padding: 10px 12px; text-align: left; font-weight: 600; }
   .data-table tbody tr { border-bottom: 1px solid #f0e8d8; transition: background 0.1s; }
   .data-table tbody tr:hover { background: #fff8f0; }
