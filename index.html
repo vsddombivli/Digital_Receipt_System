@@ -166,6 +166,30 @@
   /* RECORDS TABLE */
   .records-toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
   .records-toolbar input { flex: 1; min-width: 180px; }
+  .records-table th:nth-child(1),
+  .records-table td:nth-child(1) {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 2;
+    box-shadow: none;
+  }
+  .records-table thead th:nth-child(1) {
+    background: #8b0000;
+    z-index: 3;
+  }
+  .records-table th:nth-child(2),
+  .records-table td:nth-child(2) {
+    position: sticky;
+    left: 36px;
+    background: #fff;
+    z-index: 2;
+    box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+  }
+  .records-table thead th:nth-child(2) {
+    background: #8b0000;
+    z-index: 3;
+  }
   .table-wrap {
     overflow-x: auto;
   }
@@ -635,7 +659,7 @@
         </span>
       </div>
       <div class="table-wrap">
-        <table class="data-table">
+        <table class="data-table records-table">
           <thead><tr><th style="width:36px"></th><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Volunteer</th><th>Location</th><th>Status</th></tr></thead>
           <tbody id="records-tbody"></tbody>
         </table>
