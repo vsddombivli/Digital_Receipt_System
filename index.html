@@ -2106,12 +2106,12 @@ async function renderStats() {
   records.forEach(r => (r.accounts||[]).forEach(a => { fw[a.name] = (fw[a.name]||0)+a.amount; }));
   const fwRows = ACCOUNTS.filter(a=>fw[a]>0).map(a=>`<tr><td>${a}</td><td>₹${fw[a].toLocaleString('en-IN')}</td></tr>`).join('');
   document.getElementById('fundwise-table').innerHTML = fwRows
-    ? `<table class="data-table"><thead><tr><th>Fund Account</th><th>Total Collected</th></tr></thead><tbody>${fwRows}</tbody></table>`
+    ? `<div class="table-wrap"><table class="data-table"><thead><tr><th>Fund Account</th><th>Total Collected</th></tr></thead><tbody>${fwRows}</tbody></table>`
     : '<p style="color:var(--muted)">No data yet.</p>';
 
   document.getElementById('today-table').innerHTML = !todayRec.length
     ? '<p style="color:var(--muted)">No receipts today.</p>'
-    : `<table class="data-table"><thead><tr><th>Receipt</th><th>Donor</th><th>Amount</th><th>Payment</th><th>WA</th></tr></thead><tbody>
+    : `<div class="table-wrap"><table class="data-table"><thead><tr><th>Receipt</th><th>Donor</th><th>Amount</th><th>Payment</th><th>WA</th></tr></thead><tbody>
         ${todayRec.map(r=>`<tr><td class="mono">${r.id}</td><td>${r.donor}</td><td>₹${r.total.toLocaleString('en-IN')}</td><td>${r.payment}</td><td>${r.waSent?'✅':'⏳'}</td></tr>`).join('')}
       </tbody></table>`;
 }
