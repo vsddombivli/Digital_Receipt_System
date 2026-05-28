@@ -610,13 +610,29 @@
         <input type="text" placeholder="🔍 Search by name, receipt no., PAN…" id="search-input" oninput="renderTable()">
         <select id="filter-payment" onchange="renderTable()">
           <option value="">All Payments</option>
-          <option>UPI/QR</option><option>Cheque</option><option>Bank Transfer</option>
+          <option>UPI/QR</option><option>Cash</option><option>Cheque</option><option>Bank Transfer</option>
         </select>
-        <button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇️ Export CSV</button>
+        ${currentRole === 'admin' ? `<button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇️ CSV</button>` : ''}
+      </div>
+
+      <!-- Action toolbar -->
+      <div id="record-action-bar" style="display:none;margin-bottom:12px;padding:10px 14px;background:#fff8f0;border:1.5px solid var(--gold);border-radius:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <span style="font-size:0.82rem;color:var(--muted);margin-right:4px;">Selected: <strong id="selected-receipt-label">–</strong></span>
+        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('view')">👁 View</button>
+        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('edit')">✏️ Edit</button>
+        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('pdf')">📄 PDF</button>
+        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('screenshot')">📸 Screenshot</button>
+        <button class="btn btn-whatsapp btn-sm" onclick="actionOnSelected('text')">💬 Message</button>
+        <button class="btn btn-secondary btn-sm" onclick="actionOnSelected('image')">🖼️ Image</button>
+        <span id="admin-action-btns" style="display:none;gap:8px;display:flex;flex-wrap:wrap;">
+          <button class="btn btn-sm" style="background:var(--danger);color:#fff" onclick="actionOnSelected('invalid')">❌ Invalid</button>
+          <button class="btn btn-sm" style="background:#f39c12;color:#fff" onclick="actionOnSelected('duplicate')">⚠️ Duplicate</button>
+          <button class="btn btn-sm" style="background:var(--success);color:#fff" onclick="actionOnSelected('valid')">↩️ Valid</button>
+        </span>
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Volunteer</th><th>Location</th><th>Status</th><th>Actions</th></tr></thead>
+          <thead><tr><th style="width:36px"></th><th>Receipt</th><th>Date</th><th>Donor</th><th>PAN</th><th>Account</th><th>Amount</th><th>Payment</th><th>Volunteer</th><th>Location</th><th>Status</th></tr></thead>
           <tbody id="records-tbody"></tbody>
         </table>
       </div>
@@ -1968,10 +1984,14 @@ async function renderTable() {
   if (currentRole !== 'admin' && currentUser) filters.volunteerOrGeneratedBy = window._volunteerFullName || '';
 
   const records = await dbLoad(filters);
+  _selectedRecordData = records;
+  _selectedRecordId = null;
+  document.getElementById('record-action-bar').style.display = 'none';
   if (!records.length) { tbody.innerHTML = ''; document.getElementById('no-records').style.display = 'block'; return; }
 
   tbody.innerHTML = records.map(r => `
-    <tr>
+    <tr id="row-${r.id}" onclick="selectRecord('${r.id}')" style="cursor:pointer;">
+      <td><input type="radio" name="record-select" value="${r.id}" onclick="event.stopPropagation();selectRecord('${r.id}')"></td>
       <td class="mono">${r.id}</td>
       <td>${fmtDate(r.date)}</td>
       <td><strong>${r.donor}</strong>${r.mobile ? `<br><span style="font-size:0.78rem;color:var(--muted)">${r.mobile}</span>` : ''}</td>
@@ -1987,18 +2007,6 @@ async function renderTable() {
       </td>
       <td style="font-size:0.82rem">${r.volunteer_location || '–'}</td>
       <td>${r.status==='invalid' ? '<span class="badge" style="background:#fdecea;color:var(--danger)">❌ Invalid</span>' : r.status==='duplicate' ? '<span class="badge" style="background:#fff3e0;color:#f39c12">⚠️ Dup</span>' : '<span class="badge" style="background:#e6f4ea;color:var(--success)">✅</span>'}</td>
-      <td><div class="action-btns">
-        <button class="btn btn-secondary btn-sm" onclick="viewReceipt('${r.id}')">👁 View</button>
-        <button class="btn btn-secondary btn-sm" onclick="editReceipt('${r.id}')">✏️</button>
-        ${currentRole==='admin' ? `<button class="btn btn-sm" style="background:${r.status==='invalid'?'#888':'var(--danger)'};color:#fff;" onclick="markReceiptStatus('${r.id}','${r.status==='invalid'?'valid':'invalid'}')">${r.status==='invalid'?'↩️':'❌'}</button>` : ''}
-        ${currentRole==='admin' ? `<button class="btn btn-sm" style="background:${r.status==='duplicate'?'#888':'#f39c12'};color:#fff;" onclick="markReceiptStatus('${r.id}','${r.status==='duplicate'?'valid':'duplicate'}')">${r.status==='duplicate'?'↩️':'⚠️'}</button>` : ''}
-        ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" class="btn btn-secondary btn-sm">📸</a>` : ''}
-        <!-- <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','image')">🖼️</button> -->
-        <button class="btn btn-secondary btn-sm" onclick="downloadById('${r.id}','pdf')">📄</button>
-        ${r.mobile ? `<button class="btn btn-whatsapp btn-sm" onclick="sendTextById('${r.id}')" title="Send message to donor">💬</button>
-          <button class="btn btn-secondary btn-sm" onclick="sendImageById('${r.id}')" title="Share image">🖼️</button>`
-          : `<button class="btn btn-whatsapp btn-sm" onclick="sendWAById('${r.id}')" title="Share image + text">💬🖼️</button>`}
-      </div></td>
     </tr>`).join('');
 }
 
@@ -2811,7 +2819,48 @@ function exportReconExcel() {
   XLSX.writeFile(wb, `VSD_Reconciliation_${todayStr()}.xlsx`);
   showToast('✅ Report exported!', 'success');
 }
-  
+
+let _selectedRecordId = null;
+let _selectedRecordData = null;
+
+function selectRecord(id) {
+  _selectedRecordId = id;
+  // Highlight row
+  document.querySelectorAll('#records-tbody tr').forEach(tr => tr.style.background = '');
+  const row = document.getElementById(`row-${id}`);
+  if (row) row.style.background = '#fff3e0';
+  // Update label
+  const r = _selectedRecordData && _selectedRecordData.find(x => x.id === id);
+  document.getElementById('selected-receipt-label').textContent = r ? `${id} — ${r.donor}` : id;
+  // Show action bar
+  document.getElementById('record-action-bar').style.display = 'flex';
+  // Show admin buttons
+  const adminBtns = document.getElementById('admin-action-btns');
+  if (adminBtns) adminBtns.style.display = currentRole === 'admin' ? 'flex' : 'none';
+  // Scroll to action bar
+  document.getElementById('record-action-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function actionOnSelected(action) {
+  const id = _selectedRecordId;
+  if (!id) { showToast('Select a receipt first', 'error'); return; }
+  const all = _selectedRecordData || await dbLoad();
+  const r = all.find(x => x.id === id);
+  if (!r && action !== 'invalid' && action !== 'duplicate' && action !== 'valid') {
+    showToast('Receipt not found', 'error'); return;
+  }
+  switch(action) {
+    case 'view':        viewReceipt(id); break;
+    case 'edit':        editReceipt(id); break;
+    case 'pdf':         downloadById(id, 'pdf'); break;
+    case 'screenshot':  r && r.screenshot_url ? window.open(r.screenshot_url, '_blank') : showToast('No screenshot', 'error'); break;
+    case 'text':        r && r.mobile ? sendTextById(id) : showToast('No mobile number', 'error'); break;
+    case 'image':       sendWAById(id); break;
+    case 'invalid':     markReceiptStatus(id, 'invalid'); break;
+    case 'duplicate':   markReceiptStatus(id, 'duplicate'); break;
+    case 'valid':       markReceiptStatus(id, 'valid'); break;
+  }
+}
 function numberToWords(n) {
   if (!n) return 'Zero';
   const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
