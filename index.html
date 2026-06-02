@@ -1461,6 +1461,8 @@ async function extractTransactionId(input) {
 function extractTxnFromText(text) {
   // UPI Transaction ID patterns (covers GPay, PhonePe, Paytm, BHIM, Amazon Pay)
   const patterns = [
+    // UTR label — highest priority (catches "UTR: 192166797132")
+    /\bUTR\s*[:#\s]\s*(\d{12})\b/gi,
     /(?:transaction\s*id|txn\s*id|reference\s*(?:number|no)?|ref\.?\s*no)\s*[:\s]\s*([A-Z0-9]{6,20})/gi,
     /\b([A-Z]\d{7,12})\b/g,
     // Label-based (most reliable) — covers "Transaction ID", "Transaction Id", "Txn ID", "UTR"
@@ -2328,8 +2330,8 @@ function applyRoleAccess() {
   ['bulk','stats','recon','admin'].forEach(id => {
     // Hide export buttons from volunteers
     const exportBtns = document.querySelectorAll('[onclick="exportCSV()"]');
-    exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
-    
+    //exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
+    exportBtns.forEach(btn => btn.style.display = '');
     const btn = document.querySelector(`[onclick="switchTab('${id}')"]`);
     if (btn) btn.style.display = isAdmin ? '' : 'none';
 
