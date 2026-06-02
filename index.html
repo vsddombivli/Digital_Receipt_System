@@ -2330,8 +2330,8 @@ function applyRoleAccess() {
   ['bulk','stats','recon','admin'].forEach(id => {
     // Hide export buttons from volunteers
     const exportBtns = document.querySelectorAll('[onclick="exportCSV()"]');
-    //exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
-    exportBtns.forEach(btn => btn.style.display = '');
+    exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
+    //exportBtns.forEach(btn => btn.style.display = '');
     const btn = document.querySelector(`[onclick="switchTab('${id}')"]`);
     if (btn) btn.style.display = isAdmin ? '' : 'none';
 
