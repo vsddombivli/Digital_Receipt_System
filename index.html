@@ -2214,7 +2214,14 @@ function newReceipt() {
 }
 
 async function exportCSV() {
-  const records = await dbLoad();
+  const q  = document.getElementById('search-input').value.toLowerCase();
+  const fp = document.getElementById('filter-payment').value;
+  const filters = {};
+  if (q)  filters.search  = q;
+  if (fp) filters.payment = fp;
+  if (currentRole !== 'admin' && currentUser) filters.volunteerOrGeneratedBy = window._volunteerFullName || '';
+  //if (filters.excludeInvalidDuplicate) filters.excludeInvalidDuplicate = true;
+  const records = await dbLoad(filters);
   const rows = [['Receipt No','Date','Donor Name','Mobile','PAN','Accounts','Total','Payment','Ref','Bank','Branch','Volunteer','Location','Remarks','Status','WA Sent','Screenshot URL']];
   records.forEach(r => rows.push([r.id,r.date,r.donor,r.mobile||'',r.pan||'',
     (r.accounts||[]).map(a=>`${a.name}:${a.amount}`).join('|'),
@@ -2338,8 +2345,8 @@ function applyRoleAccess() {
   ['bulk','stats','recon','admin'].forEach(id => {
     // Hide export buttons from volunteers
     const exportBtns = document.querySelectorAll('[onclick="exportCSV()"]');
-    exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
-    //exportBtns.forEach(btn => btn.style.display = '');
+    //exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
+    exportBtns.forEach(btn => btn.style.display = '');
     const btn = document.querySelector(`[onclick="switchTab('${id}')"]`);
     if (btn) btn.style.display = isAdmin ? '' : 'none';
 
