@@ -2225,7 +2225,7 @@ async function exportCSV() {
   const rows = [['Receipt No','Date','Donor Name','Mobile','PAN','Accounts','Total','Payment','Ref','Bank','Branch','Volunteer','Location','Remarks','Status','WA Sent','Screenshot URL']];
   records.forEach(r => rows.push([r.id,r.date,r.donor,r.mobile||'',r.pan||'',
     (r.accounts||[]).map(a=>`${a.name}:${a.amount}`).join('|'),
-    r.total,r.payment,r.ref||'',r.bank_name||'',r.branch_name||'',r.volunteer,r.volunteer_location||'',r.remarks||'',r.waSent?'Yes':'No',r.screenshot_url||'']));
+    r.total,r.payment,r.ref||'',r.bank_name||'',r.branch_name||'',r.volunteer,r.volunteer_location||'',r.remarks||'',r.status||'valid',r.waSent?'Yes':'No',r.screenshot_url||'']));
   const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
   a.download = `VSD_Receipts_${todayStr()}.csv`; a.click();
