@@ -1522,14 +1522,40 @@ async function uploadScreenshot(receiptId) {
   const fileInput = document.getElementById('payment-screenshot');
   if (!fileInput.files.length) return null;
   const file = fileInput.files[0];
-  const ext = file.name.split('.').pop();
-  const path = `${receiptId}_${Date.now()}.${ext}`;
+
+  // Compress image before upload
+  const compressedBlob = await compressImage(file, 800, 0.7);
+  const ext  = file.name.split('.').pop().toLowerCase() || 'jpg';
+  const path = `${receiptId}_${Date.now()}.jpg`; // always jpg after compression
+
   const { data, error } = await _supa.storage
     .from('screenshots')
-    .upload(path, file, { contentType: file.type });
+    .upload(path, compressedBlob, { contentType: 'image/jpeg' });
+
   if (error) { console.error('Screenshot upload failed:', error); return null; }
   const { data: urlData } = _supa.storage.from('screenshots').getPublicUrl(path);
+  console.log('Screenshot URL:', urlData.publicUrl);
   return urlData.publicUrl;
+}
+
+function compressImage(file, maxWidth, quality) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        // Scale down if wider than maxWidth
+        const scale = img.width > maxWidth ? maxWidth / img.width : 1;
+        canvas.width  = Math.round(img.width  * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 function isAllowedOrigin() {
