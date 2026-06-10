@@ -3100,7 +3100,8 @@ async function searchDonorQuick(val) {
         <div style="font-size:0.78rem;color:var(--muted);">
           ${d.mobile ? `📱 ${d.mobile}` : ''} 
           ${d.pan ? `&nbsp;|&nbsp; PAN: ${d.pan}` : ''}
-          &nbsp;|&nbsp; Donated ${d.times_donated||0} time(s) — ₹${(d.total_donated||0).toLocaleString('en-IN')}
+          ${d.address ? `&nbsp;|&nbsp; ${d.address}` : ''}
+          ${d.email ? `&nbsp;|&nbsp; ✉️ ${d.email}` : ''}
         </div>
       </div>`).join('');
   }, 400);
@@ -3115,9 +3116,9 @@ function fillDonorFromSearch(d) {
 
   // Show returning donor badge
   const badge = document.getElementById('donor-returning-badge');
-  if (badge && d.times_donated > 0) {
+  if (badge) {
     badge.style.display = 'block';
-    badge.innerHTML = `⭐ Returning Donor — donated ${d.times_donated} time(s) | Total: ₹${(d.total_donated||0).toLocaleString('en-IN')} | Last: ${d.last_donated ? fmtDate(d.last_donated) : '–'}`;
+    badge.innerHTML = `⭐ Returning Donor — details loaded. Please enter donation amount.`;
   }
 
   // Close results
