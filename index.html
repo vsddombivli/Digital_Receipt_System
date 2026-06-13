@@ -1722,6 +1722,7 @@ async function generateReceipt() {
     };
     await dbInsert(receipt);
     lastReceipt = receipt;
+    await saveDonorRecord(receipt);
     renderReceiptPreview(receipt);
     document.getElementById('receipt-wrap').classList.add('show');
     document.getElementById('receipt-wrap').scrollIntoView({ behavior: 'smooth' });
@@ -3130,6 +3131,37 @@ function fillDonorFromSearch(d) {
 function clearDonorQuickSearch() {
   document.getElementById('donor-quick-search').value = '';
   document.getElementById('donor-quick-results').style.display = 'none';
+}
+
+async function saveDonorRecord(receipt) {
+  if (!isDB() || !receipt.mobile) return;
+  const mobile = receipt.mobile.replace(/\D/g,'');
+  if (mobile.length !== 10) return;
+
+  // Upsert donor — create if new, update if existing
+  const { data: existing } = await _supa
+    .from('donors')
+    .select('times_donated, total_donated')
+    .eq('mobile', mobile)
+    .single();
+
+  const times = ((existing && existing.times_donated) || 0) + 1;
+  const total = ((existing && existing.total_donated) || 0) + receipt.total;
+
+  await _supa.from('donors').upsert({
+    mobile,
+    name:           receipt.donor,
+    pan:            receipt.pan   || null,
+    address:        receipt.address || null,
+    email:          receipt.email || null,
+    times_donated:  times,
+    total_donated:  total,
+    last_donated:   receipt.date,
+    first_seen:     existing ? undefined : receipt.date,
+    added_by:       receipt.volunteer,
+    added_location: receipt.volunteer_location || null,
+    updated_at:     new Date().toISOString(),
+  }, { onConflict: 'mobile', ignoreDuplicates: false });
 }
   
 function numberToWords(n) {
