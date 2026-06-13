@@ -3137,7 +3137,7 @@ async function saveDonorRecord(receipt) {
   if (!isDB() || !receipt.mobile) return;
   const mobile = receipt.mobile.replace(/\D/g,'');
   if (mobile.length !== 10) return;
-
+  const donorName = receipt.donor.trim().toUpperCase();
   // Upsert donor — create if new, update if existing
   const { data: existing } = await _supa
     .from('donors')
@@ -3150,7 +3150,7 @@ async function saveDonorRecord(receipt) {
 
   await _supa.from('donors').upsert({
     mobile,
-    name:           receipt.donor,
+    name:           donorName,
     pan:            receipt.pan   || null,
     address:        receipt.address || null,
     email:          receipt.email || null,
