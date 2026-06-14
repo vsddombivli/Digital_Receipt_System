@@ -753,6 +753,32 @@
         </div>
       </div>
       
+      <!-- Bulk Donor Outreach -->
+      <div style="margin-bottom:24px;">
+        <div style="font-weight:600;font-size:1rem;color:var(--saffron);margin-bottom:12px;padding-bottom:8px;border-bottom:1px dashed var(--border);">
+          📢 Bulk Donor Outreach to Volunteers
+        </div>
+        <p style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;">
+          System will prepare donor list per volunteer. Admin can send each volunteer their donor details via WhatsApp so they can reach out for next year's campaign.
+        </p>
+        <div class="form-grid" style="margin-bottom:12px;">
+          <div class="form-group">
+            <label>Financial Year</label>
+            <input type="text" id="outreach-fy" placeholder="e.g. 2025-26" value="">
+          </div>
+          <div class="form-group">
+            <label>Minimum Donation Amount (optional)</label>
+            <input type="number" id="outreach-min-amt" placeholder="e.g. 1000 (leave blank for all)">
+          </div>
+          <div class="form-group full">
+            <label>Custom Message to Volunteer (optional)</label>
+            <input type="text" id="outreach-custom-msg" placeholder="e.g. Jivdaya Abhiyan 2027 is starting soon!">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="prepareOutreach()">📋 Prepare Donor Lists</button>
+        <div id="outreach-results" style="display:none;margin-top:16px;"></div>
+      </div>
+      
       <!-- Volunteer Collection Summary -->
       <div style="margin-bottom:24px;">
         <div style="font-weight:600;font-size:1rem;color:var(--saffron);margin-bottom:12px;padding-bottom:8px;border-bottom:1px dashed var(--border);">
@@ -1417,7 +1443,13 @@ function switchTab(id) {
   if (id === 'records') renderTable();
   if (id === 'bulk')    renderBulk();
   if (id === 'stats')   renderStats();
-  if (id === 'admin' && currentRole === 'admin') { loadUsers(); loadVolunteerSummary(); }
+  if (id === 'admin' && currentRole === 'admin') {
+    loadUsers();
+    loadVolunteerSummary();
+    // Auto-fill current FY
+    const fyInput = document.getElementById('outreach-fy');
+    if (fyInput && !fyInput.value) fyInput.value = currentFY();
+  }
   if (id === 'recon') { document.getElementById('recon-results').style.display='none'; }
 }
 //upload payment screenshot
@@ -3187,6 +3219,147 @@ async function saveDonorRecord(receipt) {
       updated_at:     new Date().toISOString(),
     });
   }
+}
+
+// ══════════════════════════════
+//  BULK DONOR OUTREACH
+// ══════════════════════════════
+async function prepareOutreach() {
+  const fy      = document.getElementById('outreach-fy').value.trim();
+  const minAmt  = parseFloat(document.getElementById('outreach-min-amt').value || 0);
+  const custMsg = document.getElementById('outreach-custom-msg').value.trim();
+  const resultsDiv = document.getElementById('outreach-results');
+
+  if (!fy) { showToast('Enter financial year', 'error'); return; }
+
+  resultsDiv.style.display = 'block';
+  resultsDiv.innerHTML = '<p style="color:var(--muted)">⏳ Loading donor data…</p>';
+
+  // Load all valid receipts for FY
+  let q = _supa.from('receipts')
+    .select('donor_name, donor_mobile, total_amount, volunteer, volunteer_location, payment_ref')
+    .eq('financial_year', fy)
+    .not('status', 'in', '("invalid","duplicate")');
+
+  if (minAmt > 0) q = q.gte('total_amount', minAmt);
+
+  const { data: receipts, error } = await q;
+  if (error || !data) { resultsDiv.innerHTML = '<p style="color:var(--danger)">Error loading data</p>'; return; }
+
+  // Group by volunteer
+  const byVolunteer = {};
+  receipts.forEach(r => {
+    const vol = r.volunteer || 'Unknown';
+    if (!byVolunteer[vol]) byVolunteer[vol] = { location: r.volunteer_location || '', donors: [] };
+    // Avoid duplicate donors
+    const exists = byVolunteer[vol].donors.find(d => d.mobile === r.donor_mobile && d.name === r.donor_name);
+    if (!exists) {
+      byVolunteer[vol].donors.push({
+        name:   r.donor_name,
+        mobile: r.donor_mobile || '–',
+        amount: parseFloat(r.total_amount || 0),
+      });
+    } else {
+      exists.amount += parseFloat(r.total_amount || 0);
+    }
+  });
+
+  // Load volunteer phone numbers
+  const { data: profiles } = await _supa.from('user_profiles').select('full_name, phone');
+  const phoneMap = {};
+  (profiles || []).forEach(p => { phoneMap[p.full_name] = p.phone || ''; });
+
+  const volunteers = Object.entries(byVolunteer);
+  if (!volunteers.length) {
+    resultsDiv.innerHTML = '<p style="color:var(--muted)">No data found for this financial year.</p>';
+    return;
+  }
+
+  resultsDiv.innerHTML = `
+    <div style="margin-bottom:12px;font-size:0.88rem;color:var(--muted)">
+      Found <strong>${volunteers.length} volunteers</strong> with donor data for FY ${fy}. 
+      Click Send to open WhatsApp for each volunteer.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      ${volunteers.map(([vol, data]) => {
+        const phone = phoneMap[vol] || '';
+        const donorCount = data.donors.length;
+        const totalAmt = data.donors.reduce((s,d) => s+d.amount, 0);
+        return `
+          <div style="border:1px solid var(--border);border-radius:8px;padding:12px 14px;background:#fff;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div>
+                <strong>${vol}</strong>
+                <span style="font-size:0.78rem;color:var(--muted);margin-left:8px;">${data.location}</span>
+              </div>
+              <div style="font-size:0.82rem;color:var(--muted)">
+                ${donorCount} donor(s) | ₹${totalAmt.toLocaleString('en-IN')}
+              </div>
+            </div>
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;">
+              ${data.donors.slice(0,3).map(d => `${d.name} (${d.mobile}) — ₹${d.amount.toLocaleString('en-IN')}`).join('<br>')}
+              ${donorCount > 3 ? `<br>...and ${donorCount-3} more` : ''}
+            </div>
+            ${phone
+              ? `<button class="btn btn-whatsapp btn-sm" onclick="sendOutreachWA('${vol}','${phone}',${JSON.stringify(data.donors).replace(/'/g,"\\'")},'${fy}','${custMsg.replace(/'/g,"\\'")}')">
+                  💬 Send to ${vol}
+                </button>`
+              : `<span style="font-size:0.78rem;color:var(--danger)">⚠️ No phone number for this volunteer</span>`
+            }
+          </div>`;
+      }).join('')}
+    </div>
+    <div style="margin-top:14px;">
+      <button class="btn btn-whatsapp" onclick="sendAllOutreach(${JSON.stringify(Object.entries(byVolunteer)).replace(/"/g,'&quot;')}, '${fy}', '${custMsg}')">
+        💬 Send to All Volunteers
+      </button>
+    </div>
+  `;
+}
+
+function buildOutreachMessage(volunteerName, donors, fy, custMsg) {
+  const donorList = donors.map((d,i) =>
+    `${i+1}. ${d.name} | 📱 ${d.mobile} | ₹${d.amount.toLocaleString('en-IN')}`
+  ).join('\n');
+
+  return `🙏 *Vardhman Sanskar Dham*
+
+Dear ${volunteerName},
+
+${custMsg || `Jivdaya Abhiyan campaign is starting soon! Here are your donors from FY ${fy} who may donate again this year.`}
+
+*Your Donor List (FY ${fy}):*
+${donorList}
+
+Please reach out to them and invite them to contribute again. 🐄
+
+_Thank you for your seva!_
+_Vardhman Sanskar Dham, Mumbai_`;
+}
+
+function sendOutreachWA(volunteerName, phone, donors, fy, custMsg) {
+  const mobile = phone.replace(/\D/g,'');
+  const num    = mobile.startsWith('91') ? mobile : '91' + mobile;
+  const msg    = buildOutreachMessage(volunteerName, donors, fy, custMsg);
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+  showToast(`WhatsApp opened for ${volunteerName}`, 'success');
+}
+
+async function sendAllOutreach(volunteerEntries, fy, custMsg) {
+  const { data: profiles } = await _supa.from('user_profiles').select('full_name, phone');
+  const phoneMap = {};
+  (profiles || []).forEach(p => { phoneMap[p.full_name] = p.phone || ''; });
+
+  let sent = 0;
+  volunteerEntries.forEach(([vol, data], i) => {
+    const phone = phoneMap[vol];
+    if (!phone) return;
+    setTimeout(() => {
+      sendOutreachWA(vol, phone, data.donors, fy, custMsg);
+      sent++;
+    }, i * 2000);
+  });
+  showToast(`Opening WhatsApp for ${sent} volunteers…`);
 }
   
 function numberToWords(n) {
