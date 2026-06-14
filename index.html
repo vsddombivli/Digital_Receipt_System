@@ -2541,7 +2541,7 @@ async function createUser() {
     const { error: pe } = await _supa.from('user_profiles').upsert({
       id: su.user.id,
       email,
-      full_name: name || email.split('@')[0],
+      full_name: (name || email.split('@')[0]).trim(),
       role,
       location: loc || null,
       phone: phone
