@@ -3237,7 +3237,7 @@ async function prepareOutreach() {
 
   // Load all valid receipts for FY
   let q = _supa.from('receipts')
-    .select('donor_name, donor_mobile, total_amount, volunteer, volunteer_location, payment_ref')
+    .select('donor_name, donor_mobile, total_amount, volunteer, volunteer_location, generated_by, generated_by_location, payment_ref')
     .eq('financial_year', fy)
     .not('status', 'in', '("invalid","duplicate")');
 
@@ -3249,15 +3249,16 @@ async function prepareOutreach() {
   // Group by volunteer
   const byVolunteer = {};
   receipts.forEach(r => {
-    const vol = r.volunteer || 'Unknown';
-    if (!byVolunteer[vol]) byVolunteer[vol] = { location: r.volunteer_location || '', donors: [] };
-    // Avoid duplicate donors
+    const vol = r.generated_by || r.volunteer || 'Unknown';
+    const loc = r.generated_by_location || r.volunteer_location || '';
+    if (!byVolunteer[vol]) byVolunteer[vol] = { location: loc, donors: [] };
     const exists = byVolunteer[vol].donors.find(d => d.mobile === r.donor_mobile && d.name === r.donor_name);
     if (!exists) {
       byVolunteer[vol].donors.push({
-        name:   r.donor_name,
-        mobile: r.donor_mobile || '–',
-        amount: parseFloat(r.total_amount || 0),
+        name:    r.donor_name,
+        mobile:  r.donor_mobile || '–',
+        amount:  parseFloat(r.total_amount || 0),
+        ref_vol: r.volunteer || '',
       });
     } else {
       exists.amount += parseFloat(r.total_amount || 0);
@@ -3270,6 +3271,11 @@ async function prepareOutreach() {
   (profiles || []).forEach(p => { phoneMap[p.full_name] = p.phone || ''; });
 
   const volunteers = Object.entries(byVolunteer);
+  window._outreachData = {};
+  volunteers.forEach(([vol, data]) => {
+    const key = btoa(unescape(encodeURIComponent(vol))).replace(/[^a-zA-Z0-9]/g,'');
+    window._outreachData[key] = { vol, phone: phoneMap[vol] || '', donors: data.donors, fy, custMsg };
+  });
   if (!volunteers.length) {
     resultsDiv.innerHTML = '<p style="color:var(--muted)">No data found for this financial year.</p>';
     return;
@@ -3301,7 +3307,7 @@ async function prepareOutreach() {
               ${donorCount > 3 ? `<br>...and ${donorCount-3} more` : ''}
             </div>
             ${phone
-              ? `<button class="btn btn-whatsapp btn-sm" onclick="sendOutreachWA('${vol}','${phone}',${JSON.stringify(data.donors).replace(/'/g,"\\'")},'${fy}','${custMsg.replace(/'/g,"\\'")}')">
+              ? `<button class="btn btn-whatsapp btn-sm" onclick="sendOutreachWA('${btoa(unescape(encodeURIComponent(vol))).replace(/[^a-zA-Z0-9]/g,'')}')">
                   💬 Send to ${vol}
                 </button>`
               : `<span style="font-size:0.78rem;color:var(--danger)">⚠️ No phone number for this volunteer</span>`
@@ -3310,7 +3316,7 @@ async function prepareOutreach() {
       }).join('')}
     </div>
     <div style="margin-top:14px;">
-      <button class="btn btn-whatsapp" onclick="sendAllOutreach(${JSON.stringify(Object.entries(byVolunteer)).replace(/"/g,'&quot;')}, '${fy}', '${custMsg}')">
+      <button class="btn btn-whatsapp" onclick="sendAllOutreach()">
         💬 Send to All Volunteers
       </button>
     </div>
@@ -3319,7 +3325,7 @@ async function prepareOutreach() {
 
 function buildOutreachMessage(volunteerName, donors, fy, custMsg) {
   const donorList = donors.map((d,i) =>
-    `${i+1}. ${d.name} | 📱 ${d.mobile} | ₹${d.amount.toLocaleString('en-IN')}`
+    `${i+1}. ${d.name} | 📱 ${d.mobile} | ₹${d.amount.toLocaleString('en-IN')}${d.ref_vol ? ` | via ${d.ref_vol}` : ''}`
   ).join('\n');
 
   return `🙏 *Vardhman Sanskar Dham*
@@ -3337,27 +3343,24 @@ _Thank you for your seva!_
 _Vardhman Sanskar Dham, Mumbai_`;
 }
 
-function sendOutreachWA(volunteerName, phone, donors, fy, custMsg) {
-  const mobile = phone.replace(/\D/g,'');
+function sendOutreachWA(key) {
+  const d = window._outreachData && window._outreachData[key];
+  if (!d) { showToast('Data not found, re-prepare list', 'error'); return; }
+  const mobile = d.phone.replace(/\D/g,'');
   const num    = mobile.startsWith('91') ? mobile : '91' + mobile;
-  const msg    = buildOutreachMessage(volunteerName, donors, fy, custMsg);
+  const msg    = buildOutreachMessage(d.vol, d.donors, d.fy, d.custMsg);
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
-  showToast(`WhatsApp opened for ${volunteerName}`, 'success');
+  showToast(`WhatsApp opened for ${d.vol}`, 'success');
 }
 
-async function sendAllOutreach(volunteerEntries, fy, custMsg) {
-  const { data: profiles } = await _supa.from('user_profiles').select('full_name, phone');
-  const phoneMap = {};
-  (profiles || []).forEach(p => { phoneMap[p.full_name] = p.phone || ''; });
-
+function sendAllOutreach() {
+  const entries = Object.keys(window._outreachData || {});
+  if (!entries.length) { showToast('Prepare list first', 'error'); return; }
   let sent = 0;
-  volunteerEntries.forEach(([vol, data], i) => {
-    const phone = phoneMap[vol];
-    if (!phone) return;
-    setTimeout(() => {
-      sendOutreachWA(vol, phone, data.donors, fy, custMsg);
-      sent++;
-    }, i * 2000);
+  entries.forEach((key, i) => {
+    const d = window._outreachData[key];
+    if (!d.phone) return;
+    setTimeout(() => { sendOutreachWA(key); sent++; }, i * 2000);
   });
   showToast(`Opening WhatsApp for ${sent} volunteers…`);
 }
