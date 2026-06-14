@@ -3142,11 +3142,15 @@ async function saveDonorRecord(receipt) {
   // Find existing by mobile or PAN
   let existing = null;
   if (mobile) {
-    const { data } = await _supa.from('donors').select('id,times_donated,total_donated').eq('mobile', mobile).single();
+    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('mobile', mobile).single();
     existing = data;
   }
   if (!existing && pan) {
-    const { data } = await _supa.from('donors').select('id,times_donated,total_donated').eq('pan', pan).single();
+    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('pan', pan).single();
+    existing = data;
+  }
+  if (!existing && receipt.donor) {
+    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('name', receipt.donor).single();
     existing = data;
   }
 
@@ -3171,12 +3175,18 @@ async function saveDonorRecord(receipt) {
   if (!existing) record.first_seen = receipt.date;
 
   if (existing) {
-    await _supa.from('donors').update({
+    const updates = {
       times_donated: times,
       total_donated: total,
       last_donated:  receipt.date,
       updated_at:    new Date().toISOString(),
-    }).eq('id', existing.id);
+    };
+    // Only fill in missing contact details, never overwrite existing
+    if (!existing.mobile  && mobile)           updates.mobile  = mobile;
+    if (!existing.pan     && pan)              updates.pan     = pan;
+    if (!existing.address && receipt.address)  updates.address = receipt.address;
+    if (!existing.email   && receipt.email)    updates.email   = receipt.email;
+    await _supa.from('donors').update(updates).eq('id', existing.id);
   } else {
     await _supa.from('donors').insert(record);
   }
