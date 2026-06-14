@@ -2648,7 +2648,7 @@ async function loadVolunteerSummary() {
     .eq('financial_year', currentFY())
     .not('status', 'in', '("invalid","duplicate")');
 
-  if (error || !data) {
+  if (error || !receipts) {
     tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--danger)">Error loading data</td></tr>';
     return;
   }
