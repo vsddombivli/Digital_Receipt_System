@@ -3135,60 +3135,57 @@ function clearDonorQuickSearch() {
 
 async function saveDonorRecord(receipt) {
   if (!isDB()) return;
-  const mobile = receipt.mobile ? receipt.mobile.replace(/\D/g,'') : '';
-  const pan    = (receipt.pan || '').trim().toUpperCase();
-  if (!mobile && !pan && !receipt.donor) return;
+  const mobile    = receipt.mobile ? receipt.mobile.replace(/\D/g,'') : '';
+  const pan       = (receipt.pan || '').trim().toUpperCase();
+  const donorName = (receipt.donor || '').trim().toUpperCase();
+  if (!mobile && !pan && !donorName) return;
 
-  // Find existing by mobile or PAN
   let existing = null;
   if (mobile) {
-    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('mobile', mobile).single();
+    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('mobile', mobile).maybeSingle();
     existing = data;
   }
   if (!existing && pan) {
-    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('pan', pan).single();
+    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('pan', pan).maybeSingle();
     existing = data;
   }
-  if (!existing && receipt.donor) {
-    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('name', receipt.donor).single();
+  if (!existing && donorName) {
+    const { data } = await _supa.from('donors').select('id,times_donated,total_donated,mobile,pan,address,email').eq('name', donorName).maybeSingle();
     existing = data;
   }
 
   const times = ((existing && existing.times_donated) || 0) + 1;
   const total = ((existing && existing.total_donated) || 0) + receipt.total;
 
-  const record = {
-    name:           receipt.donor.trim(),
-    pan:            pan || null,
-    mobile:         mobile || null,
-    address:        receipt.address || null,
-    email:          receipt.email   || null,
-    times_donated:  times,
-    total_donated:  total,
-    last_donated:   receipt.date,
-    first_seen:     existing ? undefined : receipt.date,
-    added_by:       receipt.generated_by || receipt.volunteer || null,
-    added_location: receipt.volunteer_location || null,
-    ref_volunteer:  receipt.volunteer || null,
-    updated_at:     new Date().toISOString(),
-  };
-  if (!existing) record.first_seen = receipt.date;
-
   if (existing) {
     const updates = {
-      times_donated: times,
-      total_donated: total,
-      last_donated:  receipt.date,
-      updated_at:    new Date().toISOString(),
+      times_donated:  times,
+      total_donated:  total,
+      last_donated:   receipt.date,
+      updated_at:     new Date().toISOString(),
     };
-    // Only fill in missing contact details, never overwrite existing
-    if (!existing.mobile  && mobile)           updates.mobile  = mobile;
-    if (!existing.pan     && pan)              updates.pan     = pan;
-    if (!existing.address && receipt.address)  updates.address = receipt.address;
-    if (!existing.email   && receipt.email)    updates.email   = receipt.email;
+    if (!existing.mobile  && mobile)          updates.mobile        = mobile;
+    if (!existing.pan     && pan)             updates.pan           = pan;
+    if (!existing.address && receipt.address) updates.address       = receipt.address;
+    if (!existing.email   && receipt.email)   updates.email         = receipt.email;
     await _supa.from('donors').update(updates).eq('id', existing.id);
   } else {
-    await _supa.from('donors').insert(record);
+    await _supa.from('donors').insert({
+      name:           donorName,
+      pan:            pan || null,
+      mobile:         mobile || null,
+      address:        receipt.address       || null,
+      email:          receipt.email         || null,
+      times_donated:  times,
+      total_donated:  total,
+      first_seen:     receipt.date,
+      last_donated:   receipt.date,
+      added_by:       receipt.generated_by  || receipt.volunteer || null,
+      added_location: receipt.volunteer_location || null,
+      ref_volunteer:  receipt.volunteer     || null,
+      ref_location:   receipt.location      || null,
+      updated_at:     new Date().toISOString(),
+    });
   }
 }
   
