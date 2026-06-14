@@ -3154,7 +3154,7 @@ async function saveDonorRecord(receipt) {
   const total = ((existing && existing.total_donated) || 0) + receipt.total;
 
   const record = {
-    name:           receipt.donor.trim().toUpperCase(),
+    name:           receipt.donor.trim(),
     pan:            pan || null,
     mobile:         mobile || null,
     address:        receipt.address || null,
@@ -3171,7 +3171,12 @@ async function saveDonorRecord(receipt) {
   if (!existing) record.first_seen = receipt.date;
 
   if (existing) {
-    await _supa.from('donors').update(record).eq('id', existing.id);
+    await _supa.from('donors').update({
+      times_donated: times,
+      total_donated: total,
+      last_donated:  receipt.date,
+      updated_at:    new Date().toISOString(),
+    }).eq('id', existing.id);
   } else {
     await _supa.from('donors').insert(record);
   }
