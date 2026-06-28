@@ -2959,9 +2959,26 @@ function parseExcelFile(file) {
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        const wb   = XLSX.read(e.target.result, { type: 'array' });
-        const ws   = wb.Sheets[wb.SheetNames[0]];
-        const data = XLSX.utils.sheet_to_json(ws);
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+
+        // Read as raw rows first to find the actual header row
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        // Find first row that looks like a real header
+        // (matches either internal format or known raw-bank columns)
+        const knownHeaders = ['date','description','amount','reference',
+                               'transaction remarks','deposit amt','withdrawal amt',
+                               'tran. id','tran id','value date','transaction date'];
+
+        let headerRowIdx = 0;
+        for (let i = 0; i < Math.min(rows.length, 20); i++) {
+          const rowVals = rows[i].map(v => String(v || '').toLowerCase().trim());
+          const hits = rowVals.filter(v => knownHeaders.some(k => v.includes(k))).length;
+          if (hits >= 3) { headerRowIdx = i; break; }
+        }
+
+        const data = XLSX.utils.sheet_to_json(ws, { range: headerRowIdx, defval: '' });
         resolve(data);
       } catch(err) { reject(err); }
     };
