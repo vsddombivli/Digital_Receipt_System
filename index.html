@@ -2811,7 +2811,7 @@ function normalizeBankStatement(rows) {
   if (['Date','Description','Amount','Reference'].every(h => headers.includes(h))) {
     return rows;
   }
-
+  console.log('DEBUG headers:', JSON.stringify(headers));
   // Detect raw bank export format (Tran. Id, Transaction Remarks, Deposit/Withdrawal Amt)
   const isRawBank = headers.some(h => /transaction remarks/i.test(h)) &&
                      headers.some(h => /deposit amt/i.test(h));
