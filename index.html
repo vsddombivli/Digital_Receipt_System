@@ -2803,7 +2803,53 @@ function downloadSampleStatement() {
   XLSX.utils.book_append_sheet(wb, ws, 'BankStatement');
   XLSX.writeFile(wb, 'VSD_BankStatement_Sample.xlsx');
 }
+function normalizeBankStatement(rows) {
+  if (!rows.length) return rows;
+  const headers = Object.keys(rows[0]);
 
+  // Already in internal format
+  if (['Date','Description','Amount','Reference'].every(h => headers.includes(h))) {
+    return rows;
+  }
+
+  // Detect raw bank export format (Tran. Id, Transaction Remarks, Deposit/Withdrawal Amt)
+  const isRawBank = headers.some(h => /transaction remarks/i.test(h)) &&
+                     headers.some(h => /deposit amt/i.test(h));
+  if (!isRawBank) return rows; // unknown format, let validation below catch it
+
+  const dateCol   = headers.find(h => /^transaction date$/i.test(h)) || headers.find(h => /value date/i.test(h));
+  const remarkCol = headers.find(h => /transaction remarks/i.test(h));
+  const depCol    = headers.find(h => /deposit amt/i.test(h));
+
+  function extractRef(remark) {
+    remark = String(remark || '');
+    let m = remark.match(/^UPI\/(\d+)\//);
+    if (m) return m[1];
+    m = remark.match(/^MMT\/IMPS\/(\d+)\//);
+    if (m) return m[1];
+    m = remark.match(/^NEFT-([A-Z0-9]+)-/);
+    if (m) return m[1];
+    m = remark.match(/^BIL\/INFT\/([A-Z0-9]+)\//);
+    if (m) return m[1];
+    m = remark.match(/^CAM\/(\w+)\//);
+    if (m) return m[1];
+    return '';
+  }
+
+  const converted = [];
+  rows.forEach(row => {
+    const dep = parseFloat(String(row[depCol] || '0').replace(/,/g,''));
+    if (!dep || dep <= 0) return; // skip withdrawals / zero rows
+    converted.push({
+      Date:        row[dateCol] || '',
+      Description: row[remarkCol] || '',
+      Amount:      dep,
+      Reference:   extractRef(row[remarkCol]),
+    });
+  });
+  return converted;
+}
+  
 async function runReconciliation() {
   const fileInput = document.getElementById('bank-statement-file');
   if (!fileInput.files.length) { showToast('Please upload bank statement file', 'error'); return; }
@@ -2811,8 +2857,14 @@ async function runReconciliation() {
   showToast('Processing…');
 
   // Parse bank statement
-  const bankRows = await parseExcelFile(fileInput.files[0]);
+  let bankRows = await parseExcelFile(fileInput.files[0]);
   if (!bankRows.length) { showToast('No data found in file', 'error'); return; }
+
+  const rawCount = bankRows.length;
+  bankRows = normalizeBankStatement(bankRows);
+  if (bankRows.length !== rawCount) {
+    showToast(`Converted bank format: ${bankRows.length} deposits found (${rawCount - bankRows.length} withdrawal/non-deposit rows skipped)`);
+  }
 
   // Validate columns
   const required = ['Date','Description','Amount','Reference'];
