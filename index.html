@@ -1017,6 +1017,7 @@
 
       <div class="btn-row" style="margin-top:16px;">
         <button class="btn btn-secondary" onclick="exportReconExcel()">📊 Export Reconciliation Report</button>
+        <button class="btn btn-primary" onclick="exportReconMasterExcel()">📥 Download Reconciliation Report</button>
       </div>
     </div>
   </div>
@@ -2809,7 +2810,7 @@ function normalizeBankStatement(rows) {
 
   // Already in internal format
   if (['Date','Description','Amount','Reference'].every(h => headers.includes(h))) {
-    return rows;
+    return rows.map(r => ({ ...r, _original: r }));
   }
   console.log('DEBUG headers:', JSON.stringify(headers));
   // Detect raw bank export format (Tran. Id, Transaction Remarks, Deposit/Withdrawal Amt)
@@ -2845,6 +2846,7 @@ function normalizeBankStatement(rows) {
       Description: row[remarkCol] || '',
       Amount:      dep,
       Reference:   extractRef(row[remarkCol]),
+      _original:   row,   // keep all original bank columns for export
     });
   });
   return converted;
@@ -2917,7 +2919,6 @@ async function runReconciliation() {
   const unmatchedReceipt = [];
   const mismatch         = [];
   const matchedRefs      = new Set();
-
   // Check each bank transaction
   bankRows.forEach(row => {
     const ref     = (row.Reference || '').toString().trim().toLowerCase();
@@ -2949,7 +2950,25 @@ async function runReconciliation() {
     }
   });
 
-  _reconData = { matched, unmatchedBank, unmatchedReceipt, mismatch };
+  // Build receipt-centric master list (only valid receipts, every receipt appears once)
+  const receiptMaster = [];
+  (receipts || []).forEach(r => {
+    const ref = (r.payment_ref || '').toString().trim().toLowerCase();
+    const bankRow = ref ? bankByRef[ref] : null;
+
+    let status, bankAmt = null;
+    if (!bankRow) {
+      status = 'NOT FOUND IN BANK';
+    } else {
+      bankAmt = parseFloat(bankRow.Amount || 0);
+      const receiptAmt = parseFloat(r.total_amount || 0);
+      status = Math.abs(bankAmt - receiptAmt) > 1 ? 'PARTIALLY MATCHED' : 'MATCHED';
+    }
+
+    receiptMaster.push({ receipt: r, bankRow, bankAmt, status });
+  });
+
+  _reconData = { matched, unmatchedBank, unmatchedReceipt, mismatch, receiptMaster };
   renderReconResults();
   showToast('✅ Reconciliation complete!', 'success');
 }
@@ -3100,7 +3119,39 @@ function exportReconExcel() {
   XLSX.writeFile(wb, `VSD_Reconciliation_${todayStr()}.xlsx`);
   showToast('✅ Report exported!', 'success');
 }
+function exportReconMasterExcel() {
+  if (typeof XLSX === 'undefined') { showToast('Loading library…'); return; }
+  const { receiptMaster } = _reconData;
+  if (!receiptMaster || !receiptMaster.length) { showToast('Run reconciliation first', 'error'); return; }
 
+  // Collect every distinct original bank column name across all rows (for consistent columns)
+  const bankColSet = new Set();
+  receiptMaster.forEach(({ bankRow }) => {
+    if (bankRow && bankRow._original) Object.keys(bankRow._original).forEach(k => bankColSet.add(k));
+  });
+  const bankCols = Array.from(bankColSet);
+
+  const rows = receiptMaster.map(({ receipt, bankRow, status }) => {
+    const base = {
+      'Receipt No':     receipt.receipt_id,
+      'Date':           fmtDate(receipt.donation_date),
+      'Donor':          receipt.donor_name,
+      'Amount':         receipt.total_amount,
+      'Payment Method': receipt.payment_method,
+      'Reference No':   receipt.payment_ref,
+      'Status':         status,
+    };
+    bankCols.forEach(col => {
+      base['Bank: ' + col] = (bankRow && bankRow._original) ? bankRow._original[col] : '';
+    });
+    return base;
+  });
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Reconciliation');
+  XLSX.writeFile(wb, `VSD_Reconciliation_Master_${todayStr()}.xlsx`);
+}
+  
 let _selectedRecordId = null;
 let _selectedRecordData = null;
 
