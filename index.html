@@ -1223,7 +1223,95 @@ window.addEventListener('DOMContentLoaded', () => {
     // DB ready — init auth (shows login screen)
     initAuth();
   }
+
+  // Auto-fill from Prabhu Pooja app URL params
+  prefillFromPrabhuPooja();
 });
+
+function prefillFromPrabhuPooja() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.get('donor_name')) return; // not coming from Prabhu Pooja
+
+  // Store params — will apply after login completes
+  window._ppPrefill = {
+    donor_name    : params.get('donor_name')    || '',
+    donor_mobile  : params.get('donor_mobile')  || '',
+    donor_pan     : params.get('donor_pan')     || '',
+    amount        : params.get('amount')        || '',
+    date          : params.get('date')          || '',
+    payment_mode  : params.get('payment_mode')  || '',
+    txn_ref       : params.get('txn_ref')       || '',
+    from_location : params.get('from_location') || '',
+    fiscal_year   : params.get('fiscal_year')   || '',
+    sundays       : params.get('sundays')       || '',
+    gift_source   : params.get('gift_source')   || '',
+  };
+
+  // Show a banner so user knows data is ready to fill
+  const banner = document.createElement('div');
+  banner.id = 'pp-prefill-banner';
+  banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#1baf7a;color:#fff;text-align:center;padding:10px;font-size:13px;font-weight:600;z-index:99999;';
+  banner.textContent = '✅ Prabhu Pooja data ready — login to auto-fill receipt';
+  document.body.prepend(banner);
+}
+
+function applyPPPrefill() {
+  const p = window._ppPrefill;
+  if (!p) return;
+
+  // Donor details
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  setVal('donor-name',   p.donor_name);
+  setVal('donor-mobile', p.donor_mobile);
+  setVal('donor-pan',    p.donor_pan.toUpperCase());
+  setVal('donation-date', p.date);
+  setVal('payment-ref',  p.txn_ref);
+
+  // Notes: include sundays + gift source + location
+  const notesEl = document.getElementById('notes');
+  if (notesEl) {
+    notesEl.value = [
+      'Bal Sanskar Prabhu Pooja',
+      p.sundays ? p.sundays + ' Sunday' + (parseInt(p.sundays)>1?'s':'') : '',
+      p.gift_source || '',
+      p.from_location ? 'Location: ' + p.from_location : '',
+      p.fiscal_year   ? 'FY: ' + p.fiscal_year : '',
+    ].filter(Boolean).join(' | ');
+  }
+
+  // Payment mode — try to match select or radio
+  if (p.payment_mode) {
+    const modeEls = document.querySelectorAll('input[name="payment-mode"], select[id*="payment"]');
+    modeEls.forEach(el => {
+      if (el.tagName === 'SELECT') {
+        [...el.options].forEach(opt => {
+          if (opt.value.toLowerCase().includes(p.payment_mode.toLowerCase())) el.value = opt.value;
+        });
+      } else if (el.value.toLowerCase() === p.payment_mode.toLowerCase()) {
+        el.checked = true; el.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+
+  // Trigger any amount calculation that exists
+  if (p.amount) {
+    const amtEl = document.getElementById('total-amount');
+    if (amtEl) {
+      amtEl.removeAttribute('readonly');
+      amtEl.value = p.amount;
+      amtEl.dispatchEvent(new Event('input'));
+      amtEl.dispatchEvent(new Event('change'));
+    }
+  }
+
+  // Remove banner and clear prefill
+  const banner = document.getElementById('pp-prefill-banner');
+  if (banner) banner.remove();
+  window._ppPrefill = null;
+
+  // Show success toast if function exists
+  if (typeof showToast === 'function') showToast('✅ Receipt pre-filled from Prabhu Pooja', 'success');
+}
 
 function saveSupabaseConfig() {
   const url = document.getElementById('setup-url').value.trim();
@@ -2439,6 +2527,7 @@ async function onLoginSuccess(user) {
   await updateCounter();
   setInterval(updateCounter, 15000);
   //loadVolunteerDropdown();
+  applyPPPrefill();
 }
 
 function applyRoleAccess() {
