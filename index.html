@@ -2764,7 +2764,7 @@ async function saveEditReceipt() {
   const newName = document.getElementById('edit-donor-name').value.trim();
   if (window._editOriginalName && newName !== window._editOriginalName) {
     await _supa.from('donors').update({ name: newName })
-      .eq('name', window._editOriginalName);
+      .ilike('name', window._editOriginalName);
   }
   showToast('✅ Receipt updated!', 'success');
   document.getElementById('edit-receipt-modal').classList.remove('show');
