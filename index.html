@@ -2742,6 +2742,7 @@ async function editReceipt(id) {
   document.getElementById('edit-notes').value = r.notes || '';
   //document.getElementById('edit-remarks').value      = r.remarks || '';
   document.getElementById('edit-receipt-modal').classList.add('show');
+  window._editOriginalName = r.donor;
 }
 
 async function saveEditReceipt() {
@@ -2760,6 +2761,11 @@ async function saveEditReceipt() {
     //remarks:       document.getElementById('edit-remarks').value.trim() || null,
   }).eq('receipt_id', _editingReceiptId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  const newName = document.getElementById('edit-donor-name').value.trim();
+  if (window._editOriginalName && newName !== window._editOriginalName) {
+    await _supa.from('donors').update({ name: newName })
+      .eq('name', window._editOriginalName);
+  }
   showToast('✅ Receipt updated!', 'success');
   document.getElementById('edit-receipt-modal').classList.remove('show');
   _editingReceiptId = null;
