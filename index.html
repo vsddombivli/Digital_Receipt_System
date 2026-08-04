@@ -823,7 +823,71 @@
           </table>
         </div></div>
       </div>
-
+      <!-- Audit Trail -->
+      <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+        <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
+          🔍 Audit Trail
+          <span id="audit-badge" style="font-size:0.72rem;background:#fdecea;color:var(--danger);padding:2px 8px;border-radius:10px;margin-left:8px;display:none;">
+            ⚠️ <span id="audit-badge-count">0</span> issues
+          </span>
+        </div>
+        <div class="admin-section-body collapsed">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;margin-top:12px;">
+            <button class="btn btn-primary" onclick="runManualAudit('today')">🔍 Audit Today's Receipts</button>
+            <button class="btn btn-secondary" onclick="runManualAudit('backfill')">📚 Run Full Backfill Audit</button>
+            <button class="btn btn-secondary" onclick="loadAuditRuns()">↺ Refresh</button>
+            <button class="btn btn-secondary" onclick="checkCreditBalance()">💳 Check Credit Balance</button>
+          </div>
+          <div id="credit-balance-card" style="display:none;background:#e6f4ea;border:1px solid var(--success);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.88rem;">
+            <strong>💳 Anthropic Credit Balance:</strong> <span id="credit-balance-val">–</span>
+          </div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-bottom:8px;">Audit run history (latest first)</div>
+          <div class="table-wrap" style="margin-bottom:16px;">
+            <table class="data-table" id="audit-runs-table">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Type</th><th>Status</th><th>Processed</th>
+                  <th>✅ OK</th><th>⚠️ Issues</th><th>📸 Scanned</th><th>⏭️ Skipped</th>
+                  <th>UTR Dup OK</th><th>UTR Dup ⚠️</th><th>Est. Cost</th>
+                  <th>Balance</th><th>By</th><th>Completed</th><th>Details</th>
+                </tr>
+              </thead>
+              <tbody id="audit-runs-tbody">
+                <tr><td colspan="15" style="text-align:center;color:var(--muted)">Click Refresh to load</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="audit-results-detail" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div style="font-weight:600;font-size:0.95rem;">Audit Results — <span id="audit-detail-run-label"></span></div>
+              <div style="display:flex;gap:8px;">
+                <select id="audit-detail-filter" onchange="filterAuditResults()" style="font-size:0.82rem;padding:4px 8px;border:1px solid var(--border);border-radius:6px;">
+                  <option value="">All Statuses</option>
+                  <option value="discrepancy">⚠️ Discrepancy</option>
+                  <option value="no_screenshot">📸 No Screenshot</option>
+                  <option value="no_utr">🔑 No UTR</option>
+                  <option value="ai_error">❌ AI Error</option>
+                  <option value="ok">✅ OK</option>
+                </select>
+                <button class="btn btn-secondary btn-sm" onclick="exportAuditResults()">📥 Export</button>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('audit-results-detail').style.display='none'">✕ Close</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Receipt</th><th>Donor</th><th>Date</th><th>Receipt ₹</th>
+                    <th>Screenshot ₹</th><th>Receipt UTR</th><th>Screenshot UTR</th>
+                    <th>Payee ✓</th><th>Status</th><th>UTR Check</th><th>Notes</th><th>Screenshot</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-results-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
       <!-- New Financial Year Setup -->
       <!--
       <div style="margin-bottom:24px;">
@@ -3906,6 +3970,171 @@ function onRefVolunteerChange() {
   document.getElementById('ref-volunteer-location').value = opt.dataset.location || '';
 }
 */
+// ══════════════════════════════
+//  AUDIT TRAIL
+// ══════════════════════════════
+let _auditResults = [];
+
+function auditStatusBadge(s) {
+  return {
+    ok:            '<span style="background:#e6f4ea;color:#2D7A3A;padding:2px 8px;border-radius:10px;font-size:0.75rem;">✅ OK</span>',
+    discrepancy:   '<span style="background:#fdecea;color:var(--danger);padding:2px 8px;border-radius:10px;font-size:0.75rem;">⚠️ Discrepancy</span>',
+    no_screenshot: '<span style="background:#fff3e0;color:#f39c12;padding:2px 8px;border-radius:10px;font-size:0.75rem;">📸 No Screenshot</span>',
+    no_utr:        '<span style="background:#f3e5f5;color:#9b59b6;padding:2px 8px;border-radius:10px;font-size:0.75rem;">🔑 No UTR</span>',
+    ai_error:      '<span style="background:#fdecea;color:var(--danger);padding:2px 8px;border-radius:10px;font-size:0.75rem;">❌ AI Error</span>',
+  }[s] || s;
+}
+
+function utrCheckBadge(s) {
+  return {
+    unique:              '<span style="color:var(--success);font-size:0.78rem;">✅ Unique</span>',
+    duplicate_ok:        '<span style="color:#f39c12;font-size:0.78rem;">🔄 Dup OK</span>',
+    duplicate_mismatch:  '<span style="color:var(--danger);font-size:0.78rem;">❌ Dup ⚠️</span>',
+    skipped:             '<span style="color:var(--muted);font-size:0.78rem;">–</span>',
+  }[s] || '–';
+}
+
+function runStatusBadge(s) {
+  return {
+    running:   '<span style="color:#f39c12;">⏳ Running</span>',
+    completed: '<span style="color:var(--success);">✅ Done</span>',
+    failed:    '<span style="color:var(--danger);">❌ Failed</span>',
+  }[s] || s;
+}
+
+async function loadAuditRuns() {
+  const tbody = document.getElementById('audit-runs-tbody');
+  tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;color:var(--muted)">⏳ Loading…</td></tr>';
+  const { data, error } = await _supa.from('audit_runs').select('*').order('created_at', { ascending: false }).limit(30);
+  if (error || !data?.length) {
+    tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;color:var(--muted)">No audit runs found</td></tr>';
+    return;
+  }
+  const totalIssues = data.reduce((s, r) => s + (r.discrepancies_found || 0), 0);
+  if (totalIssues > 0) {
+    document.getElementById('audit-badge').style.display = '';
+    document.getElementById('audit-badge-count').textContent = totalIssues;
+  }
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.run_date}</td>
+      <td style="font-size:0.78rem">${(r.run_type||'').replace('_',' ')}</td>
+      <td>${runStatusBadge(r.status)}</td>
+      <td style="text-align:center">${r.total_processed ?? '–'}</td>
+      <td style="text-align:center;color:var(--success)">${r.ok_count ?? '–'}</td>
+      <td style="text-align:center;color:${r.discrepancies_found > 0 ? 'var(--danger)' : 'var(--muted)'}"><strong>${r.discrepancies_found ?? '–'}</strong></td>
+      <td style="text-align:center">${r.images_scanned ?? '–'}</td>
+      <td style="text-align:center;color:var(--muted)">${r.images_skipped ?? '–'}</td>
+      <td style="text-align:center;color:var(--success)">${r.utr_duplicates_ok ?? '–'}</td>
+      <td style="text-align:center;color:${r.utr_duplicates_bad > 0 ? 'var(--danger)' : 'var(--muted)'}">${r.utr_duplicates_bad ?? '–'}</td>
+      <td style="font-family:monospace;font-size:0.8rem">$${parseFloat(r.estimated_cost_usd||0).toFixed(6)}</td>
+      <td style="font-family:monospace;font-size:0.8rem">${r.credit_balance_usd != null ? '$'+parseFloat(r.credit_balance_usd).toFixed(2) : '–'}</td>
+      <td style="font-size:0.78rem">${r.created_by}</td>
+      <td style="font-size:0.78rem">${r.completed_at ? fmtDate(r.completed_at.slice(0,10)) : '–'}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="loadAuditResults('${r.id}','${r.run_date}')">View</button></td>
+    </tr>`).join('');
+}
+
+async function loadAuditResults(runId, runDate) {
+  document.getElementById('audit-results-detail').style.display = 'block';
+  document.getElementById('audit-detail-run-label').textContent = runDate;
+  document.getElementById('audit-results-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted)">⏳ Loading…</td></tr>';
+  const { data, error } = await _supa.from('audit_results').select('*, receipts(donor_name)').eq('audit_run_id', runId).order('status');
+  if (error || !data) {
+    document.getElementById('audit-results-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--danger)">Error loading</td></tr>';
+    return;
+  }
+  _auditResults = data;
+  renderAuditResultsTable(data);
+  document.getElementById('audit-results-detail').scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderAuditResultsTable(data) {
+  if (!data.length) {
+    document.getElementById('audit-results-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted)">No results</td></tr>';
+    return;
+  }
+  document.getElementById('audit-results-tbody').innerHTML = data.map(r => `
+    <tr style="${r.status !== 'ok' ? 'background:#fffbf0' : ''}">
+      <td class="mono" style="font-size:0.82rem">${r.receipt_id}</td>
+      <td style="font-size:0.82rem">${r.receipts?.donor_name || '–'}</td>
+      <td style="font-size:0.82rem">${r.receipt_date ? fmtDate(r.receipt_date) : '–'}</td>
+      <td style="text-align:right">₹${parseFloat(r.receipt_amount||0).toLocaleString('en-IN')}</td>
+      <td style="text-align:right;color:${r.extracted_amount && Math.abs(r.extracted_amount - r.receipt_amount) > 1 ? 'var(--danger)' : 'inherit'}">
+        ${r.extracted_amount != null ? '₹'+parseFloat(r.extracted_amount).toLocaleString('en-IN') : '–'}
+      </td>
+      <td class="mono" style="font-size:0.78rem">${r.receipt_utr || '–'}</td>
+      <td class="mono" style="font-size:0.78rem;color:${r.extracted_utr && r.receipt_utr && r.extracted_utr.toLowerCase() !== r.receipt_utr.toLowerCase() ? 'var(--danger)' : 'inherit'}">
+        ${r.extracted_utr || '–'}
+      </td>
+      <td style="text-align:center">${r.extracted_raw?.payee_matches_vsd === true ? '✅' : r.extracted_raw?.payee_matches_vsd === false ? '❌' : '–'}</td>
+      <td>${auditStatusBadge(r.status)}</td>
+      <td>${utrCheckBadge(r.utr_check_status)}</td>
+      <td style="font-size:0.76rem;color:var(--danger);max-width:220px;white-space:normal">
+        ${r.discrepancy_notes || (r.utr_check_status?.includes('mismatch') ? r.utr_check_notes : '') || ''}
+      </td>
+      <td style="text-align:center">
+        ${r.screenshot_url ? `<a href="${r.screenshot_url}" target="_blank" style="font-size:0.8rem">📸</a>` : '<span style="color:var(--muted);font-size:0.78rem">–</span>'}
+      </td>
+    </tr>`).join('');
+}
+
+function filterAuditResults() {
+  const f = document.getElementById('audit-detail-filter').value;
+  renderAuditResultsTable(f ? _auditResults.filter(r => r.status === f) : _auditResults);
+}
+
+async function runManualAudit(mode) {
+  const label = mode === 'backfill' ? 'FULL BACKFILL (all historical receipts)' : "today's receipts";
+  if (!confirm(`Run ${label} audit? This will call Anthropic API and incur costs.`)) return;
+  showToast('Starting audit… this may take a few minutes');
+  try {
+    const { data: { session } } = await _supa.auth.getSession();
+    const res = await fetch(`${_supabaseUrl}/functions/v1/audit-scan-images`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+      body: JSON.stringify({ mode, created_by: session?.user?.email || 'admin' }),
+    });
+    const result = await res.json();
+    if (res.ok) { showToast(result.message || 'Audit started', 'success'); setTimeout(loadAuditRuns, 3000); }
+    else showToast('Audit failed: ' + (result.error || 'Unknown error'), 'error');
+  } catch (e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+async function checkCreditBalance() {
+  showToast('Checking credit balance…');
+  try {
+    const { data: { session } } = await _supa.auth.getSession();
+    const res = await fetch(`${_supabaseUrl}/functions/v1/audit-credit-check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+      body: '{}',
+    });
+    const result = await res.json();
+    const card = document.getElementById('credit-balance-card');
+    card.style.display = '';
+    document.getElementById('credit-balance-val').textContent =
+      result.balance_usd != null ? `$${parseFloat(result.balance_usd).toFixed(4)} remaining` : 'Error: ' + (result.error || 'unknown');
+    card.style.background   = result.level === 'critical' ? '#fdecea' : result.level === 'warning' ? '#fff3e0' : '#e6f4ea';
+    card.style.borderColor  = result.level === 'critical' ? 'var(--danger)' : result.level === 'warning' ? '#f39c12' : 'var(--success)';
+  } catch (e) { showToast('Error: ' + e.message, 'error'); }
+}
+
+function exportAuditResults() {
+  if (!_auditResults.length) { showToast('No results to export', 'error'); return; }
+  const rows = _auditResults.map(r => ({
+    'Receipt ID': r.receipt_id, 'Donor': r.receipts?.donor_name || '',
+    'Date': r.receipt_date, 'Receipt Amount': r.receipt_amount,
+    'Screenshot Amount': r.extracted_amount, 'Receipt UTR': r.receipt_utr,
+    'Screenshot UTR': r.extracted_utr, 'Payee Matches VSD': r.extracted_raw?.payee_matches_vsd,
+    'Status': r.status, 'UTR Check': r.utr_check_status,
+    'Discrepancy Notes': r.discrepancy_notes, 'UTR Check Notes': r.utr_check_notes,
+    'Screenshot URL': r.screenshot_url,
+  }));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Audit Results');
+  XLSX.writeFile(wb, `VSD_Audit_Results_${todayStr()}.xlsx`);
+}
 </script>
 </body>
 </html>
