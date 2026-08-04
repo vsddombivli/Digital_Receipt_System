@@ -834,8 +834,10 @@
         </div>
         <div class="admin-section-body collapsed">
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;margin-top:12px;">
+            <button class="btn btn-primary" onclick="runManualAudit('today')">🔍 Audit Today's Receipts</button>
+            <button class="btn btn-secondary" onclick="runManualAudit('backfill')">📚 Run Full Backfill Audit</button>
             <button class="btn btn-secondary" onclick="loadAuditRuns()">↺ Refresh</button>
-            <button class="btn btn-secondary" onclick="checkCreditBalance()">💳 Check Credit Balance</button>
+            <!-- <button class="btn btn-secondary" onclick="checkCreditBalance()">💳 Check Credit Balance</button> -->
           </div>
           <div id="credit-balance-card" style="display:none;background:#e6f4ea;border:1px solid var(--success);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.88rem;">
             <strong>💳 Anthropic Credit Balance:</strong> <span id="credit-balance-val">–</span>
