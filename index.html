@@ -4091,7 +4091,7 @@ async function runManualAudit(mode) {
   showToast('Starting audit… this may take a few minutes');
   try {
     const { data: { session } } = await _supa.auth.getSession();
-    const res = await fetch(`${_supabaseUrl}/functions/v1/audit-scan-images`, {
+    const res = await fetch(`${_supaUrl}/functions/v1/audit-scan-images`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
       body: JSON.stringify({ mode, created_by: session?.user?.email || 'admin' }),
@@ -4106,7 +4106,7 @@ async function checkCreditBalance() {
   showToast('Checking credit balance…');
   try {
     const { data: { session } } = await _supa.auth.getSession();
-    const res = await fetch(`${_supabaseUrl}/functions/v1/audit-credit-check`, {
+    const res = await fetch(`${_supaUrl}/functions/v1/audit-credit-check`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
       body: '{}',
