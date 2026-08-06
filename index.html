@@ -4088,18 +4088,60 @@ function filterAuditResults() {
 async function runManualAudit(mode) {
   const label = mode === 'backfill' ? 'FULL BACKFILL (all historical receipts)' : "today's receipts";
   if (!confirm(`Run ${label} audit? This will call Anthropic API and incur costs.`)) return;
-  showToast('Starting audit… this may take a few minutes');
-  try {
-    const { data: { session } } = await _supa.auth.getSession();
-    const res = await fetch(`${_supaUrl}/functions/v1/audit-scan-images`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
-      body: JSON.stringify({ mode, created_by: session?.user?.email || 'admin' }),
-    });
-    const result = await res.json();
-    if (res.ok) { showToast(result.message || 'Audit started', 'success'); setTimeout(loadAuditRuns, 3000); }
-    else showToast('Audit failed: ' + (result.error || 'Unknown error'), 'error');
-  } catch (e) { showToast('Error: ' + e.message, 'error'); }
+
+  const { data: { session } } = await _supa.auth.getSession();
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session?.access_token}`
+  };
+  const created_by = session?.user?.email || 'admin';
+
+  if (mode === 'today') {
+    // Single call for today
+    showToast('Starting audit for today…');
+    try {
+      const res = await fetch(`${_supaUrl}/functions/v1/audit-scan-images`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ mode, created_by }),
+      });
+      const result = await res.json();
+      if (res.ok) { showToast(result.message || 'Audit submitted — results in ~15 min', 'success'); setTimeout(loadAuditRuns, 3000); }
+      else showToast('Audit failed: ' + (result.error || 'Unknown error'), 'error');
+    } catch (e) { showToast('Error: ' + e.message, 'error'); }
+
+  } else {
+    // Backfill: loop page by page
+    showToast('Starting backfill — submitting pages…');
+    let page = 0;
+    let totalSubmitted = 0;
+
+    try {
+      while (true) {
+        const res = await fetch(`${_supaUrl}/functions/v1/audit-scan-images`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ mode: 'backfill', created_by, page, page_size: 10 }),
+        });
+        const result = await res.json();
+
+        if (!res.ok) {
+          showToast(`Page ${page} failed: ${result.error || 'Unknown'}`, 'error');
+          break;
+        }
+
+        totalSubmitted += result.submitted || 0;
+        showToast(`Page ${page} submitted (${totalSubmitted} receipts so far)…`);
+
+        if (!result.has_more) break; // all pages done
+
+        page++;
+        await new Promise(r => setTimeout(r, 3000)); // 3s gap — avoid hammering
+      }
+
+      showToast(`Backfill complete — ${totalSubmitted} receipts submitted. Results appear in ~15 min.`, 'success');
+      setTimeout(loadAuditRuns, 3000);
+
+    } catch (e) { showToast('Backfill error on page ' + page + ': ' + e.message, 'error'); }
+  }
 }
 
 async function checkCreditBalance() {
