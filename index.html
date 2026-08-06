@@ -4040,13 +4040,35 @@ async function loadAuditResults(runId, runDate) {
   document.getElementById('audit-results-detail').style.display = 'block';
   document.getElementById('audit-detail-run-label').textContent = runDate;
   document.getElementById('audit-results-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--muted)">⏳ Loading…</td></tr>';
-  const { data, error } = await _supa.from('audit_results').select('*, receipts(donor_name)').eq('audit_run_id', runId).order('status');
+
+  const { data, error } = await _supa
+    .from('audit_results')
+    .select('*')
+    .eq('audit_run_id', runId)
+    .order('status');
+
   if (error || !data) {
     document.getElementById('audit-results-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--danger)">Error loading</td></tr>';
     return;
   }
-  _auditResults = data;
-  renderAuditResultsTable(data);
+
+  // Fetch donor names separately
+  const receiptIds = data.map(r => r.receipt_id).filter(Boolean);
+  let donorMap = {};
+  if (receiptIds.length) {
+    const { data: receipts } = await _supa
+      .from('receipts')
+      .select('receipt_id, donor')
+      .in('receipt_id', receiptIds);
+    if (receipts) {
+      donorMap = Object.fromEntries(receipts.map(r => [r.receipt_id, r.donor]));
+    }
+  }
+
+  const enriched = data.map(r => ({ ...r, donor_name: donorMap[r.receipt_id] || '—' }));
+
+  _auditResults = enriched;
+  renderAuditResultsTable(enriched);
   document.getElementById('audit-results-detail').scrollIntoView({ behavior: 'smooth' });
 }
 
