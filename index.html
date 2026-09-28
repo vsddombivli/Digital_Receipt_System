@@ -322,13 +322,11 @@
 </div>
 
 <div class="tabs">
-  <button class="tab-btn active" onclick="switchTab('new')">📝 New Receipt</button>
-  <button class="tab-btn" onclick="switchTab('records')">📋 All Records</button>
-  <button class="tab-btn" onclick="switchTab('bulk')">📤 Bulk WA</button>
-  <button class="tab-btn" onclick="switchTab('stats')">📊 Summary</button>
-  <!-- <button class="tab-btn" onclick="switchTab('poster')">🖼️ Poster</button> -->
-  <button class="tab-btn admin-only" id="tab-btn-admin" onclick="switchTab('admin')" style="display:none">⚙️ Admin</button>
-  <button class="tab-btn admin-only" id="tab-btn-recon" onclick="switchTab('recon')" style="display:none">🔍 Reconcile</button>
+  <button class="tab-btn active" id="tab-btn-new"     onclick="switchTab('new')">📝 New Receipt</button>
+  <button class="tab-btn"        id="tab-btn-records" onclick="switchTab('records')">📋 All Records</button>
+  <button class="tab-btn"        id="tab-btn-stats"   onclick="switchTab('stats')" style="display:none">📊 Summary</button>
+  <button class="tab-btn"        id="tab-btn-admin"   onclick="switchTab('admin')" style="display:none">⚙️ Admin</button>
+  <button class="tab-btn"        id="tab-btn-finance" onclick="switchTab('finance')" style="display:none">💰 Finance</button>
 </div>
 
 <div class="main">
@@ -690,19 +688,7 @@
       <div id="no-records" style="text-align:center;padding:30px;color:var(--muted);display:none">No records found.</div>
     </div>
   </div>
-
-  <!-- BULK WHATSAPP TAB -->
-  <div class="panel" id="tab-bulk">
-    <div class="card">
-      <div class="card-title">📤 Bulk WhatsApp — End of Day</div>
-      <p style="color:var(--muted);font-size:0.93rem;margin-bottom:18px">
-        Pending receipts (donors with mobile, not yet sent today) listed below.
-      </p>
-      <div id="bulk-list"></div>
-      <div id="bulk-empty" style="text-align:center;padding:30px;color:var(--muted);display:none">🎉 All receipts sent for today!</div>
-    </div>
-  </div>
-
+  
   <!-- STATS TAB -->
   <div class="panel" id="tab-stats">
     <div class="stats-grid" id="stats-grid"></div>
@@ -766,7 +752,21 @@
         </div></div>
       </div>
       
-      <!-- Bulk Donor Outreach -->
+      <!-- Bulk WA — moved from top nav -->
+      <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">📤 Bulk WhatsApp Outreach</div>
+      <div class="admin-section-body collapsed" id="bulk-section-body">
+        <!-- BULK WHATSAPP TAB -->
+        <div class="panel" id="tab-bulk">
+          <div class="card">
+            <div class="card-title">📤 Bulk WhatsApp — End of Day</div>
+            <p style="color:var(--muted);font-size:0.93rem;margin-bottom:18px">
+              Pending receipts (donors with mobile, not yet sent today) listed below.
+            </p>
+            <div id="bulk-list"></div>
+            <div id="bulk-empty" style="text-align:center;padding:30px;color:var(--muted);display:none">🎉 All receipts sent for today!</div>
+          </div>
+        </div>
+      </div>
       
       <!-- Bulk Donor Outreach -->
       <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
@@ -991,6 +991,26 @@
       <div style="color:var(--muted);font-size:0.88rem;margin-top:6px;">Ask admin to upload the poster template.</div>
     </div>
   </div>
+  <!-- Finance Tab -->
+  <div class="panel" id="tab-finance">
+    <div style="padding:20px">
+      <h2 style="font-family:'Crimson Pro',serif;color:var(--maroon);margin-bottom:4px">💰 Finance</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:20px">Finance-only tools — suspense receipts and reconciliation</p>
+      
+      <!-- Reconcile section (moved from top nav) -->
+      <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🔍 Bank Reconciliation</div>
+      <div class="admin-section-body collapsed" id="recon-section-body">
+        <!-- existing recon content will be moved here -->
+      </div>
+  
+      <!-- Suspense section placeholder (Point 1 later) -->
+      <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🗂 Suspense Receipt Creation</div>
+      <div class="admin-section-body collapsed">
+        <p style="color:var(--muted);font-size:0.85rem">Coming soon — upload Tally suspense export to auto-generate receipts.</p>
+      </div>
+    </div>
+  </div>
+  
   <!-- RECONCILIATION TAB -->
   <div class="panel" id="tab-recon">
     <div class="card">
@@ -1617,7 +1637,7 @@ function switchTab(id) {
   if (id === 'records') renderTable(1);
   if (id === 'bulk')    renderBulk();
   if (id === 'stats')   renderStats();
-  if (id === 'admin' && currentRole === 'admin') {
+  if (id === 'admin' && ['superadmin','admin'].includes(currentRole)) {
     loadUsers();
     loadVolunteerSummary();
     // Auto-fill current FY
@@ -2537,7 +2557,9 @@ async function exportCSV() {
   const filters = {};
   if (q)  filters.search  = q;
   if (fp) filters.payment = fp;
-  if (currentRole !== 'admin' && currentUser) filters.volunteerOrGeneratedBy = window._volunteerFullName || '';
+  if (!['superadmin','admin','finance'].includes(currentRole) && currentUser) {
+    filters.volunteerOrGeneratedBy = window._volunteerFullName || '';
+  }
   //if (filters.excludeInvalidDuplicate) filters.excludeInvalidDuplicate = true;
   const records = await dbLoad(filters);
   const rows = [['Receipt No','Date','Donor Name','Address','Email','Mobile','PAN','Accounts','Total','Payment','Ref','Bank','Branch','Volunteer','Location','Generated By','Generated By Location','Remarks','Status','WA Sent','Screenshot URL','Receipt Link']];
@@ -2629,8 +2651,9 @@ async function onLoginSuccess(user) {
   }
 
   // If admin tab is active, load users
-  if (currentRole === 'admin') {
-    document.getElementById('admin-user-email').textContent = user.email;
+  if (['superadmin','admin'].includes(currentRole)) {
+    const el = document.getElementById('admin-user-email');
+    if (el) el.textContent = user.email;
   }
 
   // Default to new receipt tab
@@ -2642,42 +2665,92 @@ async function onLoginSuccess(user) {
   //loadVolunteerDropdown();
   applyPPPrefill();
 }
-
-function applyRoleAccess() {
-  const isAdmin = currentRole === 'admin';
-
-  // Tab visibility
-  const tabMap = {
-    'new':     true,          // all users
-    'records': isAdmin,
-    'bulk':    isAdmin,
-    'stats':   isAdmin,
-    'admin':   isAdmin,
-  };
-  //const btns = document.querySelectorAll('.tab-btn');
-  //const ids  = ['new','records','bulk','stats','admin'];
-  //btns.forEach((btn, i) => {
-  //  if (ids[i]) btn.style.display = tabMap[ids[i]] ? '' : 'none';
-  //});
-  //document.getElementById('tab-btn-admin').style.display = isAdmin ? '' : 'none';
-
-  ['bulk','stats','recon','admin'].forEach(id => {
-    // Hide export buttons from volunteers
-    const exportBtns = document.querySelectorAll('[onclick="exportCSV()"]');
-    //exportBtns.forEach(btn => btn.style.display = isAdmin ? '' : 'none');
-    exportBtns.forEach(btn => btn.style.display = '');
-    const btn = document.querySelector(`[onclick="switchTab('${id}')"]`);
-    if (btn) btn.style.display = isAdmin ? '' : 'none';
-
-    const reconBtn = document.getElementById('tab-btn-recon');
-    if (reconBtn) reconBtn.style.display = isAdmin ? '' : 'none';
-  });
   
-  // Volunteer profile card (logout) visible in admin tab for volunteers
-  if (!isAdmin) {
-    document.getElementById('volunteer-profile-card').style.display = 'block';
-    document.getElementById('vol-user-email').textContent = currentUser.email;
+function applyRoleAccess() {
+  const role = currentRole; // 'superadmin' | 'admin' | 'finance' | 'location_admin' | 'volunteer'
+
+  // ── Tab visibility matrix ──
+  const tabRules = {
+    'new':     ['superadmin','admin','finance','location_admin','volunteer'],
+    'records': ['superadmin','admin','finance','location_admin','volunteer'],
+    'stats':   ['superadmin','admin','finance','location_admin'],
+    'admin':   ['superadmin','admin'],
+    'finance': ['superadmin','finance'],
+  };
+
+  Object.entries(tabRules).forEach(([tabId, allowedRoles]) => {
+    const btn = document.getElementById('tab-btn-' + tabId);
+    if (btn) btn.style.display = allowedRoles.includes(role) ? '' : 'none';
+  });
+
+  // ── Admin tab internals ──
+  // Bulk WA and Reconcile inside admin — visible to superadmin and admin only
+  // (already gated by admin tab visibility)
+
+  // ── Finance tab — reconcile visible to finance + superadmin ──
+  // Already gated by finance tab visibility
+
+  // ── All Records — admin action buttons (invalid/duplicate/valid) ──
+  const adminActionBtns = document.getElementById('admin-action-btns');
+  if (adminActionBtns) {
+    adminActionBtns.style.display = ['superadmin','admin'].includes(role) ? 'flex' : 'none';
   }
+
+  // ── Export CSV button ──
+  document.querySelectorAll('[onclick="exportCSV()"]').forEach(btn => {
+    btn.style.display = ['superadmin','admin','finance'].includes(role) ? '' : 'none';
+  });
+
+  // ── Volunteer profile card (shown to non-admin roles) ──
+  const volCard = document.getElementById('volunteer-profile-card');
+  if (volCard) {
+    volCard.style.display = ['volunteer','location_admin'].includes(role) ? 'block' : 'none';
+    if (currentUser) {
+      const el = document.getElementById('vol-user-email');
+      if (el) el.textContent = currentUser.email;
+    }
+  }
+
+  // ── Admin email display ──
+  const adminEmail = document.getElementById('admin-user-email');
+  if (adminEmail && ['superadmin','admin'].includes(role)) {
+    adminEmail.textContent = currentUser?.email || '';
+  }
+
+  // ── Role badge ──
+  const badge = document.getElementById('admin-role-badge');
+  if (badge) {
+    const badgeMap = {
+      superadmin:    { bg:'#fde8e8', color:'#8b0000', label:'Super Admin' },
+      admin:         { bg:'#fde8e8', color:'#c0392b', label:'Admin' },
+      finance:       { bg:'#e8f4fd', color:'#1a5f8b', label:'Finance' },
+      location_admin:{ bg:'#fff3cd', color:'#856404', label:'Location Admin' },
+      volunteer:     { bg:'#e6f4ea', color:'#2D7A3A', label:'Volunteer' },
+    };
+    const b = badgeMap[role] || badgeMap.volunteer;
+    badge.style.background = b.bg;
+    badge.style.color = b.color;
+    badge.textContent = b.label;
+  }
+
+  // ── Create User — superadmin sees all roles, admin sees limited ──
+  const roleSelect = document.getElementById('new-user-role');
+  if (roleSelect) {
+    if (role === 'superadmin') {
+      roleSelect.innerHTML = `
+        <option value="volunteer">Volunteer</option>
+        <option value="location_admin">Location Admin</option>
+        <option value="admin">Admin</option>
+        <option value="finance">Finance</option>
+        <option value="superadmin">Super Admin</option>`;
+    } else {
+      roleSelect.innerHTML = `
+        <option value="volunteer">Volunteer</option>
+        <option value="location_admin">Location Admin</option>`;
+    }
+  }
+
+  // ── Summary tab — no suspense data shown (handled in loadStats) ──
 }
 
 async function doLogin() {
@@ -3332,7 +3405,7 @@ function selectRecord(id) {
   document.getElementById('record-action-bar').style.display = 'flex';
   // Show admin buttons
   const adminBtns = document.getElementById('admin-action-btns');
-  if (adminBtns) adminBtns.style.display = currentRole === 'admin' ? 'flex' : 'none';
+  if (adminBtns) adminBtns.style.display = ['superadmin','admin'].includes(currentRole) ? 'flex' : 'none';
   // Scroll to action bar
   document.getElementById('record-action-bar').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
