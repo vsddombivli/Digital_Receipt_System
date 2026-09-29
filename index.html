@@ -2336,10 +2336,14 @@ async function renderTable(page = 1) {
   let query = _supa.from('receipts').select('*', { count: 'exact' });
 
   // Filters
-  if (currentRole !== 'admin' && currentUser) {
+  if (currentRole === 'volunteer' && currentUser) {
     const name = window._volunteerFullName || '';
     query = query.or(`volunteer.eq.${name},generated_by.eq.${name}`);
+  } else if (currentRole === 'location_admin' && currentUser) {
+    const loc = window._volunteerLocation || '';
+    if (loc) query = query.eq('volunteer_location', loc);
   }
+// superadmin, admin, finance see ALL — no filter applied
   if (fp) query = query.eq('payment_method', fp);
   if (q)  query = query.or(`donor_name.ilike.%${q}%,receipt_id.ilike.%${q}%,donor_pan.ilike.%${q}%,volunteer.ilike.%${q}%`);
 
