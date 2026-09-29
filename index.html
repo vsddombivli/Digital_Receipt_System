@@ -1048,7 +1048,16 @@
         Next Receipt: <strong id="next-receipt-no">D00001</strong>
         <span style="color:var(--muted);font-size:0.75rem">(auto-assigned on submit)</span>
       </div>
-
+      
+      <div id="fy-closed-banner" style="display:none;margin-bottom:16px;padding:16px 20px;background:#fdecea;border:1.5px solid #e74c3c;border-radius:10px;text-align:center;">
+        <div style="font-size:1.2rem;margin-bottom:6px;">🔒</div>
+        <strong style="color:#c0392b;font-size:1rem;">Online Receipt Generation is Closed</strong>
+        <p style="color:#7a0000;font-size:0.88rem;margin-top:6px;">
+          Receipt generation for the current financial year has ended.<br>
+          <span id="fy-closed-contact-msg"></span>
+        </p>
+      </div>
+      
       <div class="card">
         <div style="margin-bottom:16px;">
           <label
@@ -1540,6 +1549,32 @@
           </div>
         </div>
 
+        <!-- FY Stop Date Control — superadmin only -->
+        <div style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;" id="fy-stop-section">
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🔒 Financial Year — Receipt Generation Control</div>
+          <div class="admin-section-body collapsed">
+            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">
+              Set a stop date after which online receipt generation is disabled for the current financial year. Leave blank to keep generation open.
+            </p>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Stop Date (inclusive)</label>
+                <input type="date" id="fy-stop-date-input">
+                <span style="font-size:0.78rem;color:var(--muted)">After this date, new receipts cannot be generated.</span>
+              </div>
+              <div class="form-group">
+                <label>Contact Info (shown in closed message)</label>
+                <input type="text" id="fy-stop-contact-input" placeholder="e.g. admin@vsddombivli.com or 9876543210">
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+              <button class="btn btn-primary" onclick="saveFyStopDate()">💾 Save Settings</button>
+              <button class="btn btn-danger btn-sm" onclick="clearFyStopDate()">✕ Clear Stop Date (Re-open)</button>
+            </div>
+            <div id="fy-stop-current" style="margin-top:12px;font-size:0.85rem;color:var(--muted);"></div>
+          </div>
+        </div>
+        
         <!-- Bulk WA — moved from top nav -->
         <div
           style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
@@ -2603,6 +2638,11 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
         const fyInput = document.getElementById('outreach-fy');
         if (fyInput && !fyInput.value) fyInput.value = currentFY();
       }
+      // Show/hide FY closed banner
+      if (id === 'new') {
+        const banner = document.getElementById('fy-closed-banner');
+        if (banner) banner.style.display = isFyClosed() ? 'block' : 'none';
+      }
       //if (id === 'recon') { document.getElementById('recon-results').style.display='none'; }
     }
     //upload payment screenshot
@@ -2788,11 +2828,76 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
       return allowed.includes(origin);
     }
     // ══════════════════════════════
+    //  FY STOP DATE
+    // ══════════════════════════════
+    let _fyStopDate = null;
+    let _fyStopContact = '';
+    
+    async function loadFySettings() {
+      if (!isDB()) return;
+      const { data } = await _supa.from('app_settings')
+        .select('key,value')
+        .in('key', ['fy_stop_date','fy_stop_contact']);
+      if (!data) return;
+      data.forEach(row => {
+        if (row.key === 'fy_stop_date')    _fyStopDate    = row.value || null;
+        if (row.key === 'fy_stop_contact') _fyStopContact = row.value || '';
+      });
+      // Populate admin inputs if visible
+      const inp = document.getElementById('fy-stop-date-input');
+      const cin = document.getElementById('fy-stop-contact-input');
+      if (inp) inp.value = _fyStopDate || '';
+      if (cin) cin.value = _fyStopContact || '';
+      updateFyStopDisplay();
+      const contactMsg = document.getElementById('fy-closed-contact-msg');
+      if (contactMsg) contactMsg.textContent = _fyStopContact ? `For any query contact: ${_fyStopContact}` : 'Please contact admin.';
+    }
+    
+    function updateFyStopDisplay() {
+      const el = document.getElementById('fy-stop-current');
+      if (!el) return;
+      if (_fyStopDate) {
+        el.innerHTML = `<span style="color:#c0392b;font-weight:600;">🔒 Receipt generation closes after: ${fmtDate(_fyStopDate)}</span>`;
+      } else {
+        el.innerHTML = `<span style="color:#2D7A3A;">✅ Receipt generation is currently OPEN (no stop date set)</span>`;
+      }
+    }
+    
+    async function saveFyStopDate() {
+      const date    = document.getElementById('fy-stop-date-input').value;
+      const contact = document.getElementById('fy-stop-contact-input').value.trim();
+      await _supa.from('app_settings').upsert([
+        { key:'fy_stop_date',    value: date    || null, updated_by: currentUser?.email, updated_at: new Date().toISOString() },
+        { key:'fy_stop_contact', value: contact || null, updated_by: currentUser?.email, updated_at: new Date().toISOString() },
+      ]);
+      _fyStopDate    = date    || null;
+      _fyStopContact = contact || '';
+      updateFyStopDisplay();
+      showToast(date ? `✅ Receipt generation closes after ${fmtDate(date)}` : '✅ Stop date cleared', 'success');
+    }
+    
+    async function clearFyStopDate() {
+      if (!confirm('This will re-open receipt generation. Confirm?')) return;
+      document.getElementById('fy-stop-date-input').value = '';
+      await saveFyStopDate();
+    }
+    
+    function isFyClosed() {
+      if (!_fyStopDate) return false;
+      return todayStr() > _fyStopDate;
+    }
+    // ══════════════════════════════
     //  GENERATE RECEIPT
     // ══════════════════════════════
     async function generateReceipt() {
       if (!isAllowedOrigin()) {
         alert('Receipt generation is only allowed from the official portal.');
+        return;
+      }
+      // FY closed check
+      if (isFyClosed()) {
+        const contact = _fyStopContact ? `For any query contact: ${_fyStopContact}` : 'Please contact admin.';
+        alert(`🔒 Online receipt generation is closed for the current financial year.\n\n${contact}`);
         return;
       }
       if (!confirm('Please verify all details before confirming.\n\nClick OK to generate receipt or Cancel to go back and edit.')) return;
@@ -3622,6 +3727,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       // Default to new receipt tab
       switchTab('new');
       buildAccountsGrid();
+      await loadFySettings();
       document.getElementById('donation-date').value = todayStr();
       await updateCounter();
       setInterval(updateCounter, 15000);
@@ -3713,6 +3819,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         }
       }
 
+      const fyStopSection = document.getElementById('fy-stop-section');
+      if (fyStopSection) fyStopSection.style.display = currentRole === 'superadmin' ? 'block' : 'none';
       // ── Summary tab — no suspense data shown (handled in loadStats) ──
     }
 
