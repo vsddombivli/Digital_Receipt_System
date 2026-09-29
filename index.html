@@ -756,7 +756,7 @@
       <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">📤 Bulk WhatsApp Outreach</div>
       <div class="admin-section-body collapsed" id="bulk-section-body">
         <!-- BULK WHATSAPP TAB -->
-        <div class="panel" id="tab-bulk">
+        <div id="tab-bulk">
           <div class="card">
             <div class="card-title">📤 Bulk WhatsApp — End of Day</div>
             <p style="color:var(--muted);font-size:0.93rem;margin-bottom:18px">
@@ -1001,6 +1001,46 @@
       <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🔍 Bank Reconciliation</div>
       <div class="admin-section-body collapsed" id="recon-section-body">
         <!-- existing recon content will be moved here -->
+        <div class="admin-section-body collapsed" id="recon-section-body">
+          <div id="tab-recon-inner">
+            <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px;">
+              Upload your bank statement in Excel format. System will match each transaction against generated receipts using UTR/Reference number.
+            </p>
+            <!-- FORMAT GUIDE -->
+            <div style="background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px;font-size:0.85rem;">
+              <strong>Required Excel columns (exact names):</strong><br>
+              <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:0.82rem;">Date, Description, Amount, Reference</code><br>
+              The "Reference" column should contain UTR/Transaction/Cheque number.
+              <button class="btn btn-outline btn-sm" style="margin-top:10px;display:block" onclick="downloadReconSample()">⬇️ Download Sample Format</button>
+            </div>
+            <!-- FILE UPLOAD -->
+            <div class="form-group">
+              <label>Bank Statement Excel File</label>
+              <input type="file" id="bank-statement-file" accept=".xlsx,.xls,.csv"
+                style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;box-sizing:border-box;">
+            </div>
+            <div class="form-group">
+              <label>Filter by Date Range (optional)</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <input type="date" id="recon-from" style="flex:1;min-width:120px;box-sizing:border-box;">
+                <input type="date" id="recon-to" style="flex:1;min-width:120px;box-sizing:border-box;">
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="runReconciliation()">🔍 Run Reconciliation</button>
+            <div id="recon-results" style="display:none;margin-top:20px;">
+              <div class="stats-grid" id="recon-stats" style="margin-bottom:20px;"></div>
+              <div class="table-wrap">
+                <table class="data-table" id="recon-table">
+                  <thead><tr>
+                    <th>Date</th><th>Description</th><th>Amount</th>
+                    <th>Reference</th><th>Match Status</th><th>Receipt</th>
+                  </tr></thead>
+                  <tbody id="recon-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
   
       <!-- Suspense section placeholder (Point 1 later) -->
@@ -1010,43 +1050,6 @@
       </div>
     </div>
   </div>
-  
-  <!-- RECONCILIATION TAB -->
-  <div class="panel" id="tab-recon">
-    <div class="card">
-      <div class="card-title">🔍 Bank Statement Reconciliation</div>
-      <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px;">
-        Upload your bank statement in Excel format. System will match each transaction against generated receipts using UTR/Reference number.
-      </p>
-
-      <!-- Format guide -->
-      <div style="background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px;font-size:0.85rem;">
-        <strong>Required Excel columns (exact names):</strong><br>
-        <code style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:0.82rem;">Date, Description, Amount, Reference</code><br>
-        <span style="color:var(--muted);font-size:0.8rem;">The "Reference" column should contain UTR/Transaction/Cheque number. Download sample below.</span>
-        <div style="margin-top:8px;">
-          <button class="btn btn-secondary btn-sm" onclick="downloadSampleStatement()">⬇️ Download Sample Format</button>
-        </div>
-      </div>
-
-      <div class="form-grid" style="margin-bottom:16px;">
-        <div class="form-group">
-          <label>Bank Statement Excel File</label>
-          <input type="file" id="bank-statement-file" accept=".xlsx,.xls,.csv"
-            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;box-sizing:border-box;">
-        </div>
-        <div class="form-group">
-          <label>Filter by Date Range (optional)</label>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <input type="date" id="recon-from" style="flex:1;min-width:120px;box-sizing:border-box;">
-            <input type="date" id="recon-to" style="flex:1;min-width:120px;box-sizing:border-box;">
-          </div>
-        </div>
-      </div>
-
-      <button class="btn btn-primary" onclick="runReconciliation()">🔍 Run Reconciliation</button>
-    </div>
-
     <!-- Results -->
     <div id="recon-results" style="display:none;margin-top:20px;">
 
@@ -1644,7 +1647,7 @@ function switchTab(id) {
     const fyInput = document.getElementById('outreach-fy');
     if (fyInput && !fyInput.value) fyInput.value = currentFY();
   }
-  if (id === 'recon') { document.getElementById('recon-results').style.display='none'; }
+  //if (id === 'recon') { document.getElementById('recon-results').style.display='none'; }
 }
 //upload payment screenshot
 // ══════════════════════════════
@@ -3749,7 +3752,13 @@ function toggleAdminSection(header) {
   if (body && body.classList.contains('admin-section-body')) {
     body.classList.toggle('collapsed');
   }
+
+  // Load bulk list when opened
+  if (body.id === 'bulk-section-body' && !body.classList.contains('collapsed')) {
+    loadBulkList();
+  }
 }
+  
 function numberToWords(n) {
   if (!n) return 'Zero';
   const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
