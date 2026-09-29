@@ -1846,95 +1846,100 @@
     <div class="panel" id="tab-finance">
       <div style="padding:20px">
         <h2 style="font-family:'Crimson Pro',serif;color:var(--maroon);margin-bottom:4px">💰 Finance</h2>
-        <p style="color:var(--muted);font-size:0.85rem;margin-bottom:20px">Finance-only tools — suspense receipts and
-          reconciliation</p>
+        <!-- <p style="color:var(--muted);font-size:0.85rem;margin-bottom:20px">Finance-only tools — suspense receipts and
+          reconciliation</p> -->
 
         <!-- Reconcile section (moved from top nav) -->
-        <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🔍 Bank Reconciliation</div>
-        <div class="admin-section-body collapsed" id="recon-section-body">
-          <div style="padding:14px 0;">
-            <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px;">
-              Upload your bank statement in Excel format. System will match each transaction against generated receipts
-              using UTR/Reference number.
-            </p>
-            <div
-              style="background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px;font-size:0.85rem;">
-              <strong>Required Excel columns (exact names):</strong><br>
-              <code
-                style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:0.82rem;">Date, Description, Amount, Reference</code><br>
-              <span style="color:var(--muted);font-size:0.8rem;">The "Reference" column should contain
-                UTR/Transaction/Cheque number.</span>
-              <div style="margin-top:8px;">
-                <button class="btn btn-secondary btn-sm" onclick="downloadSampleStatement()">⬇️ Download Sample
-                  Format</button>
-              </div>
-            </div>
-            <div class="form-grid" style="margin-bottom:16px;">
-              <div class="form-group">
-                <label>Bank Statement Excel File</label>
-                <input type="file" id="bank-statement-file" accept=".xlsx,.xls,.csv"
-                  style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;box-sizing:border-box;">
-              </div>
-              <div class="form-group">
-                <label>Filter by Date Range (optional)</label>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                  <input type="date" id="recon-from" style="flex:1;min-width:120px;box-sizing:border-box;">
-                  <input type="date" id="recon-to" style="flex:1;min-width:120px;box-sizing:border-box;">
+        <div
+          style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🔍 Bank Reconciliation</div>
+          <div class="admin-section-body collapsed" id="recon-section-body">
+            <div style="padding:14px 0;">
+              <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px;">
+                Upload your bank statement in Excel format. System will match each transaction against generated receipts
+                using UTR/Reference number.
+              </p>
+              <div
+                style="background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px;font-size:0.85rem;">
+                <strong>Required Excel columns (exact names):</strong><br>
+                <code
+                  style="background:#f0f0f0;padding:2px 6px;border-radius:4px;font-size:0.82rem;">Date, Description, Amount, Reference</code><br>
+                <span style="color:var(--muted);font-size:0.8rem;">The "Reference" column should contain
+                  UTR/Transaction/Cheque number.</span>
+                <div style="margin-top:8px;">
+                  <button class="btn btn-secondary btn-sm" onclick="downloadSampleStatement()">⬇️ Download Sample
+                    Format</button>
                 </div>
               </div>
-            </div>
-            <button class="btn btn-primary" onclick="runReconciliation()">🔍 Run Reconciliation</button>
-          </div>
-          <div id="recon-results" style="display:none;margin-top:20px;">
-            <div class="stats-grid" id="recon-stats" style="margin-bottom:20px;"></div>
-            <div class="card" style="margin-bottom:16px;">
-              <div class="card-title" style="color:var(--success);">✅ Matched Transactions (<span
-                  id="matched-count">0</span>)</div>
-              <div class="table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Reference</th>
-                      <th>Bank Amount</th>
-                      <th>Receipt No</th>
-                      <th>Receipt Amount</th>
-                      <th>Donor</th>
-                      <th>Date</th>
-                      <th>Match</th>
-                    </tr>
-                  </thead>
-                  <tbody id="matched-tbody"></tbody>
-                </table>
+              <div class="form-grid" style="margin-bottom:16px;">
+                <div class="form-group">
+                  <label>Bank Statement Excel File</label>
+                  <input type="file" id="bank-statement-file" accept=".xlsx,.xls,.csv"
+                    style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;box-sizing:border-box;">
+                </div>
+                <div class="form-group">
+                  <label>Filter by Date Range (optional)</label>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <input type="date" id="recon-from" style="flex:1;min-width:120px;box-sizing:border-box;">
+                    <input type="date" id="recon-to" style="flex:1;min-width:120px;box-sizing:border-box;">
+                  </div>
+                </div>
               </div>
+              <button class="btn btn-primary" onclick="runReconciliation()">🔍 Run Reconciliation</button>
             </div>
-            <div class="card" style="margin-bottom:16px;">
-              <div class="card-title" style="color:var(--danger);">❌ In Bank but No Receipt (<span
-                  id="unmatched-bank-count">0</span>)</div>
-              <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">These transactions appear in bank
-                statement but no matching receipt found.</p>
-              <div class="table-wrap">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Reference</th>
-                      <th>Amount</th>
-                      <th>Description</th>
-                    </tr>
-                  </thead>
-                  <tbody id="unmatched-bank-tbody"></tbody>
-                </table>
+            <div id="recon-results" style="display:none;margin-top:20px;">
+              <div class="stats-grid" id="recon-stats" style="margin-bottom:20px;"></div>
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title" style="color:var(--success);">✅ Matched Transactions (<span
+                    id="matched-count">0</span>)</div>
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Reference</th>
+                        <th>Bank Amount</th>
+                        <th>Receipt No</th>
+                        <th>Receipt Amount</th>
+                        <th>Donor</th>
+                        <th>Date</th>
+                        <th>Match</th>
+                      </tr>
+                    </thead>
+                    <tbody id="matched-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title" style="color:var(--danger);">❌ In Bank but No Receipt (<span
+                    id="unmatched-bank-count">0</span>)</div>
+                <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">These transactions appear in bank
+                  statement but no matching receipt found.</p>
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Reference</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody id="unmatched-bank-tbody"></tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Suspense section placeholder (Point 1 later) -->
-        <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🗂 Suspense Receipt Creation
-        </div>
-        <div class="admin-section-body collapsed">
-          <p style="color:var(--muted);font-size:0.85rem">Coming soon — upload Tally suspense export to auto-generate
-            receipts.</p>
+        <div
+          style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🗂 Suspense Receipt Creation</div>
+          <div class="admin-section-body collapsed">
+            <p style="color:var(--muted);font-size:0.85rem">Coming soon — upload Tally suspense export to auto-generate
+              receipts.</p>
+          </div>
         </div>
       </div>
     </div>
