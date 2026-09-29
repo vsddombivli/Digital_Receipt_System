@@ -2638,11 +2638,6 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
         const fyInput = document.getElementById('outreach-fy');
         if (fyInput && !fyInput.value) fyInput.value = currentFY();
       }
-      // Show/hide FY closed banner
-      if (id === 'new') {
-        const banner = document.getElementById('fy-closed-banner');
-        if (banner) banner.style.display = isFyClosed() ? 'block' : 'none';
-      }
       //if (id === 'recon') { document.getElementById('recon-results').style.display='none'; }
     }
     //upload payment screenshot
@@ -2874,12 +2869,34 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
       _fyStopContact = contact || '';
       updateFyStopDisplay();
       showToast(date ? `✅ Receipt generation closes after ${fmtDate(date)}` : '✅ Stop date cleared', 'success');
+      // Update banner immediately without refresh
+      const banner = document.getElementById('fy-closed-banner');
+      if (banner) {
+        banner.style.display = isFyClosed() ? 'block' : 'none';
+        const contactMsg = document.getElementById('fy-closed-contact-msg');
+        if (contactMsg) contactMsg.textContent = _fyStopContact ? `For any query contact: ${_fyStopContact}` : 'Please contact admin.';
+      }
+      
+      // Disable/enable generate button immediately
+      const genBtn = document.getElementById('generate-btn');
+      if (genBtn) genBtn.disabled = isFyClosed();
     }
     
     async function clearFyStopDate() {
       if (!confirm('This will re-open receipt generation. Confirm?')) return;
       document.getElementById('fy-stop-date-input').value = '';
       await saveFyStopDate();
+      // Update banner immediately without refresh
+      const banner = document.getElementById('fy-closed-banner');
+      if (banner) {
+        banner.style.display = isFyClosed() ? 'block' : 'none';
+        const contactMsg = document.getElementById('fy-closed-contact-msg');
+        if (contactMsg) contactMsg.textContent = _fyStopContact ? `For any query contact: ${_fyStopContact}` : 'Please contact admin.';
+      }
+      
+      // Disable/enable generate button immediately
+      const genBtn = document.getElementById('generate-btn');
+      if (genBtn) genBtn.disabled = isFyClosed();
     }
     
     function isFyClosed() {
@@ -3728,6 +3745,15 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       switchTab('new');
       buildAccountsGrid();
       await loadFySettings();
+      // Show FY closed banner immediately if applicable
+      if (isFyClosed()) {
+        const banner = document.getElementById('fy-closed-banner');
+        if (banner) {
+          banner.style.display = 'block';
+          const contactMsg = document.getElementById('fy-closed-contact-msg');
+          if (contactMsg) contactMsg.textContent = _fyStopContact ? `For any query contact: ${_fyStopContact}` : 'Please contact admin.';
+        }
+      }
       document.getElementById('donation-date').value = todayStr();
       await updateCounter();
       setInterval(updateCounter, 15000);
