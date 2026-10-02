@@ -2489,6 +2489,7 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
       if (filters.excludeInvalidDuplicate) q = q.not('status', 'in', '("invalid","duplicate")');
       if (filters.search) q = q.or(`donor_name.ilike.%${filters.search}%,receipt_id.ilike.%${filters.search}%,donor_pan.ilike.%${filters.search}%`);
       if (filters.payment) q = q.eq('payment_method', filters.payment);
+      if (filters.location) q = q.eq('volunteer_location', filters.location);
       const { data, error } = await q;
       if (error) { console.error('DB load error:', error); return localLoad(); }
       return (data || []).map(toReceipt);
@@ -3565,7 +3566,11 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
     async function renderStats() {
       document.getElementById('stats-grid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--muted)">⏳ Loading…</div>';
       //const records   = await dbLoad();
-      const records = await dbLoad({ excludeInvalidDuplicate: true });
+      const loadOpts = { excludeInvalidDuplicate: true };
+      if (currentRole === 'location_admin' && window._volunteerLocation) {
+        loadOpts.location = window._volunteerLocation;
+      }
+      const records = await dbLoad(loadOpts);
       const today = todayStr();
       const todayRec = records.filter(r => r.date === today);
       const thisMonth = records.filter(r => r.date && r.date.startsWith(new Date().toISOString().slice(0, 7)));
