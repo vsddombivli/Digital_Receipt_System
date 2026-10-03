@@ -3057,9 +3057,9 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
       // document.getElementById('r-payment').textContent = r.payment + (r.ref ? ` — Ref: ${r.ref}` : '');
       // Determine display name for receipt footer
 
-      const refName = document.getElementById('ref-volunteer-select').value.trim();
-      const loggedInName = document.getElementById('volunteer-name').value.trim();
-      document.getElementById('r-volunteer').textContent = refName || loggedInName;
+      // Use saved receipt data — r.volunteer is the original volunteer who created the receipt
+      // r.generated_by is who actually submitted it (may differ if ref volunteer was selected)
+      document.getElementById('r-volunteer').textContent = r.volunteer || r.generated_by || window._volunteerFullName || '';
       //document.getElementById('r-volunteer').textContent = r.volunteer;
 
       const watermark = document.querySelector('.receipt-watermark');
