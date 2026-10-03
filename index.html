@@ -2915,7 +2915,21 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
     let selectedPayment = 'UPI/QR';
     let lastReceipt = null;
 
-    function todayStr() { return new Date().toISOString().slice(0, 10); }
+    function indiaDateStr(date = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).formatToParts(date);
+    
+      const p = Object.fromEntries(parts.map(x => [x.type, x.value]));
+      return `${p.year}-${p.month}-${p.day}`;
+    }
+    
+    function todayStr() {
+      return indiaDateStr();
+    }
     function fmtDate(s) { if (!s) return '–'; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; }
 
     // ══════════════════════════════
@@ -3934,7 +3948,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       const records = await dbLoad(loadOpts);
       const today = todayStr();
       const todayRec = records.filter(r => r.date === today);
-      const thisMonth = records.filter(r => r.date && r.date.startsWith(new Date().toISOString().slice(0, 7)));
+      const thisMonth = records.filter(r => r.date && r.date.startsWith(todayStr().slice(0, 7)));
 
       document.getElementById('stats-grid').innerHTML = [
         ['Total Receipts', records.length, '📋'],
@@ -4836,7 +4850,9 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         let nonBlank = 0;
         _suspenseHeaders.forEach((header, colIndex) => {
           const value = values[colIndex] ?? '';
-          raw[header] = value instanceof Date ? value.toISOString() : value;
+          raw[header] = value instanceof Date
+            ? suspenseMakeISODate(value.getFullYear(), value.getMonth() + 1, value.getDate())
+            : value;
           if (String(value ?? '').trim() !== '') nonBlank++;
         });
         if (!nonBlank) continue;
@@ -4943,7 +4959,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
     
     function suspenseParseDate(value) {
       if (value instanceof Date && !Number.isNaN(value.getTime())) {
-        return value.toISOString().slice(0, 10);
+        return suspenseMakeISODate(value.getFullYear(), value.getMonth() + 1, value.getDate());
       }
       if (typeof value === 'number' && Number.isFinite(value) && XLSX?.SSF?.parse_date_code) {
         const parts = XLSX.SSF.parse_date_code(value);
