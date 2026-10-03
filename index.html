@@ -2273,6 +2273,154 @@
     </div>
   </div>
   </div><!-- /main -->
+  <!-- INSERT immediately before the existing "VIEW RECEIPT MODAL" comment. -->
+  <div class="modal-overlay" id="suspense-review-modal">
+    <div class="modal" style="max-width:960px;">
+      <div class="modal-head">
+        <h3>📝 Review Suspense Receipt <span id="suspense-review-no" class="mono"></span></h3>
+        <button class="close-btn" onclick="closeSuspenseReview()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="suspense-review-id">
+        <input type="hidden" id="suspense-review-version">
+  
+        <div id="suspense-review-alerts" style="margin-bottom:14px;"></div>
+  
+        <div class="card" style="padding:16px;margin-bottom:14px;">
+          <div class="card-title" style="font-size:1rem;margin-bottom:12px;">Original Tally Source</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Batch</label>
+              <input type="text" id="suspense-source-batch" disabled>
+            </div>
+            <div class="form-group">
+              <label>Source Row</label>
+              <input type="text" id="suspense-source-row" disabled>
+            </div>
+            <div class="form-group">
+              <label>Original Amount</label>
+              <input type="text" id="suspense-source-amount" disabled>
+            </div>
+            <div class="form-group">
+              <label>Original Date Text</label>
+              <input type="text" id="suspense-source-date-text" disabled>
+            </div>
+            <div class="form-group">
+              <label>Tally Party</label>
+              <input type="text" id="suspense-source-party" disabled>
+            </div>
+            <div class="form-group">
+              <label>Voucher No.</label>
+              <input type="text" id="suspense-source-voucher" disabled>
+            </div>
+            <div class="form-group full">
+              <label>Narration</label>
+              <textarea id="suspense-source-narration" rows="2" disabled></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Complete Source Row</label>
+              <pre id="suspense-source-json"
+                style="white-space:pre-wrap;word-break:break-word;background:#1e293b;color:#e2e8f0;padding:12px;border-radius:7px;max-height:220px;overflow:auto;font-size:0.75rem;"></pre>
+            </div>
+          </div>
+        </div>
+  
+        <div class="card" style="padding:16px;margin-bottom:14px;">
+          <div class="card-title" style="font-size:1rem;margin-bottom:12px;">Final Receipt Details</div>
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Donor Name <span class="required">*</span></label>
+              <input type="text" id="suspense-review-donor-name">
+            </div>
+            <div class="form-group full">
+              <label>Address</label>
+              <input type="text" id="suspense-review-address">
+            </div>
+            <div class="form-group">
+              <label>Mobile</label>
+              <input type="tel" id="suspense-review-mobile" maxlength="10">
+            </div>
+            <div class="form-group">
+              <label>PAN</label>
+              <input type="text" id="suspense-review-pan" maxlength="10" style="text-transform:uppercase;">
+            </div>
+            <div class="form-group full">
+              <label>Email</label>
+              <input type="email" id="suspense-review-email">
+            </div>
+            <div class="form-group">
+              <label>Donation Date <span class="required">*</span></label>
+              <input type="date" id="suspense-review-date">
+            </div>
+            <div class="form-group">
+              <label>Final Amount <span class="required">*</span></label>
+              <input type="number" id="suspense-review-amount" min="0.01" step="0.01">
+              <div class="helper-text" id="suspense-amount-help"></div>
+            </div>
+            <div class="form-group full" id="suspense-amount-reason-wrap" style="display:none;">
+              <label>Amount Change Reason <span class="required">*</span></label>
+              <input type="text" id="suspense-review-amount-reason"
+                placeholder="Required only when superadmin changes the imported amount">
+            </div>
+            <div class="form-group">
+              <label>Payment Method <span class="required">*</span></label>
+              <select id="suspense-review-payment">
+                <option value="">Select</option>
+                <option value="UPI/QR">UPI / QR</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cheque">Cheque</option>
+                <option value="Cash">Cash</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Payment / UTR / Ref No.</label>
+              <input type="text" id="suspense-review-ref">
+            </div>
+            <div class="form-group">
+              <label>Bank Name</label>
+              <input type="text" id="suspense-review-bank">
+            </div>
+            <div class="form-group">
+              <label>Branch</label>
+              <input type="text" id="suspense-review-branch">
+            </div>
+            <div class="form-group">
+              <label>Reference Volunteer</label>
+              <input type="text" id="suspense-review-volunteer" oninput="this.value=this.value.toUpperCase()">
+            </div>
+            <div class="form-group">
+              <label>Reference Location</label>
+              <input type="text" id="suspense-review-location">
+            </div>
+            <div class="form-group full">
+              <label>Fund</label>
+              <input type="text" value="ANIMAL WELFARE FUND (JIVDAYA)" disabled>
+            </div>
+            <div class="form-group full">
+              <label>Internal Notes</label>
+              <textarea id="suspense-review-internal-notes" rows="2"></textarea>
+            </div>
+            <div class="form-group full">
+              <label>Finance Review Notes</label>
+              <textarea id="suspense-review-notes" rows="2"></textarea>
+            </div>
+          </div>
+        </div>
+  
+        <div class="card" style="padding:16px;margin-bottom:14px;">
+          <div class="card-title" style="font-size:1rem;margin-bottom:12px;">Audit History</div>
+          <div id="suspense-audit-list" style="font-size:0.84rem;color:var(--muted);">Loading…</div>
+        </div>
+  
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn btn-secondary" id="suspense-save-btn" onclick="saveSuspenseReviewDraft()">💾 Save Draft</button>
+          <button class="btn btn-success" id="suspense-issue-btn" onclick="issueSuspenseReceipt()">✅ Resolve & Issue Receipt</button>
+          <button class="btn btn-danger" id="suspense-void-btn" onclick="voidSuspenseReceipt()">Void</button>
+          <button class="btn btn-secondary" onclick="closeSuspenseReview()" style="margin-left:auto;">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- VIEW RECEIPT MODAL -->
   <div class="modal-overlay" id="view-modal">
@@ -4361,6 +4509,1296 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       );
       window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
       showToast(`WhatsApp opened for ${name}`, 'success');
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SUSPENSE RECEIPTS — Tally import, review queue and S-series issue workflow
+    // Insert this complete block immediately BEFORE the existing
+    // "//  BANK RECONCILIATION" section.
+    // ═══════════════════════════════════════════════════════════════════════════════
+    
+    const SUSPENSE_FUND = 'ANIMAL WELFARE FUND (JIVDAYA)';
+    const SUSPENSE_BUCKET = 'suspense-imports';
+    const SUSPENSE_IMPORT_CHUNK_SIZE = 200;
+    const SUSPENSE_QUEUE_PAGE_SIZE = 50;
+    
+    let _suspenseWorkbook = null;
+    let _suspenseWorkbookBuffer = null;
+    let _suspenseFileHash = '';
+    let _suspenseHeaders = [];
+    let _suspenseHeaderRowIndex = 0;
+    let _suspenseSourceRows = [];
+    let _suspenseColumnMap = {};
+    let _suspenseParsedRows = [];
+    let _suspenseAnalysedFY = '';
+    let _suspenseCurrentRecord = null;
+    let _suspenseQueuePage = 1;
+    let _suspenseQueueCount = 0;
+    let _suspenseQueueReloadTimer = null;
+    let _lastSuspenseImportResult = null;
+    
+    const SUSPENSE_MAPPING_FIELDS = [
+      { key: 'date', label: 'Transaction Date' },
+      { key: 'amount', label: 'Amount' },
+      { key: 'credit', label: 'Credit / Cr Amount' },
+      { key: 'debit', label: 'Debit / Dr Amount' },
+      { key: 'dr_cr', label: 'Dr / Cr Indicator' },
+      { key: 'party', label: 'Party / Particulars / Donor' },
+      { key: 'voucher_no', label: 'Voucher Number' },
+      { key: 'voucher_type', label: 'Voucher Type' },
+      { key: 'reference', label: 'Reference / UTR' },
+      { key: 'narration', label: 'Narration / Description' },
+      { key: 'ledger', label: 'Ledger' },
+    ];
+    
+    const SUSPENSE_HEADER_ALIASES = {
+      date: ['date', 'voucher date', 'vch date', 'transaction date', 'value date', 'dated'],
+      amount: ['amount', 'transaction amount', 'net amount'],
+      credit: ['credit', 'credit amount', 'cr amount', 'deposit amount', 'deposit amt'],
+      debit: ['debit', 'debit amount', 'dr amount', 'withdrawal amount', 'withdrawal amt'],
+      dr_cr: ['dr cr', 'dr/cr', 'credit debit', 'cr dr', 'type'],
+      party: ['particulars', 'party', 'party name', 'donor', 'donor name', 'account'],
+      voucher_no: ['voucher no', 'voucher number', 'vch no', 'vch number', 'voucher id'],
+      voucher_type: ['voucher type', 'vch type'],
+      reference: ['reference', 'reference no', 'ref no', 'utr', 'transaction id', 'bank reference'],
+      narration: ['narration', 'description', 'remarks', 'transaction remarks'],
+      ledger: ['ledger', 'ledger name', 'account ledger'],
+    };
+    
+    function suspenseHasAccess() {
+      return ['finance', 'superadmin'].includes(currentRole);
+    }
+    
+    function suspenseEscape(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+    
+    function suspenseNormaliseHeader(value) {
+      return String(value ?? '')
+        .replace(/[._]/g, ' ')
+        .replace(/[^a-zA-Z0-9/ ]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+    }
+    
+    function suspenseStableStringify(value) {
+      if (value === null || typeof value !== 'object') return JSON.stringify(value);
+      if (Array.isArray(value)) return '[' + value.map(suspenseStableStringify).join(',') + ']';
+      return '{' + Object.keys(value).sort().map(key =>
+        JSON.stringify(key) + ':' + suspenseStableStringify(value[key])
+      ).join(',') + '}';
+    }
+    
+    async function suspenseSha256(input) {
+      const bytes = input instanceof ArrayBuffer
+        ? new Uint8Array(input)
+        : new TextEncoder().encode(String(input));
+      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      return Array.from(new Uint8Array(digest))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+    
+    function suspenseSafeFileName(name) {
+      const cleaned = String(name || 'tally-export.xlsx')
+        .replace(/[^a-zA-Z0-9._-]+/g, '_')
+        .replace(/_+/g, '_')
+        .slice(-120);
+      return cleaned || 'tally-export.xlsx';
+    }
+    
+    function suspenseSeriesPreview(fy) {
+      const m = String(fy || '').trim().match(/^(\d{4})-(\d{2})$/);
+      return m ? `S${m[1].slice(2)}-${m[2]}-00001` : 'S-- -- -----';
+    }
+    
+    function suspenseValidateFY(fy) {
+      const m = String(fy || '').trim().match(/^(\d{4})-(\d{2})$/);
+      if (!m) return false;
+      return (Number(m[1]) + 1) % 100 === Number(m[2]);
+    }
+    
+    function suspenseUpdateSeriesPreview() {
+      const fy = document.getElementById('suspense-fy')?.value || '';
+      const el = document.getElementById('suspense-series-preview');
+      if (el) el.textContent = suspenseSeriesPreview(fy);
+    }
+    
+    function suspenseFileChanged(input) {
+      _suspenseWorkbook = null;
+      _suspenseWorkbookBuffer = null;
+      _suspenseFileHash = '';
+      _suspenseParsedRows = [];
+      _suspenseAnalysedFY = '';
+      _suspenseSourceRows = [];
+      _suspenseHeaders = [];
+      _lastSuspenseImportResult = null;
+    
+      const fyInput = document.getElementById('suspense-fy');
+      if (fyInput && !fyInput.value) fyInput.value = currentFY();
+      suspenseUpdateSeriesPreview();
+    
+      const sheet = document.getElementById('suspense-sheet');
+      if (sheet) {
+        sheet.disabled = true;
+        sheet.innerHTML = '<option value="">Analyse file first</option>';
+      }
+      document.getElementById('suspense-preview-wrap').style.display = 'none';
+      document.getElementById('suspense-mapping-wrap').style.display = 'none';
+      document.getElementById('suspense-import-result').style.display = 'none';
+    
+      if (input?.files?.[0]) {
+        suspenseSetStatus(`Selected: ${input.files[0].name}`);
+      }
+    }
+    
+    function suspenseSetStatus(message, type = '') {
+      const el = document.getElementById('suspense-analysis-status');
+      if (!el) return;
+      el.style.display = 'block';
+      el.style.padding = '10px 12px';
+      el.style.borderRadius = '7px';
+      el.style.background = type === 'error' ? '#fdecea' : type === 'success' ? '#e6f4ea' : '#fff8f0';
+      el.style.color = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--muted)';
+      el.textContent = message;
+    }
+    
+    async function suspenseLoadWorkbook(file) {
+      if (typeof XLSX === 'undefined') throw new Error('SheetJS library is not loaded');
+      if (!file) throw new Error('Select a Tally file first');
+      if (file.size > 10 * 1024 * 1024) throw new Error('File exceeds the 10 MB limit');
+    
+      _suspenseWorkbookBuffer = await file.arrayBuffer();
+      _suspenseFileHash = await suspenseSha256(_suspenseWorkbookBuffer);
+      _suspenseWorkbook = XLSX.read(_suspenseWorkbookBuffer, {
+        type: 'array',
+        cellDates: true,
+        raw: true,
+      });
+    
+      const sheetSelect = document.getElementById('suspense-sheet');
+      sheetSelect.innerHTML = _suspenseWorkbook.SheetNames
+        .map(name => `<option value="${suspenseEscape(name)}">${suspenseEscape(name)}</option>`)
+        .join('');
+      sheetSelect.disabled = false;
+      return _suspenseWorkbook;
+    }
+    
+    function suspenseHeaderAliasScore(header, alias) {
+      if (!header || !alias) return 0;
+      if (header === alias) return 100;
+      if (header.startsWith(alias + ' ') || header.endsWith(' ' + alias)) return 80;
+      if (header.includes(alias)) return 60;
+      return 0;
+    }
+    
+    function suspenseDetectHeaderRow(rows) {
+      let bestIndex = 0;
+      let bestScore = -1;
+      const maxRows = Math.min(rows.length, 40);
+    
+      for (let i = 0; i < maxRows; i++) {
+        const normalized = (rows[i] || []).map(suspenseNormaliseHeader);
+        const fieldHits = new Set();
+        let score = 0;
+    
+        Object.entries(SUSPENSE_HEADER_ALIASES).forEach(([field, aliases]) => {
+          let fieldScore = 0;
+          normalized.forEach(header => {
+            aliases.forEach(alias => {
+              fieldScore = Math.max(fieldScore, suspenseHeaderAliasScore(header, alias));
+            });
+          });
+          if (fieldScore > 0) {
+            fieldHits.add(field);
+            score += fieldScore;
+          }
+        });
+    
+        if (fieldHits.has('date')) score += 100;
+        if (fieldHits.has('amount') || fieldHits.has('credit')) score += 150;
+        if (fieldHits.size >= 3) score += 100;
+    
+        if (score > bestScore) {
+          bestScore = score;
+          bestIndex = i;
+        }
+      }
+      return bestIndex;
+    }
+    
+    function suspenseUniqueHeaders(headerRow) {
+      const seen = new Map();
+      return (headerRow || []).map((value, index) => {
+        let base = String(value ?? '').trim();
+        if (!base) base = `Column ${index + 1}`;
+        const count = (seen.get(base) || 0) + 1;
+        seen.set(base, count);
+        return count === 1 ? base : `${base} (${count})`;
+      });
+    }
+    
+    function suspenseAutoMapColumns(headers) {
+      const mapping = {};
+      const used = new Set();
+    
+      SUSPENSE_MAPPING_FIELDS.forEach(field => {
+        let bestHeader = '';
+        let bestScore = 0;
+        headers.forEach(header => {
+          if (used.has(header)) return;
+          const normalized = suspenseNormaliseHeader(header);
+          (SUSPENSE_HEADER_ALIASES[field.key] || []).forEach(alias => {
+            const score = suspenseHeaderAliasScore(normalized, alias);
+            if (score > bestScore) {
+              bestScore = score;
+              bestHeader = header;
+            }
+          });
+        });
+        mapping[field.key] = bestScore >= 60 ? bestHeader : '';
+        if (mapping[field.key]) used.add(mapping[field.key]);
+      });
+    
+      return mapping;
+    }
+    
+    function suspenseBuildSourceRows(sheetName) {
+      const ws = _suspenseWorkbook.Sheets[sheetName];
+      if (!ws) throw new Error('Selected worksheet was not found');
+    
+      const matrix = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: true });
+      if (!matrix.length) throw new Error('Selected worksheet is empty');
+    
+      _suspenseHeaderRowIndex = suspenseDetectHeaderRow(matrix);
+      _suspenseHeaders = suspenseUniqueHeaders(matrix[_suspenseHeaderRowIndex] || []);
+      _suspenseSourceRows = [];
+    
+      for (let i = _suspenseHeaderRowIndex + 1; i < matrix.length; i++) {
+        const values = matrix[i] || [];
+        const raw = {};
+        let nonBlank = 0;
+        _suspenseHeaders.forEach((header, colIndex) => {
+          const value = values[colIndex] ?? '';
+          raw[header] = value instanceof Date ? value.toISOString() : value;
+          if (String(value ?? '').trim() !== '') nonBlank++;
+        });
+        if (!nonBlank) continue;
+        _suspenseSourceRows.push({
+          source_row_number: i + 1,
+          raw,
+        });
+      }
+    
+      _suspenseColumnMap = suspenseAutoMapColumns(_suspenseHeaders);
+      suspenseRenderMapping();
+    }
+    
+    function suspenseRenderMapping() {
+      const grid = document.getElementById('suspense-mapping-grid');
+      if (!grid) return;
+    
+      const options = ['<option value="">— Not mapped —</option>']
+        .concat(_suspenseHeaders.map(header =>
+          `<option value="${suspenseEscape(header)}">${suspenseEscape(header)}</option>`
+        )).join('');
+    
+      grid.innerHTML = SUSPENSE_MAPPING_FIELDS.map(field => `
+        <div class="form-group">
+          <label>${suspenseEscape(field.label)}</label>
+          <select data-suspense-map="${field.key}">${options}</select>
+        </div>
+      `).join('');
+    
+      grid.querySelectorAll('[data-suspense-map]').forEach(select => {
+        select.value = _suspenseColumnMap[select.dataset.suspenseMap] || '';
+      });
+      document.getElementById('suspense-mapping-wrap').style.display = 'block';
+    }
+    
+    function suspenseReadMappingFromUI() {
+      const mapping = {};
+      document.querySelectorAll('[data-suspense-map]').forEach(select => {
+        mapping[select.dataset.suspenseMap] = select.value || '';
+      });
+      return mapping;
+    }
+    
+    function suspenseGetRaw(row, key) {
+      const column = _suspenseColumnMap[key];
+      return column ? row.raw[column] : '';
+    }
+    
+    function suspenseParseNumeric(value) {
+      if (value === null || value === undefined || value === '') {
+        return { amount: null, marker: '' };
+      }
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return { amount: value, marker: value < 0 ? 'DR' : '' };
+      }
+    
+      let text = String(value).trim();
+      const upper = text.toUpperCase();
+      let marker = /\bDR\b|DEBIT/.test(upper) ? 'DR' : /\bCR\b|CREDIT/.test(upper) ? 'CR' : '';
+      const bracketNegative = /^\(.*\)$/.test(text);
+      text = text
+        .replace(/[₹,\s]/g, '')
+        .replace(/\((.*)\)/, '$1')
+        .replace(/[^0-9.+-]/g, '');
+      const num = Number.parseFloat(text);
+      if (!Number.isFinite(num)) return { amount: null, marker };
+      const amount = bracketNegative ? -Math.abs(num) : num;
+      if (amount < 0 && !marker) marker = 'DR';
+      return { amount, marker };
+    }
+    
+    function suspenseExtractAmount(row) {
+      const credit = suspenseParseNumeric(suspenseGetRaw(row, 'credit'));
+      const debit = suspenseParseNumeric(suspenseGetRaw(row, 'debit'));
+      const amount = suspenseParseNumeric(suspenseGetRaw(row, 'amount'));
+      const indicator = String(suspenseGetRaw(row, 'dr_cr') || '').trim().toUpperCase();
+    
+      if (credit.amount !== null && credit.amount > 0) {
+        return { amount: Math.abs(credit.amount), source: suspenseGetRaw(row, 'credit'), rejected: false };
+      }
+      if (debit.amount !== null && debit.amount > 0) {
+        return { amount: Math.abs(debit.amount), source: suspenseGetRaw(row, 'debit'), rejected: true, reason: 'DEBIT_OR_REVERSAL' };
+      }
+      if (amount.amount === null) {
+        return { amount: null, source: suspenseGetRaw(row, 'amount'), rejected: true, reason: 'INVALID_OR_MISSING_POSITIVE_AMOUNT' };
+      }
+      if (amount.amount <= 0 || amount.marker === 'DR' || /\bDR\b|DEBIT/.test(indicator)) {
+        return { amount: Math.abs(amount.amount || 0), source: suspenseGetRaw(row, 'amount'), rejected: true, reason: 'DEBIT_OR_REVERSAL' };
+      }
+      return { amount: Math.abs(amount.amount), source: suspenseGetRaw(row, 'amount'), rejected: false };
+    }
+    
+    function suspensePad2(value) {
+      return String(value).padStart(2, '0');
+    }
+    
+    function suspenseMakeISODate(year, month, day) {
+      year = Number(year); month = Number(month); day = Number(day);
+      if (!year || month < 1 || month > 12 || day < 1 || day > 31) return null;
+      const d = new Date(Date.UTC(year, month - 1, day));
+      if (d.getUTCFullYear() !== year || d.getUTCMonth() !== month - 1 || d.getUTCDate() !== day) return null;
+      return `${year}-${suspensePad2(month)}-${suspensePad2(day)}`;
+    }
+    
+    function suspenseParseDate(value) {
+      if (value instanceof Date && !Number.isNaN(value.getTime())) {
+        return value.toISOString().slice(0, 10);
+      }
+      if (typeof value === 'number' && Number.isFinite(value) && XLSX?.SSF?.parse_date_code) {
+        const parts = XLSX.SSF.parse_date_code(value);
+        if (parts) return suspenseMakeISODate(parts.y, parts.m, parts.d);
+      }
+    
+      const text = String(value ?? '').trim();
+      if (!text) return null;
+      let m = text.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+      if (m) return suspenseMakeISODate(m[1], m[2], m[3]);
+      m = text.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
+      if (m) {
+        let year = Number(m[3]);
+        if (year < 100) year += year >= 70 ? 1900 : 2000;
+        return suspenseMakeISODate(year, m[2], m[1]);
+      }
+      return null;
+    }
+    
+    function suspenseDateInFY(isoDate, fy) {
+      if (!isoDate || !suspenseValidateFY(fy)) return false;
+      const startYear = Number(fy.slice(0, 4));
+      return isoDate >= `${startYear}-04-01` && isoDate <= `${startYear + 1}-03-31`;
+    }
+    
+    function suspenseTextLooksGenericParty(value) {
+      const text = String(value || '').trim().toUpperCase();
+      if (!text) return true;
+      return /^(SUSPENSE|BANK|CASH|DONATION|ONLINE|UPI|NEFT|IMPS|RTGS|TOTAL|GRAND TOTAL|OPENING BALANCE|CLOSING BALANCE)$/.test(text)
+        || /SUSPENSE A\/?C|BANK A\/?C|TOTAL$/.test(text);
+    }
+    
+    function suspenseCandidateDonor(row) {
+      const party = String(suspenseGetRaw(row, 'party') || '').trim();
+      if (party && !suspenseTextLooksGenericParty(party)) return party;
+      const ledger = String(suspenseGetRaw(row, 'ledger') || '').trim();
+      if (ledger && !suspenseTextLooksGenericParty(ledger)) return ledger;
+      return null;
+    }
+    
+    function suspenseExtractReference(row) {
+      const direct = String(suspenseGetRaw(row, 'reference') || '').trim();
+      if (direct) return direct;
+    
+      const haystack = [
+        suspenseGetRaw(row, 'narration'),
+        suspenseGetRaw(row, 'party'),
+        suspenseGetRaw(row, 'ledger'),
+      ].map(v => String(v || '')).join(' ');
+    
+      const patterns = [
+        /\bUPI[\s/:_-]*([0-9]{10,18})\b/i,
+        /\b(?:IMPS|NEFT|RTGS)[\s/:_-]*([A-Z0-9]{8,30})\b/i,
+        /\bUTR[\s/:_-]*([A-Z0-9]{8,30})\b/i,
+        /\b([0-9]{12})\b/,
+      ];
+      for (const pattern of patterns) {
+        const match = haystack.match(pattern);
+        if (match) return match[1];
+      }
+      return null;
+    }
+    
+    function suspenseDetectPaymentMethod(row) {
+      const text = [
+        suspenseGetRaw(row, 'reference'),
+        suspenseGetRaw(row, 'narration'),
+        suspenseGetRaw(row, 'voucher_type'),
+        suspenseGetRaw(row, 'ledger'),
+      ].map(v => String(v || '').toUpperCase()).join(' ');
+    
+      if (/CHEQUE|CHQ/.test(text)) return 'Cheque';
+      if (/UPI|QR/.test(text)) return 'UPI/QR';
+      if (/NEFT|IMPS|RTGS|BANK TRANSFER|ECS|ACH/.test(text)) return 'Bank Transfer';
+      if (/\bCASH\b/.test(text)) return 'Cash';
+      return null;
+    }
+    
+    function suspenseRowText(row) {
+      return Object.values(row.raw || {}).map(v => String(v ?? '')).join(' ').toUpperCase();
+    }
+    
+    function suspenseNormalizeRow(sourceRow, fy) {
+      const amountInfo = suspenseExtractAmount(sourceRow);
+      const sourceDate = suspenseGetRaw(sourceRow, 'date');
+      const donationDate = suspenseParseDate(sourceDate);
+      const donorName = suspenseCandidateDonor(sourceRow);
+      const paymentRef = suspenseExtractReference(sourceRow);
+      const paymentMethod = suspenseDetectPaymentMethod(sourceRow);
+      const voucherNo = String(suspenseGetRaw(sourceRow, 'voucher_no') || '').trim() || null;
+      const voucherType = String(suspenseGetRaw(sourceRow, 'voucher_type') || '').trim() || null;
+      const ledger = String(suspenseGetRaw(sourceRow, 'ledger') || '').trim() || null;
+      const narration = String(suspenseGetRaw(sourceRow, 'narration') || '').trim() || null;
+      const partyName = String(suspenseGetRaw(sourceRow, 'party') || '').trim() || null;
+      const flags = [];
+      const missing = [];
+      const allText = suspenseRowText(sourceRow);
+    
+      if (!donorName) missing.push('donor_name');
+      if (!donationDate) missing.push('donation_date');
+      if (!paymentMethod) missing.push('payment_method');
+      if (!paymentRef && !voucherNo) missing.push('trace_reference');
+      if (donationDate && !suspenseDateInFY(donationDate, fy)) flags.push('FY_MISMATCH');
+      if (/GRAND TOTAL|OPENING BALANCE|CLOSING BALANCE|^TOTAL\b|\bTOTAL$/.test(allText)) flags.push('POSSIBLE_TOTAL_ROW');
+      if (amountInfo.reason) flags.push(amountInfo.reason);
+    
+      const eligible = Boolean(amountInfo.amount && amountInfo.amount > 0 && !amountInfo.rejected && !flags.includes('POSSIBLE_TOTAL_ROW'));
+      const reviewState = missing.length === 0 && !flags.includes('FY_MISMATCH')
+        ? 'ready_to_issue'
+        : 'needs_review';
+    
+      return {
+        source_row_number: sourceRow.source_row_number,
+        source_row_data: sourceRow.raw,
+        source_date_text: String(sourceDate ?? ''),
+        source_amount_text: String(amountInfo.source ?? ''),
+        donation_date: donationDate,
+        source_amount: amountInfo.amount,
+        final_amount: amountInfo.amount,
+        fund_name: SUSPENSE_FUND,
+        donor_name: donorName,
+        donor_address: null,
+        donor_mobile: null,
+        donor_email: null,
+        donor_pan: null,
+        payment_method: paymentMethod,
+        payment_ref: paymentRef,
+        bank_name: null,
+        branch_name: null,
+        tally_voucher_no: voucherNo,
+        tally_voucher_type: voucherType,
+        tally_ledger: ledger,
+        tally_party_name: partyName,
+        tally_narration: narration,
+        reference_volunteer: null,
+        reference_location: null,
+        validation_flags: flags,
+        parser_confidence: {
+          amount: amountInfo.amount ? 1 : 0,
+          date: donationDate ? 0.9 : 0,
+          donor: donorName ? 0.65 : 0,
+          reference: paymentRef ? 0.8 : 0,
+        },
+        internal_notes: null,
+        missing_fields: missing,
+        review_state: reviewState,
+        eligible,
+        selected: eligible,
+        rejection_reason: eligible ? null : amountInfo.reason || (flags.includes('POSSIBLE_TOTAL_ROW') ? 'POSSIBLE_TOTAL_ROW' : 'NOT_ELIGIBLE'),
+      };
+    }
+    
+    async function analyseSuspenseFile() {
+      if (!suspenseHasAccess()) {
+        showToast('Finance access is required', 'error');
+        return;
+      }
+    
+      const file = document.getElementById('suspense-file')?.files?.[0];
+      const fy = document.getElementById('suspense-fy')?.value.trim();
+      if (!file) { showToast('Select a Tally file', 'error'); return; }
+      if (!suspenseValidateFY(fy)) { showToast('Enter a valid financial year such as 2026-27', 'error'); return; }
+    
+      const btn = document.getElementById('suspense-analyse-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Analysing…';
+      suspenseUpdateSeriesPreview();
+      suspenseSetStatus('Reading workbook and calculating file hash…');
+    
+      try {
+        if (!_suspenseWorkbook) await suspenseLoadWorkbook(file);
+        const sheetName = document.getElementById('suspense-sheet').value || _suspenseWorkbook.SheetNames[0];
+        suspenseBuildSourceRows(sheetName);
+        await suspenseBuildParsedRows();
+        suspenseSetStatus(`Analysis complete. ${_suspenseSourceRows.length} non-blank source rows found.`, 'success');
+      } catch (error) {
+        console.error(error);
+        suspenseSetStatus(error.message || 'Unable to analyse file', 'error');
+        showToast(error.message || 'Unable to analyse file', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🔍 Analyse File';
+      }
+    }
+    
+    async function suspenseSheetChanged() {
+      if (!_suspenseWorkbook) return;
+      try {
+        suspenseBuildSourceRows(document.getElementById('suspense-sheet').value);
+        await suspenseBuildParsedRows();
+      } catch (error) {
+        showToast(error.message || 'Unable to read worksheet', 'error');
+      }
+    }
+    
+    async function applySuspenseMapping() {
+      _suspenseColumnMap = suspenseReadMappingFromUI();
+      if (!_suspenseColumnMap.amount && !_suspenseColumnMap.credit) {
+        showToast('Map either Amount or Credit Amount', 'error');
+        return;
+      }
+      await suspenseBuildParsedRows();
+    }
+    
+    async function suspenseBuildParsedRows() {
+      const fy = document.getElementById('suspense-fy').value.trim();
+      _suspenseColumnMap = suspenseReadMappingFromUI();
+      _suspenseParsedRows = _suspenseSourceRows.map(row => suspenseNormalizeRow(row, fy));
+      _suspenseAnalysedFY = fy;
+      suspenseRenderPreview();
+    }
+    
+    function suspenseWarningBadges(row) {
+      const warnings = [...(row.validation_flags || []), ...(row.missing_fields || []).map(x => `MISSING_${x.toUpperCase()}`)];
+      if (!warnings.length) return '<span style="color:var(--success)">Ready</span>';
+      return warnings.map(w => `<span class="badge" style="background:#fff3e0;color:#9a5b00;margin:1px;">${suspenseEscape(w)}</span>`).join('');
+    }
+    
+    function suspenseRenderPreview() {
+      const tbody = document.getElementById('suspense-preview-tbody');
+      const eligible = _suspenseParsedRows.filter(r => r.eligible);
+      const needsReview = eligible.filter(r => r.review_state === 'needs_review');
+      const ready = eligible.filter(r => r.review_state === 'ready_to_issue');
+      const rejected = _suspenseParsedRows.filter(r => !r.eligible);
+      const total = eligible.reduce((sum, row) => sum + Number(row.source_amount || 0), 0);
+    
+      document.getElementById('suspense-analysis-stats').innerHTML = [
+        ['Source Rows', _suspenseParsedRows.length, '📄'],
+        ['Eligible', eligible.length, '✅'],
+        ['Ready', ready.length, '🟢'],
+        ['Needs Review', needsReview.length, '🟠'],
+        ['Rejected', rejected.length, '❌'],
+        ['Eligible Amount', `₹${total.toLocaleString('en-IN')}`, '💰'],
+      ].map(([label, value, icon]) => `
+        <div class="stat-card"><div style="font-size:1.3rem">${icon}</div>
+          <div class="stat-val" style="font-size:1.2rem">${value}</div>
+          <div class="stat-label">${label}</div>
+        </div>`).join('');
+    
+      tbody.innerHTML = _suspenseParsedRows.map(row => `
+        <tr style="${row.eligible ? '' : 'background:#fff5f5;color:var(--muted);'}">
+          <td><input type="checkbox" ${row.selected ? 'checked' : ''} ${row.eligible ? '' : 'disabled'}
+            onchange="setSuspenseRowSelected(${row.source_row_number},this.checked)"></td>
+          <td class="mono">${row.source_row_number}</td>
+          <td>${suspenseEscape(row.donation_date || 'Unclear')}</td>
+          <td>${suspenseEscape(row.donor_name || 'Unidentified Donor')}</td>
+          <td style="text-align:right">${row.source_amount ? '₹' + Number(row.source_amount).toLocaleString('en-IN') : '—'}</td>
+          <td class="mono">${suspenseEscape(row.payment_ref || '—')}</td>
+          <td class="mono">${suspenseEscape(row.tally_voucher_no || '—')}</td>
+          <td style="min-width:180px">${suspenseWarningBadges(row)}</td>
+        </tr>
+      `).join('');
+    
+      document.getElementById('suspense-preview-wrap').style.display = 'block';
+      document.getElementById('suspense-preview-note').textContent =
+        `${eligible.length} eligible rows are selected by default. Rejected debit, total or amount-less rows will not receive S numbers.`;
+      suspenseUpdateCreateButton();
+    }
+    
+    function setSuspenseRowSelected(rowNumber, checked) {
+      const row = _suspenseParsedRows.find(r => r.source_row_number === Number(rowNumber));
+      if (row?.eligible) row.selected = Boolean(checked);
+      suspenseUpdateCreateButton();
+    }
+    
+    function toggleAllSuspenseRows(checked) {
+      _suspenseParsedRows.forEach(row => {
+        if (row.eligible) row.selected = Boolean(checked);
+      });
+      suspenseRenderPreview();
+    }
+    
+    function suspenseUpdateCreateButton() {
+      const selected = _suspenseParsedRows.filter(r => r.eligible && r.selected);
+      const btn = document.getElementById('suspense-create-btn');
+      if (!btn) return;
+      btn.disabled = selected.length === 0;
+      btn.textContent = selected.length
+        ? `Create ${selected.length} Suspense Receipt${selected.length === 1 ? '' : 's'}`
+        : 'No Eligible Rows Selected';
+    }
+    
+    function downloadSuspensePreview() {
+      if (!_suspenseParsedRows.length) { showToast('Analyse a file first', 'error'); return; }
+      const rows = _suspenseParsedRows.map(row => ({
+        'Import': row.selected ? 'YES' : 'NO',
+        'Source Row': row.source_row_number,
+        'Date': row.donation_date || '',
+        'Candidate Donor': row.donor_name || '',
+        'Amount': row.source_amount || '',
+        'Payment Method': row.payment_method || '',
+        'Reference': row.payment_ref || '',
+        'Voucher': row.tally_voucher_no || '',
+        'Review State': row.review_state,
+        'Warnings': [...row.validation_flags, ...row.missing_fields.map(x => `MISSING_${x}`)].join(', '),
+        'Rejection Reason': row.rejection_reason || '',
+      }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Suspense Preview');
+      XLSX.writeFile(wb, `VSD_Suspense_Preview_${todayStr()}.xlsx`);
+    }
+    
+    async function suspenseInvoke(functionName, body) {
+      if (!isDB()) throw new Error('Supabase is not connected');
+      const { data, error } = await _supa.functions.invoke(functionName, { body });
+      if (error) {
+        let message = error.message || `Function ${functionName} failed`;
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            const responseBody = await error.context.json();
+            message = responseBody?.error || responseBody?.message || message;
+          }
+        } catch (_) { /* keep original message */ }
+        throw new Error(message);
+      }
+      if (!data?.ok) throw new Error(data?.error || `Function ${functionName} failed`);
+      return data.data;
+    }
+    
+    function suspenseImportPayloadRow(row) {
+      return {
+        source_row_number: row.source_row_number,
+        source_row_data: row.source_row_data,
+        source_date_text: row.source_date_text,
+        source_amount_text: row.source_amount_text,
+        donation_date: row.donation_date,
+        source_amount: row.source_amount,
+        donor_name: row.donor_name,
+        donor_address: row.donor_address,
+        donor_mobile: row.donor_mobile,
+        donor_email: row.donor_email,
+        donor_pan: row.donor_pan,
+        payment_method: row.payment_method,
+        payment_ref: row.payment_ref,
+        bank_name: row.bank_name,
+        branch_name: row.branch_name,
+        tally_voucher_no: row.tally_voucher_no,
+        tally_voucher_type: row.tally_voucher_type,
+        tally_ledger: row.tally_ledger,
+        tally_party_name: row.tally_party_name,
+        tally_narration: row.tally_narration,
+        reference_volunteer: row.reference_volunteer,
+        reference_location: row.reference_location,
+        validation_flags: row.validation_flags,
+        parser_confidence: row.parser_confidence,
+        internal_notes: row.internal_notes,
+        force_reject_reason: row.eligible
+          ? (row.selected ? null : 'USER_EXCLUDED')
+          : (row.rejection_reason || 'NOT_ELIGIBLE'),
+      };
+    }
+    
+    async function submitSuspenseImport() {
+      if (!suspenseHasAccess()) { showToast('Finance access is required', 'error'); return; }
+      if (!isDB()) { showToast('Supabase is not connected', 'error'); return; }
+    
+      const file = document.getElementById('suspense-file')?.files?.[0];
+      const fy = document.getElementById('suspense-fy')?.value.trim();
+      const selected = _suspenseParsedRows.filter(row => row.eligible && row.selected);
+      if (!file || !_suspenseWorkbook || !_suspenseFileHash) { showToast('Analyse the file first', 'error'); return; }
+      if (!suspenseValidateFY(fy)) { showToast('Enter a valid financial year', 'error'); return; }
+      if (_suspenseAnalysedFY !== fy) {
+        showToast('Financial year changed after analysis. Rebuild the preview before importing.', 'error');
+        return;
+      }
+      if (!selected.length) { showToast('Select at least one eligible row', 'error'); return; }
+    
+      const total = selected.reduce((sum, row) => sum + Number(row.source_amount || 0), 0);
+      if (!confirm(`Create ${selected.length} S-series receipts for FY ${fy}?\n\nTotal amount: ₹${total.toLocaleString('en-IN')}\nFund: ${SUSPENSE_FUND}`)) return;
+    
+      const btn = document.getElementById('suspense-create-btn');
+      const batchId = crypto.randomUUID();
+      const safeName = suspenseSafeFileName(file.name);
+      const storagePath = `${fy}/${batchId}/${Date.now()}_${safeName}`;
+    
+      btn.disabled = true;
+      btn.textContent = '⏳ Uploading source file…';
+    
+      try {
+        const { error: uploadError } = await _supa.storage
+          .from(SUSPENSE_BUCKET)
+          .upload(storagePath, file, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: file.type || 'application/octet-stream',
+          });
+        if (uploadError) throw new Error(`Source file upload failed: ${uploadError.message}`);
+    
+        const batch = {
+          id: batchId,
+          file_name: file.name,
+          file_hash: _suspenseFileHash,
+          storage_path: storagePath,
+          financial_year: fy,
+          sheet_name: document.getElementById('suspense-sheet').value,
+          column_mapping: _suspenseColumnMap,
+          source_system: 'tally',
+          batch_note: document.getElementById('suspense-batch-note').value.trim() || null,
+          total_rows: _suspenseParsedRows.length,
+        };
+    
+        // Send every analysed row so the batch report also preserves rejected and
+        // manually excluded rows. Only selected eligible rows omit force_reject_reason.
+        const payloadRows = _suspenseParsedRows.map(suspenseImportPayloadRow);
+        let finalResult = null;
+        for (let offset = 0; offset < payloadRows.length; offset += SUSPENSE_IMPORT_CHUNK_SIZE) {
+          const chunk = payloadRows.slice(offset, offset + SUSPENSE_IMPORT_CHUNK_SIZE);
+          const finalize = offset + chunk.length >= payloadRows.length;
+          btn.textContent = `⏳ Creating ${Math.min(offset + chunk.length, payloadRows.length)} / ${payloadRows.length}…`;
+          finalResult = await suspenseInvoke('suspense-import', { batch, rows: chunk, finalize });
+        }
+    
+        _lastSuspenseImportResult = finalResult;
+        suspenseRenderImportResult(finalResult);
+        showToast(`✅ ${finalResult.created_count} suspense receipts created`, 'success');
+        await loadSuspenseDashboard();
+      } catch (error) {
+        console.error(error);
+        showToast(error.message || 'Suspense import failed', 'error');
+        suspenseSetStatus(error.message || 'Suspense import failed', 'error');
+      } finally {
+        btn.disabled = false;
+        suspenseUpdateCreateButton();
+      }
+    }
+    
+    function suspenseRenderImportResult(result) {
+      const el = document.getElementById('suspense-import-result');
+      const first = result?.first_receipt_no || '—';
+      const last = result?.last_receipt_no || '—';
+      el.style.display = 'block';
+      el.innerHTML = `
+        <div class="card" style="padding:16px;border-color:var(--success);">
+          <div class="card-title" style="color:var(--success);font-size:1rem;">✅ Suspense Import Complete</div>
+          <div class="stats-grid" style="margin-bottom:12px;">
+            <div class="stat-card"><div class="stat-val">${Number(result.created_count || 0)}</div><div class="stat-label">Created</div></div>
+            <div class="stat-card"><div class="stat-val">${Number(result.duplicate_count || 0)}</div><div class="stat-label">Duplicates</div></div>
+            <div class="stat-card"><div class="stat-val">${Number(result.rejected_count || 0)}</div><div class="stat-label">Rejected</div></div>
+          </div>
+          <div style="font-size:0.86rem;line-height:1.7;">
+            <strong>Batch:</strong> <span class="mono">${suspenseEscape(result.batch_id)}</span><br>
+            <strong>First S receipt:</strong> <span class="mono">${suspenseEscape(first)}</span><br>
+            <strong>Last S receipt:</strong> <span class="mono">${suspenseEscape(last)}</span>
+          </div>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="btn btn-secondary btn-sm" onclick="downloadSuspenseBatchResult('${suspenseEscape(result.batch_id)}')">⬇️ Download Result</button>
+            <button class="btn btn-primary btn-sm" onclick="openSuspenseQueueSection()">Open Review Queue</button>
+          </div>
+        </div>`;
+    }
+    
+    function openSuspenseQueueSection() {
+      const body = document.getElementById('suspense-queue-section-body');
+      if (!body) return;
+      body.classList.remove('collapsed');
+      body.previousElementSibling?.classList.remove('collapsed');
+      body.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      loadSuspenseDashboard();
+    }
+    
+    function resetSuspenseImport() {
+      const file = document.getElementById('suspense-file');
+      if (file) file.value = '';
+      const note = document.getElementById('suspense-batch-note');
+      if (note) note.value = '';
+      const status = document.getElementById('suspense-analysis-status');
+      if (status) status.style.display = 'none';
+      document.getElementById('suspense-mapping-wrap').style.display = 'none';
+      document.getElementById('suspense-preview-wrap').style.display = 'none';
+      document.getElementById('suspense-import-result').style.display = 'none';
+      _suspenseWorkbook = null;
+      _suspenseWorkbookBuffer = null;
+      _suspenseFileHash = '';
+      _suspenseHeaders = [];
+      _suspenseSourceRows = [];
+      _suspenseColumnMap = {};
+      _suspenseParsedRows = [];
+      _suspenseAnalysedFY = '';
+      _lastSuspenseImportResult = null;
+      const sheet = document.getElementById('suspense-sheet');
+      if (sheet) {
+        sheet.disabled = true;
+        sheet.innerHTML = '<option value="">Select file first</option>';
+      }
+    }
+    
+    function scheduleSuspenseQueueReload() {
+      clearTimeout(_suspenseQueueReloadTimer);
+      _suspenseQueueReloadTimer = setTimeout(() => loadSuspenseQueue(1), 350);
+    }
+    
+    async function loadSuspenseDashboard() {
+      if (!suspenseHasAccess() || !isDB()) return;
+      const fyInput = document.getElementById('suspense-filter-fy');
+      const importFy = document.getElementById('suspense-fy');
+      if (fyInput && !fyInput.value) fyInput.value = currentFY();
+      if (importFy && !importFy.value) importFy.value = currentFY();
+      suspenseUpdateSeriesPreview();
+    
+      await Promise.allSettled([
+        loadSuspenseQueueStats(),
+        loadSuspenseQueue(1),
+        loadSuspenseHistory(),
+      ]);
+    }
+    
+    async function loadSuspenseQueueStats() {
+      const fy = document.getElementById('suspense-filter-fy')?.value.trim() || currentFY();
+      const el = document.getElementById('suspense-queue-stats');
+      if (!el) return;
+      el.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);">⏳ Loading…</div>';
+    
+      const { data, error } = await _supa.rpc('get_suspense_dashboard_stats', { p_financial_year: fy });
+      if (error) {
+        el.innerHTML = `<div style="grid-column:1/-1;color:var(--danger);">${suspenseEscape(error.message)}</div>`;
+        return;
+      }
+      const stats = data || {};
+      el.innerHTML = [
+        ['Open', stats.open_count || 0, '📂'],
+        ['Needs Review', stats.needs_review_count || 0, '🟠'],
+        ['Ready', stats.ready_to_issue_count || 0, '🟢'],
+        ['Issued', stats.issued_count || 0, '✅'],
+        ['Voided', stats.void_count || 0, '🚫'],
+        ['Open Amount', `₹${Number(stats.open_amount || 0).toLocaleString('en-IN')}`, '💰'],
+      ].map(([label, value, icon]) => `
+        <div class="stat-card"><div style="font-size:1.3rem">${icon}</div>
+          <div class="stat-val" style="font-size:1.2rem">${value}</div>
+          <div class="stat-label">${label}</div>
+        </div>`).join('');
+    }
+    
+    function suspenseSanitizeSearch(value) {
+      return String(value || '').trim().replace(/[,%()]/g, ' ').replace(/\s+/g, ' ');
+    }
+    
+    async function loadSuspenseQueue(page = 1) {
+      if (!suspenseHasAccess() || !isDB()) return;
+      _suspenseQueuePage = page;
+      const tbody = document.getElementById('suspense-queue-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);">⏳ Loading…</td></tr>';
+    
+      const fy = document.getElementById('suspense-filter-fy')?.value.trim() || currentFY();
+      const status = document.getElementById('suspense-filter-status')?.value || '';
+      const review = document.getElementById('suspense-filter-review')?.value || '';
+      const search = suspenseSanitizeSearch(document.getElementById('suspense-filter-search')?.value);
+      const from = (page - 1) * SUSPENSE_QUEUE_PAGE_SIZE;
+      const to = from + SUSPENSE_QUEUE_PAGE_SIZE - 1;
+    
+      let query = _supa
+        .from('suspense_receipts')
+        .select('id,receipt_no,financial_year,status,review_state,version,donation_date,final_amount,donor_name,payment_ref,tally_voucher_no,validation_flags,missing_fields,created_at,issued_receipt_no', { count: 'exact' })
+        .eq('financial_year', fy)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+    
+      if (status) query = query.eq('status', status);
+      if (review) query = query.eq('review_state', review);
+      if (search) {
+        query = query.or(`receipt_no.ilike.%${search}%,donor_name.ilike.%${search}%,payment_ref.ilike.%${search}%,tally_voucher_no.ilike.%${search}%`);
+      }
+    
+      const { data, error, count } = await query;
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--danger);">${suspenseEscape(error.message)}</td></tr>`;
+        return;
+      }
+    
+      _suspenseQueueCount = count || 0;
+      const rows = data || [];
+      tbody.innerHTML = rows.length ? rows.map(row => `
+        <tr>
+          <td class="mono"><strong>${suspenseEscape(row.receipt_no)}</strong></td>
+          <td>${row.donation_date ? fmtDate(row.donation_date) : '<span style="color:var(--danger)">Unclear</span>'}</td>
+          <td>${suspenseEscape(row.donor_name || 'Unidentified Donor')}</td>
+          <td style="text-align:right">₹${Number(row.final_amount || 0).toLocaleString('en-IN')}</td>
+          <td class="mono">${suspenseEscape(row.payment_ref || '—')}</td>
+          <td class="mono">${suspenseEscape(row.tally_voucher_no || '—')}</td>
+          <td>${row.review_state === 'ready_to_issue'
+            ? '<span class="badge" style="background:#e6f4ea;color:var(--success)">Ready</span>'
+            : '<span class="badge" style="background:#fff3e0;color:#9a5b00">Needs Review</span>'}</td>
+          <td>${row.status === 'issued'
+            ? '<span class="badge" style="background:#e6f4ea;color:var(--success)">Issued</span>'
+            : row.status === 'void'
+              ? '<span class="badge" style="background:#fdecea;color:var(--danger)">Void</span>'
+              : '<span class="badge" style="background:#e3f2fd;color:#1565c0">Open</span>'}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openSuspenseReview('${row.id}')">Review</button>
+            ${row.status === 'issued' && row.issued_receipt_no
+              ? `<button class="btn btn-secondary btn-sm" onclick="viewReceipt('${suspenseEscape(row.issued_receipt_no)}')">Final</button>`
+              : ''}
+          </td>
+        </tr>`).join('')
+        : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px;">No suspense receipts found.</td></tr>';
+    
+      suspenseRenderQueuePagination();
+    }
+    
+    function suspenseRenderQueuePagination() {
+      const el = document.getElementById('suspense-queue-pagination');
+      if (!el) return;
+      const pages = Math.max(1, Math.ceil(_suspenseQueueCount / SUSPENSE_QUEUE_PAGE_SIZE));
+      el.innerHTML = `
+        <button class="btn btn-secondary btn-sm" ${_suspenseQueuePage <= 1 ? 'disabled' : ''}
+          onclick="loadSuspenseQueue(${_suspenseQueuePage - 1})">← Previous</button>
+        <span style="align-self:center;color:var(--muted);font-size:0.85rem;">Page ${_suspenseQueuePage} of ${pages} · ${_suspenseQueueCount} records</span>
+        <button class="btn btn-secondary btn-sm" ${_suspenseQueuePage >= pages ? 'disabled' : ''}
+          onclick="loadSuspenseQueue(${_suspenseQueuePage + 1})">Next →</button>`;
+    }
+    
+    async function loadSuspenseHistory() {
+      if (!suspenseHasAccess() || !isDB()) return;
+      const tbody = document.getElementById('suspense-history-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);">⏳ Loading…</td></tr>';
+    
+      const { data, error } = await _supa
+        .from('suspense_import_batches')
+        .select('*')
+        .order('uploaded_at', { ascending: false })
+        .limit(50);
+    
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--danger);">${suspenseEscape(error.message)}</td></tr>`;
+        return;
+      }
+    
+      tbody.innerHTML = (data || []).length ? data.map(batch => `
+        <tr>
+          <td>${batch.uploaded_at ? new Date(batch.uploaded_at).toLocaleString('en-IN') : '—'}</td>
+          <td style="max-width:180px;word-break:break-word;">${suspenseEscape(batch.file_name)}</td>
+          <td class="mono">${suspenseEscape(batch.financial_year)}</td>
+          <td>${suspenseEscape(batch.uploaded_by_email || '—')}</td>
+          <td>${batch.created_count || 0}</td>
+          <td>${batch.duplicate_count || 0}</td>
+          <td>${batch.rejected_count || 0}</td>
+          <td><span class="badge" style="background:#f3f4f6;color:#374151">${suspenseEscape(batch.status)}</span></td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-secondary btn-sm" onclick="openSuspenseSourceFile('${batch.id}')">File</button>
+            <button class="btn btn-secondary btn-sm" onclick="downloadSuspenseBatchResult('${batch.id}')">Report</button>
+          </td>
+        </tr>`).join('')
+        : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px;">No suspense imports yet.</td></tr>';
+    }
+    
+    async function openSuspenseSourceFile(batchId) {
+      const { data: batch, error } = await _supa
+        .from('suspense_import_batches')
+        .select('storage_path')
+        .eq('id', batchId)
+        .single();
+      if (error || !batch?.storage_path) { showToast('Original file not found', 'error'); return; }
+    
+      const { data, error: signedError } = await _supa.storage
+        .from(SUSPENSE_BUCKET)
+        .createSignedUrl(batch.storage_path, 120);
+      if (signedError || !data?.signedUrl) { showToast('Unable to open source file', 'error'); return; }
+      window.open(data.signedUrl, '_blank', 'noopener');
+    }
+    
+    async function downloadSuspenseBatchResult(batchId) {
+      const { data, error } = await _supa
+        .from('suspense_import_row_results')
+        .select('source_row_number,row_status,receipt_no,errors,warnings,source_row_data,processed_at')
+        .eq('batch_id', batchId)
+        .order('source_row_number');
+      if (error) { showToast(error.message, 'error'); return; }
+    
+      const rows = (data || []).map(row => ({
+        'Source Row': row.source_row_number,
+        'Result': row.row_status,
+        'Receipt No': row.receipt_no || '',
+        'Errors': (row.errors || []).join(' | '),
+        'Warnings': (row.warnings || []).join(' | '),
+        'Processed At': row.processed_at || '',
+        'Source JSON': JSON.stringify(row.source_row_data || {}),
+      }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Import Result');
+      XLSX.writeFile(wb, `VSD_Suspense_Import_${batchId.slice(0, 8)}.xlsx`);
+    }
+    
+    async function openSuspenseReview(id) {
+      if (!suspenseHasAccess()) return;
+      const { data, error } = await _supa
+        .from('suspense_receipts')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (error || !data) { showToast(error?.message || 'Suspense receipt not found', 'error'); return; }
+    
+      _suspenseCurrentRecord = data;
+      document.getElementById('suspense-review-id').value = data.id;
+      document.getElementById('suspense-review-version').value = data.version;
+      document.getElementById('suspense-review-no').textContent = data.receipt_no;
+      document.getElementById('suspense-source-batch').value = data.batch_id || '';
+      document.getElementById('suspense-source-row').value = data.source_row_number || '';
+      document.getElementById('suspense-source-amount').value = `₹${Number(data.source_amount || 0).toLocaleString('en-IN')}`;
+      document.getElementById('suspense-source-date-text').value = data.source_date_text || '';
+      document.getElementById('suspense-source-party').value = data.tally_party_name || '';
+      document.getElementById('suspense-source-voucher').value = data.tally_voucher_no || '';
+      document.getElementById('suspense-source-narration').value = data.tally_narration || '';
+      document.getElementById('suspense-source-json').textContent = JSON.stringify(data.source_row_data || {}, null, 2);
+    
+      document.getElementById('suspense-review-donor-name').value = data.donor_name || '';
+      document.getElementById('suspense-review-address').value = data.donor_address || '';
+      document.getElementById('suspense-review-mobile').value = data.donor_mobile || '';
+      document.getElementById('suspense-review-pan').value = data.donor_pan || '';
+      document.getElementById('suspense-review-email').value = data.donor_email || '';
+      document.getElementById('suspense-review-date').value = data.donation_date || '';
+      document.getElementById('suspense-review-amount').value = Number(data.final_amount || 0).toFixed(2);
+      document.getElementById('suspense-review-payment').value = data.payment_method || '';
+      document.getElementById('suspense-review-ref').value = data.payment_ref || '';
+      document.getElementById('suspense-review-bank').value = data.bank_name || '';
+      document.getElementById('suspense-review-branch').value = data.branch_name || '';
+      document.getElementById('suspense-review-volunteer').value = data.reference_volunteer || '';
+      document.getElementById('suspense-review-location').value = data.reference_location || '';
+      document.getElementById('suspense-review-internal-notes').value = data.internal_notes || '';
+      document.getElementById('suspense-review-notes').value = data.review_notes || '';
+      document.getElementById('suspense-review-amount-reason').value = '';
+    
+      const amountInput = document.getElementById('suspense-review-amount');
+      amountInput.disabled = currentRole !== 'superadmin' || data.status !== 'open';
+      document.getElementById('suspense-amount-reason-wrap').style.display = currentRole === 'superadmin' && data.status === 'open' ? '' : 'none';
+      document.getElementById('suspense-amount-help').textContent = currentRole === 'superadmin'
+        ? 'Changing amount requires a reason and creates an audit entry.'
+        : 'Only superadmin can change the imported amount.';
+    
+      const flags = data.validation_flags || [];
+      const missing = data.missing_fields || [];
+      document.getElementById('suspense-review-alerts').innerHTML = `
+        ${missing.length ? `<div style="padding:10px 12px;background:#fff3e0;border:1px solid #ffcc80;border-radius:7px;margin-bottom:8px;"><strong>Missing:</strong> ${suspenseEscape(missing.join(', '))}</div>` : ''}
+        ${flags.length ? `<div style="padding:10px 12px;background:#fdecea;border:1px solid #f5c6cb;border-radius:7px;"><strong>Warnings:</strong> ${suspenseEscape(flags.join(', '))}</div>` : ''}
+        ${!missing.length && !flags.length ? '<div style="padding:10px 12px;background:#e6f4ea;border:1px solid #a5d6a7;border-radius:7px;color:var(--success);">Ready for final review and issue.</div>' : ''}`;
+    
+      const isOpen = data.status === 'open';
+      const editableIds = [
+        'suspense-review-donor-name', 'suspense-review-address',
+        'suspense-review-mobile', 'suspense-review-pan', 'suspense-review-email',
+        'suspense-review-date', 'suspense-review-payment', 'suspense-review-ref',
+        'suspense-review-bank', 'suspense-review-branch',
+        'suspense-review-volunteer', 'suspense-review-location',
+        'suspense-review-internal-notes', 'suspense-review-notes'
+      ];
+      editableIds.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) field.disabled = !isOpen;
+      });
+      amountInput.disabled = !isOpen || currentRole !== 'superadmin';
+      document.getElementById('suspense-review-amount-reason').disabled = !isOpen || currentRole !== 'superadmin';
+    
+      document.getElementById('suspense-save-btn').style.display = isOpen ? '' : 'none';
+      document.getElementById('suspense-issue-btn').style.display = isOpen ? '' : 'none';
+      document.getElementById('suspense-void-btn').style.display = isOpen ? '' : 'none';
+    
+      document.getElementById('suspense-review-modal').classList.add('show');
+      await loadSuspenseAudit(id);
+    }
+    
+    function closeSuspenseReview() {
+      document.getElementById('suspense-review-modal').classList.remove('show');
+      _suspenseCurrentRecord = null;
+    }
+    
+    function collectSuspenseReviewPatch() {
+      const originalAmount = Number(_suspenseCurrentRecord?.final_amount || 0);
+      const finalAmount = Number(document.getElementById('suspense-review-amount').value || 0);
+      return {
+        donor_name: document.getElementById('suspense-review-donor-name').value.trim(),
+        donor_address: document.getElementById('suspense-review-address').value.trim(),
+        donor_mobile: document.getElementById('suspense-review-mobile').value.trim(),
+        donor_pan: document.getElementById('suspense-review-pan').value.trim().toUpperCase(),
+        donor_email: document.getElementById('suspense-review-email').value.trim(),
+        donation_date: document.getElementById('suspense-review-date').value,
+        final_amount: finalAmount,
+        amount_change_reason: finalAmount !== originalAmount
+          ? document.getElementById('suspense-review-amount-reason').value.trim()
+          : '',
+        payment_method: document.getElementById('suspense-review-payment').value,
+        payment_ref: document.getElementById('suspense-review-ref').value.trim(),
+        bank_name: document.getElementById('suspense-review-bank').value.trim(),
+        branch_name: document.getElementById('suspense-review-branch').value.trim(),
+        reference_volunteer: document.getElementById('suspense-review-volunteer').value.trim().toUpperCase(),
+        reference_location: document.getElementById('suspense-review-location').value.trim(),
+        internal_notes: document.getElementById('suspense-review-internal-notes').value.trim(),
+        review_notes: document.getElementById('suspense-review-notes').value.trim(),
+        fund_name: SUSPENSE_FUND,
+      };
+    }
+    
+    function validateSuspenseReviewPatch(patch, forIssue = false) {
+      if (patch.donor_mobile && !/^[6-9]\d{9}$/.test(patch.donor_mobile)) throw new Error('Mobile must be 10 digits starting with 6-9');
+      if (patch.donor_pan && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(patch.donor_pan)) throw new Error('Invalid PAN format');
+      if (patch.donor_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(patch.donor_email)) throw new Error('Invalid email address');
+      if (!patch.final_amount || patch.final_amount <= 0) throw new Error('Final amount must be positive');
+      if (forIssue) {
+        if (!patch.donor_name) throw new Error('Donor name is required before issue');
+        if (!patch.donation_date) throw new Error('Donation date is required before issue');
+        if (!patch.payment_method) throw new Error('Payment method is required before issue');
+        if (!patch.payment_ref && !_suspenseCurrentRecord?.tally_voucher_no) throw new Error('Payment reference or Tally voucher number is required');
+        if (patch.payment_method === 'Cheque' && !patch.bank_name) throw new Error('Bank name is required for cheque receipts');
+        if (patch.final_amount > 20000 && !patch.donor_pan) throw new Error('PAN is mandatory above ₹20,000');
+      }
+    }
+    
+    async function saveSuspenseReviewDraft() {
+      if (!_suspenseCurrentRecord) return;
+      const btn = document.getElementById('suspense-save-btn');
+      try {
+        const patch = collectSuspenseReviewPatch();
+        validateSuspenseReviewPatch(patch, false);
+        btn.disabled = true;
+        btn.textContent = '⏳ Saving…';
+        const data = await suspenseInvoke('suspense-save-review', {
+          suspense_id: _suspenseCurrentRecord.id,
+          expected_version: Number(document.getElementById('suspense-review-version').value),
+          patch,
+        });
+        showToast('✅ Suspense review saved', 'success');
+        await openSuspenseReview(data.id);
+        await Promise.allSettled([loadSuspenseQueue(_suspenseQueuePage), loadSuspenseQueueStats()]);
+      } catch (error) {
+        showToast(error.message || 'Unable to save review', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Save Draft';
+      }
+    }
+    
+    async function issueSuspenseReceipt() {
+      if (!_suspenseCurrentRecord) return;
+      const btn = document.getElementById('suspense-issue-btn');
+      try {
+        const patch = collectSuspenseReviewPatch();
+        validateSuspenseReviewPatch(patch, true);
+        if (!confirm(`Issue final receipt ${_suspenseCurrentRecord.receipt_no} to ${patch.donor_name}?\n\nThe S receipt number will remain unchanged.`)) return;
+    
+        btn.disabled = true;
+        btn.textContent = '⏳ Issuing…';
+        const data = await suspenseInvoke('suspense-issue', {
+          suspense_id: _suspenseCurrentRecord.id,
+          expected_version: Number(document.getElementById('suspense-review-version').value),
+          patch,
+        });
+    
+        closeSuspenseReview();
+        await loadSuspenseDashboard();
+        showToast(`✅ Receipt ${data.receipt.receipt_id} issued`, 'success');
+    
+        lastReceipt = toReceipt(data.receipt);
+        renderReceiptPreview(lastReceipt);
+        switchTab('new');
+        document.getElementById('receipt-wrap').classList.add('show');
+        document.getElementById('receipt-wrap').scrollIntoView({ behavior: 'smooth' });
+      } catch (error) {
+        showToast(error.message || 'Unable to issue receipt', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Resolve & Issue Receipt';
+      }
+    }
+    
+    async function voidSuspenseReceipt() {
+      if (!_suspenseCurrentRecord) return;
+      const reason = prompt(`Enter the reason for voiding ${_suspenseCurrentRecord.receipt_no}:`);
+      if (reason === null) return;
+      if (reason.trim().length < 5) { showToast('Enter a meaningful void reason', 'error'); return; }
+      if (!confirm(`Void ${_suspenseCurrentRecord.receipt_no}? The number will never be reused.`)) return;
+    
+      try {
+        await suspenseInvoke('suspense-void', {
+          suspense_id: _suspenseCurrentRecord.id,
+          expected_version: Number(document.getElementById('suspense-review-version').value),
+          reason: reason.trim(),
+        });
+        closeSuspenseReview();
+        await loadSuspenseDashboard();
+        showToast(`✅ ${_suspenseCurrentRecord?.receipt_no || 'Suspense receipt'} voided`, 'success');
+      } catch (error) {
+        showToast(error.message || 'Unable to void receipt', 'error');
+      }
+    }
+    
+    async function loadSuspenseAudit(id) {
+      const el = document.getElementById('suspense-audit-list');
+      if (!el) return;
+      const { data, error } = await _supa
+        .from('suspense_receipt_audit')
+        .select('*')
+        .eq('suspense_receipt_id', id)
+        .order('created_at', { ascending: false });
+    
+      if (error) {
+        el.innerHTML = `<span style="color:var(--danger)">${suspenseEscape(error.message)}</span>`;
+        return;
+      }
+      el.innerHTML = (data || []).length ? data.map(item => `
+        <div style="border-bottom:1px solid #eee;padding:8px 0;">
+          <strong>${suspenseEscape(item.action)}</strong>
+          <span style="float:right">${new Date(item.created_at).toLocaleString('en-IN')}</span><br>
+          <span>${suspenseEscape(item.actor_email || 'system')}</span>
+          ${item.reason ? `<div style="margin-top:3px;color:var(--ink)">${suspenseEscape(item.reason)}</div>` : ''}
+        </div>`).join('')
+        : 'No audit entries.';
     }
 
     // ══════════════════════════════
