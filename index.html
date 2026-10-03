@@ -4985,121 +4985,250 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       return isoDate >= `${startYear}-04-01` && isoDate <= `${startYear + 1}-03-31`;
     }
     
-    function suspenseTextLooksGenericParty(value) {
-      const text = String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
-      if (!text) return true;
-      return /^(SUSPENSE|BANK|CASH|DONATION|ONLINE|UPI|NEFT|IMPS|RTGS|CLG|CAM|TOTAL|GRAND TOTAL|OPENING BALANCE|CLOSING BALANCE|JEEVDAYA|JIVDAYA|PAID VIA CRED)$/.test(text)
-        || /SUSPENSE A\/?C|BANK A\/?C|TOTAL$|CASH DEP|\bBANK\b/.test(text);
-    }
-    
     function suspenseCleanNarrationPart(value) {
-      return String(value || '').replace(/\s+/g, ' ').trim();
+  return String(value || '').replace(/\s+/g, ' ').trim();
+  }
+  
+  function suspenseTextLooksGenericParty(value) {
+    const text = suspenseCleanNarrationPart(value).toUpperCase();
+    if (!text) return true;
+  
+    if (/^(?:0|SUSPENSE|BANK|CASH|DONATION|ONLINE|UPI|NEFT|IMPS|RTGS|CLG|CAM|BIL|INFT|CHEQUE|CHQ|TOTAL|GRAND TOTAL|OPENING BALANCE|CLOSING BALANCE|OTHER|PAID VIA CRED|MUMBAI)$/.test(text)) {
+      return true;
     }
-    
-    function suspenseStructuredNarration(row) {
-      const values = [
-        suspenseGetRaw(row, 'narration'),
-        suspenseGetRaw(row, 'reference'),
-        suspenseGetRaw(row, 'party'),
-        suspenseGetRaw(row, 'ledger'),
-      ].map(suspenseCleanNarrationPart).filter(Boolean);
-    
-      return values.find(value => /^(?:UPI|CLG|CAM|NEFT|IMPS|RTGS|CHEQUE|CHQ)\//i.test(value))
-        || values[0]
-        || '';
+  
+    // These are donation-purpose labels, not donor names.
+    if (/\b(?:JEEVDAYA|JIVDAYA)\b/.test(text)) return true;
+  
+    return /SUSPENSE A\/?C|BANK A\/?C|CASH DEP|^80G\b|TOTAL$/.test(text);
+  }
+  
+  function suspenseLooksLikeBankOrTail(value) {
+    const text = suspenseCleanNarrationPart(value);
+    const upper = text.toUpperCase();
+    if (!upper) return false;
+  
+    // Bank-name segments that appear after the donor identifier.
+    if (/\b(?:HDFC|ICICI|AXIS|KOTAK|STATE\s*BANK|SBI|UNION\s*BANK|BANK\s*OF\s*(?:INDIA|BARODA|MAHARASHTRA)|INDIAN\s*OVERSEAS|UCO|YES\s*BANK|JAMMU\s*AND\s*KASHMIR|SARASWAT|SARAS|FEDERAL\s*BANK|IDBI|INDUSIND|CANARA|PUNJAB\s*NATIONAL|PNB|CENTRAL\s*BANK|AU\s*SMALL|RBL|DBS|HSBC|CITI|STANDARD\s*CHARTERED|IDFC|BANDHAN|KARNATAKA\s*BANK|SOUTH\s*INDIAN)\b/.test(upper)
+        || /\bBANK\b|^BANKOF\b/.test(upper)) {
+      return true;
     }
-    
-    function suspenseCandidateDonor(row) {
-      const narration = suspenseStructuredNarration(row);
-      const parts = narration.split('/').map(suspenseCleanNarrationPart);
-      const mode = String(parts[0] || '').toUpperCase();
-    
-      // UPI/<UTR>/<label or name>/<UPI ID>/<bank>/...
-      // Prefer the UPI ID because it is the most reliable donor identifier.
-      if (mode === 'UPI') {
-        const upiId = parts.slice(2).find(part => /^[^\s/@]+@[^\s/]*$/i.test(part));
-        if (upiId) return upiId;
-    
-        const labelledName = parts[2];
-        if (labelledName && !suspenseTextLooksGenericParty(labelledName)) return labelledName;
+  
+    const compact = text.replace(/\s+/g, '');
+  
+    // Bank-generated transaction/hash suffixes such as AXI..., SBI..., ICI..., YCD....
+    if (/^(?:AXI|SBI|ICI|YCD|HDF|KKBK|UTIB|PUNB|BARB|UBIN|IOBA|YESB|JAKA|SRCB)[A-Z0-9]{10,}$/i.test(compact)) {
+      return true;
+    }
+  
+    // Very long alphanumeric tail/reference values are not donor names.
+    return /^[A-Z0-9]{24,}$/i.test(compact) && /\d/.test(compact);
+  }
+  
+  function suspenseLooksLikeDonorPart(value) {
+    const text = suspenseCleanNarrationPart(value);
+    if (!text) return false;
+    if (suspenseTextLooksGenericParty(text)) return false;
+    if (suspenseLooksLikeBankOrTail(text)) return false;
+    if (/^\d{6,18}$/.test(text)) return false;
+    return /[A-Z]/i.test(text);
+  }
+  
+  function suspenseStructuredNarration(row) {
+    const values = [
+      suspenseGetRaw(row, 'narration'),
+      suspenseGetRaw(row, 'reference'),
+      suspenseGetRaw(row, 'party'),
+      suspenseGetRaw(row, 'ledger'),
+    ].map(suspenseCleanNarrationPart).filter(Boolean);
+  
+    return values.find(value =>
+      /^(?:UPI|CLG|CAM|BIL\/INFT|MMT\/IMPS|IMPS|RTGS|CHEQUE|CHQ)(?:\/|-)|^NEFT-|^BY\s+CASH\b/i.test(value)
+    ) || values[0] || '';
+  }
+  
+  function suspenseJoinDonorParts(parts, startIndex) {
+    const donorParts = [];
+  
+    for (let i = startIndex; i < parts.length; i++) {
+      const part = suspenseCleanNarrationPart(parts[i]);
+      if (!part) continue;
+      if (suspenseLooksLikeBankOrTail(part)) break;
+      if (suspenseTextLooksGenericParty(part)) continue;
+      if (!suspenseLooksLikeDonorPart(part)) continue;
+      donorParts.push(part);
+    }
+  
+    return donorParts.length ? donorParts.join(' / ') : null;
+  }
+  
+  function suspenseCandidateDonor(row) {
+    const source = suspenseStructuredNarration(row);
+    const slashParts = source.split('/').map(suspenseCleanNarrationPart);
+    const mode = String(slashParts[0] || '').toUpperCase();
+  
+    // UPI/<UTR>/<purpose or description>/<donor UPI handle>/<bank>/<hash>
+    // The fourth segment is preferred because Tally/Bank narrations usually place
+    // Jivdaya, Donation, UPI, 80G, or another purpose in the third segment.
+    if (mode === 'UPI') {
+      const preferred = slashParts[3];
+      if (suspenseLooksLikeDonorPart(preferred)) return preferred;
+  
+      for (let i = 3; i < slashParts.length; i++) {
+        if (suspenseLooksLikeBankOrTail(slashParts[i])) break;
+        if (suspenseLooksLikeDonorPart(slashParts[i])) return slashParts[i];
       }
-    
-      // CLG/<donor name>/<cheque number>/<bank>/...
-      if (mode === 'CLG' || mode === 'CHEQUE' || mode === 'CHQ') {
-        const chequeDonor = parts[1];
-        if (chequeDonor && !suspenseTextLooksGenericParty(chequeDonor)) return chequeDonor;
-      }
-    
-      // Fall back to genuinely mapped party/ledger fields, but never use a whole
-      // structured narration or a bank ledger as the donor name.
-      const party = suspenseCleanNarrationPart(suspenseGetRaw(row, 'party'));
-      if (party && !suspenseTextLooksGenericParty(party) && !party.includes('/')) return party;
-    
-      const ledger = suspenseCleanNarrationPart(suspenseGetRaw(row, 'ledger'));
-      if (ledger && !suspenseTextLooksGenericParty(ledger) && !ledger.includes('/')) return ledger;
-    
-      return null;
+  
+      const fallback = slashParts[2];
+      if (suspenseLooksLikeDonorPart(fallback)) return fallback;
     }
-    
-    function suspenseExtractReference(row) {
-      const direct = suspenseCleanNarrationPart(suspenseGetRaw(row, 'reference'));
-    
-      // Use a dedicated reference column only when it contains a single reference,
-      // not when the full narration was accidentally mapped to it.
-      if (direct && !direct.includes('/') && /^[A-Z0-9._-]{4,40}$/i.test(direct)) {
-        return direct;
-      }
-    
-      const source = suspenseStructuredNarration(row);
-    
-      // UPI/<UTR>/...
-      let match = source.match(/^UPI\/([0-9]{10,18})(?:\/|$)/i);
-      if (match) return match[1];
-    
-      // CLG/<donor>/<cheque number>/...
-      match = source.match(/^(?:CLG|CHEQUE|CHQ)\/[^/]*\/([^/]+)/i);
-      if (match) return suspenseCleanNarrationPart(match[1]);
-    
-      // CAM/<reference>/...
-      match = source.match(/^CAM\/([^/]+)/i);
-      if (match) return suspenseCleanNarrationPart(match[1]);
-    
-      const haystack = [
-        direct,
-        source,
-        suspenseGetRaw(row, 'narration'),
-        suspenseGetRaw(row, 'party'),
-        suspenseGetRaw(row, 'ledger'),
-      ].map(suspenseCleanNarrationPart).join(' ');
-    
-      const patterns = [
-        /\bUPI[\s/:_-]*([0-9]{10,18})\b/i,
-        /\b(?:IMPS|NEFT|RTGS)[\s/:_-]*([A-Z0-9]{8,30})\b/i,
-        /\bUTR[\s/:_-]*([A-Z0-9]{8,30})\b/i,
-        /\b([0-9]{12})\b/,
-      ];
-    
-      for (const pattern of patterns) {
-        const fallbackMatch = haystack.match(pattern);
-        if (fallbackMatch) return fallbackMatch[1];
-      }
-      return null;
+  
+    // CLG/<donor name>/<cheque number>/<bank>/...
+    if (mode === 'CLG' || mode === 'CHEQUE' || mode === 'CHQ') {
+      return suspenseLooksLikeDonorPart(slashParts[1]) ? slashParts[1] : null;
     }
-    
-    function suspenseDetectPaymentMethod(row) {
-      const text = [
-        suspenseGetRaw(row, 'reference'),
-        suspenseGetRaw(row, 'narration'),
-        suspenseGetRaw(row, 'voucher_type'),
-        suspenseGetRaw(row, 'ledger'),
-      ].map(value => String(value || '').toUpperCase()).join(' ');
-    
-      if (/\bCLG\b|CHEQUE|CHQ/.test(text)) return 'Cheque';
-      if (/UPI|QR/.test(text)) return 'UPI/QR';
-      if (/NEFT|IMPS|RTGS|BANK TRANSFER|ECS|ACH/.test(text)) return 'Bank Transfer';
-      if (/\bCASH\b|\bCAM\b/.test(text)) return 'Cash';
-      return null;
+  
+    // BIL/INFT/<reference>/<donor name>[/<additional donor description>]
+    if (mode === 'BIL' && String(slashParts[1] || '').toUpperCase() === 'INFT') {
+      return suspenseJoinDonorParts(slashParts, 3);
     }
+  
+    // MMT/IMPS/<reference>/<purpose or 0>/<donor name>/<bank>
+    if (mode === 'MMT' && String(slashParts[1] || '').toUpperCase() === 'IMPS') {
+      return suspenseJoinDonorParts(slashParts, 3);
+    }
+  
+    // Direct IMPS/<reference>/<donor>/<bank> or RTGS equivalent.
+    if (mode === 'IMPS' || mode === 'RTGS') {
+      return suspenseJoinDonorParts(slashParts, 2);
+    }
+  
+    // NEFT-<reference>-<donor>-0001...-<account>-<bank code>
+    if (/^NEFT-/i.test(source)) {
+      const parts = source.split('-').map(suspenseCleanNarrationPart);
+      const markerIndex = parts.findIndex((part, index) => index >= 2 && /^0001/i.test(part));
+      const donorParts = markerIndex > 2 ? parts.slice(2, markerIndex) : parts.slice(2, 3);
+      const donor = donorParts.filter(suspenseLooksLikeDonorPart).join(' - ');
+      if (donor) return donor;
+    }
+  
+    // BY CASH - <location> - <donor name>
+    if (/^BY\s+CASH\b/i.test(source)) {
+      const parts = source.split(/\s*-\s*/).map(suspenseCleanNarrationPart);
+      for (let i = parts.length - 1; i >= 1; i--) {
+        if (suspenseLooksLikeDonorPart(parts[i])) return parts[i];
+      }
+    }
+  
+    // Use actual mapped party/ledger fields only when they are not the complete
+    // structured narration, a purpose label, or a bank ledger.
+    const party = suspenseCleanNarrationPart(suspenseGetRaw(row, 'party'));
+    if (party && !party.includes('/') && suspenseLooksLikeDonorPart(party)) return party;
+  
+    const ledger = suspenseCleanNarrationPart(suspenseGetRaw(row, 'ledger'));
+    if (ledger && !ledger.includes('/') && suspenseLooksLikeDonorPart(ledger)) return ledger;
+  
+    return null;
+  }
+  
+  function suspenseExtractReference(row) {
+    const source = suspenseStructuredNarration(row);
+    let match;
+  
+    // UPI/<UTR>/...
+    match = source.match(/^UPI\/([0-9]{10,18})(?:\/|$)/i);
+    if (match) return match[1];
+  
+    // CLG/<donor>/<cheque number>/...
+    match = source.match(/^(?:CLG|CHEQUE|CHQ)\/[^/]*\/([^/]+)/i);
+    if (match) return suspenseCleanNarrationPart(match[1]);
+  
+    // CAM/<reference>/...
+    match = source.match(/^CAM\/([^/]+)/i);
+    if (match) return suspenseCleanNarrationPart(match[1]);
+  
+    // BIL/INFT/<reference>/...
+    match = source.match(/^BIL\/INFT\/([^/]+)/i);
+    if (match) return suspenseCleanNarrationPart(match[1]);
+  
+    // MMT/IMPS/<reference>/...
+    match = source.match(/^MMT\/IMPS\/([^/]+)/i);
+    if (match) return suspenseCleanNarrationPart(match[1]);
+  
+    // Direct IMPS or RTGS formats.
+    match = source.match(/^IMPS\/([^/]+)/i);
+    if (match) return suspenseCleanNarrationPart(match[1]);
+  
+    match = source.match(/^RTGS[\/-]([^\/-]+)/i);
+    if (match) return suspenseCleanNarrationPart(match[1]);
+  
+    // NEFT-<reference>-<donor>-...
+    match = source.match(/^NEFT-([^-]+)-/i);
+    if (match) return suspenseCleanNarrationPart(match[1]);
+  
+    const direct = suspenseCleanNarrationPart(suspenseGetRaw(row, 'reference'));
+  
+    // Use a dedicated reference column only when it contains one reference—not
+    // when the complete narration was accidentally mapped to Reference.
+    if (direct
+        && !/[\/]/.test(direct)
+        && !/^(?:NEFT|BY\s+CASH)-/i.test(direct)
+        && /^[A-Z0-9._-]{4,40}$/i.test(direct)) {
+      return direct;
+    }
+  
+    const haystack = [
+      direct,
+      source,
+      suspenseGetRaw(row, 'narration'),
+      suspenseGetRaw(row, 'party'),
+      suspenseGetRaw(row, 'ledger'),
+    ].map(suspenseCleanNarrationPart).join(' ');
+  
+    const patterns = [
+      /\bUPI[\s/:_-]*([0-9]{10,18})\b/i,
+      /\b(?:IMPS|NEFT|RTGS)[\s/:_-]*([A-Z0-9]{8,30})\b/i,
+      /\bUTR[\s/:_-]*([A-Z0-9]{8,30})\b/i,
+      /\b([0-9]{12})\b/,
+    ];
+  
+    for (const pattern of patterns) {
+      const fallbackMatch = haystack.match(pattern);
+      if (fallbackMatch) return fallbackMatch[1];
+    }
+  
+    return null;
+  }
+  
+  function suspenseDetectPaymentMethod(row) {
+    const source = suspenseStructuredNarration(row).toUpperCase();
+    const text = [
+      source,
+      suspenseGetRaw(row, 'reference'),
+      suspenseGetRaw(row, 'narration'),
+      suspenseGetRaw(row, 'voucher_type'),
+      suspenseGetRaw(row, 'ledger'),
+    ].map(value => String(value || '').toUpperCase()).join(' ');
+  
+    if (/^(?:CLG|CHEQUE|CHQ)\//.test(source) || /\bCHEQUE\b|\bCHQ\b/.test(text)) {
+      return 'Cheque';
+    }
+  
+    if (/^UPI\//.test(source) || /\bUPI\b|\bQR\b/.test(text)) {
+      return 'UPI/QR';
+    }
+  
+    if (/^(?:BIL\/INFT|MMT\/IMPS|IMPS\/|RTGS[\/-]|NEFT-)/.test(source)
+        || /\bNEFT\b|\bIMPS\b|\bRTGS\b|BANK TRANSFER|\bECS\b|\bACH\b/.test(text)) {
+      return 'Bank Transfer';
+    }
+  
+    if (/^BY\s+CASH\b|^CAM\//.test(source) || /\bCASH\b|\bCAM\b/.test(text)) {
+      return 'Cash';
+    }
+  
+    return null;
+  }
     
     function suspenseRowText(row) {
       return Object.values(row.raw || {}).map(v => String(v ?? '')).join(' ').toUpperCase();
