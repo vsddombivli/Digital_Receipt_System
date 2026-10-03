@@ -1968,14 +1968,209 @@
         </div>
 
         <!-- Suspense section placeholder (Point 1 later) -->
+        <!-- REPLACE the current "Suspense section placeholder" block with this block. -->
+        
+        <!-- Suspense Import -->
         <div
           style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
-          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🗂 Suspense Receipt Creation</div>
-          <div class="admin-section-body collapsed">
-            <p style="color:var(--muted);font-size:0.85rem">Coming soon — upload Tally suspense export to auto-generate
-              receipts.</p>
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🗂 Import Tally Suspense</div>
+          <div class="admin-section-body collapsed" id="suspense-import-section-body">
+            <div style="padding:14px 0;">
+              <div
+                style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:0.86rem;line-height:1.55;">
+                <strong>Automatic provisional receipt creation</strong><br>
+                Every eligible positive-amount row receives an S-series number immediately. Missing donor or payment details do
+                not block creation; those records enter the Finance review queue. The fund is permanently fixed to
+                <strong>ANIMAL WELFARE FUND (JIVDAYA)</strong>.
+              </div>
+        
+              <div class="form-grid" style="margin-bottom:14px;">
+                <div class="form-group full">
+                  <label>Tally Suspense File <span class="required">*</span></label>
+                  <input type="file" id="suspense-file" accept=".xlsx,.xls,.csv"
+                    onchange="suspenseFileChanged(this)"
+                    style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                  <div class="helper-text">Maximum 10 MB. The original file is preserved in private Supabase Storage.</div>
+                </div>
+        
+                <div class="form-group">
+                  <label>Financial Year <span class="required">*</span></label>
+                  <input type="text" id="suspense-fy" placeholder="2026-27" maxlength="7"
+                    oninput="this.value=this.value.replace(/[^0-9-]/g,'');suspenseUpdateSeriesPreview()">
+                  <div class="helper-text">Controls the S-series counter, for example S26-27-00001.</div>
+                </div>
+        
+                <div class="form-group">
+                  <label>Worksheet</label>
+                  <select id="suspense-sheet" onchange="suspenseSheetChanged()" disabled>
+                    <option value="">Select file first</option>
+                  </select>
+                </div>
+        
+                <div class="form-group full">
+                  <label>Batch Note</label>
+                  <input type="text" id="suspense-batch-note"
+                    placeholder="Optional note, e.g. Tally suspense export received from accounts">
+                </div>
+              </div>
+        
+              <div
+                style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-bottom:14px;">
+                <div style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
+                  <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">Fund</div>
+                  <div style="font-size:0.88rem;font-weight:600;margin-top:3px;">ANIMAL WELFARE FUND (JIVDAYA)</div>
+                </div>
+                <div style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
+                  <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">Series Preview</div>
+                  <div id="suspense-series-preview" class="mono" style="font-size:0.92rem;font-weight:600;margin-top:3px;">S-- -- -----</div>
+                </div>
+              </div>
+        
+              <div class="btn-row" style="margin-top:0;">
+                <button class="btn btn-primary" id="suspense-analyse-btn" onclick="analyseSuspenseFile()">🔍 Analyse File</button>
+                <button class="btn btn-secondary" onclick="resetSuspenseImport()">↺ Reset</button>
+              </div>
+        
+              <div id="suspense-analysis-status" style="display:none;margin-top:12px;font-size:0.88rem;"></div>
+        
+              <!-- Column mapping -->
+              <div id="suspense-mapping-wrap" style="display:none;margin-top:18px;">
+                <div class="card" style="padding:16px;margin-bottom:14px;">
+                  <div class="card-title" style="font-size:1rem;margin-bottom:12px;">Column Mapping</div>
+                  <p style="font-size:0.83rem;color:var(--muted);margin-bottom:12px;">
+                    Review the detected columns. Amount or Credit Amount is required. All other columns may remain unmapped.
+                  </p>
+                  <div class="form-grid" id="suspense-mapping-grid"></div>
+                  <div class="btn-row" style="margin-top:14px;">
+                    <button class="btn btn-secondary btn-sm" onclick="applySuspenseMapping()">Apply Mapping & Rebuild Preview</button>
+                  </div>
+                </div>
+              </div>
+        
+              <!-- Analysis summary and preview -->
+              <div id="suspense-preview-wrap" style="display:none;margin-top:18px;">
+                <div class="stats-grid" id="suspense-analysis-stats"></div>
+        
+                <div class="card" style="padding:16px;margin-bottom:14px;">
+                  <div class="card-title" style="font-size:1rem;margin-bottom:12px;">
+                    Import Preview
+                    <span style="margin-left:auto;font-size:0.76rem;color:var(--muted);font-weight:400;">
+                      Clear a checkbox only for a row that must not be imported.
+                    </span>
+                  </div>
+                  <div class="table-wrap" style="max-height:430px;overflow:auto;">
+                    <table class="data-table">
+                      <thead style="position:sticky;top:0;z-index:2;">
+                        <tr>
+                          <th style="width:38px;"><input type="checkbox" id="suspense-select-all" checked
+                              onchange="toggleAllSuspenseRows(this.checked)"></th>
+                          <th>Row</th>
+                          <th>Date</th>
+                          <th>Candidate Donor</th>
+                          <th>Amount</th>
+                          <th>Reference</th>
+                          <th>Voucher</th>
+                          <th>Warnings</th>
+                        </tr>
+                      </thead>
+                      <tbody id="suspense-preview-tbody"></tbody>
+                    </table>
+                  </div>
+                  <div id="suspense-preview-note" style="margin-top:10px;font-size:0.82rem;color:var(--muted);"></div>
+                </div>
+        
+                <div class="btn-row" style="margin-top:0;">
+                  <button class="btn btn-success" id="suspense-create-btn" onclick="submitSuspenseImport()">
+                    Create Suspense Receipts
+                  </button>
+                  <button class="btn btn-secondary" onclick="downloadSuspensePreview()">⬇️ Download Preview</button>
+                </div>
+              </div>
+        
+              <div id="suspense-import-result" style="display:none;margin-top:18px;"></div>
+            </div>
           </div>
         </div>
+        
+        <!-- Suspense Review Queue -->
+        <div
+          style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">📝 Suspense Review Queue</div>
+          <div class="admin-section-body collapsed" id="suspense-queue-section-body">
+            <div style="padding:14px 0;">
+              <div class="stats-grid" id="suspense-queue-stats"></div>
+        
+              <div class="records-toolbar" style="margin-bottom:12px;">
+                <input type="text" id="suspense-filter-search"
+                  placeholder="Search S no., donor, UTR or voucher…"
+                  oninput="scheduleSuspenseQueueReload()">
+                <input type="text" id="suspense-filter-fy" placeholder="FY 2026-27" maxlength="7"
+                  onchange="loadSuspenseDashboard()" style="max-width:120px;">
+                <select id="suspense-filter-status" onchange="loadSuspenseQueue(1)" style="max-width:145px;">
+                  <option value="open">Open</option>
+                  <option value="issued">Issued</option>
+                  <option value="void">Void</option>
+                  <option value="">All Statuses</option>
+                </select>
+                <select id="suspense-filter-review" onchange="loadSuspenseQueue(1)" style="max-width:165px;">
+                  <option value="">All Review States</option>
+                  <option value="needs_review">Needs Review</option>
+                  <option value="ready_to_issue">Ready to Issue</option>
+                </select>
+                <button class="btn btn-secondary btn-sm" onclick="loadSuspenseDashboard()">↻ Refresh</button>
+              </div>
+        
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>S Receipt</th>
+                      <th>Date</th>
+                      <th>Donor</th>
+                      <th>Amount</th>
+                      <th>Reference</th>
+                      <th>Voucher</th>
+                      <th>Review</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="suspense-queue-tbody"></tbody>
+                </table>
+              </div>
+              <div id="suspense-queue-pagination" class="btn-row" style="justify-content:center;margin-top:12px;"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Suspense Import History -->
+        <div
+          style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">📦 Suspense Import History</div>
+          <div class="admin-section-body collapsed" id="suspense-history-section-body">
+            <div style="padding:14px 0;">
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Uploaded</th>
+                      <th>File</th>
+                      <th>FY</th>
+                      <th>Uploaded By</th>
+                      <th>Created</th>
+                      <th>Duplicates</th>
+                      <th>Rejected</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="suspense-history-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
     <!-- Results -->
