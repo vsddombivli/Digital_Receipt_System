@@ -4986,29 +4986,91 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
     }
     
     function suspenseTextLooksGenericParty(value) {
-      const text = String(value || '').trim().toUpperCase();
+      const text = String(value || '').replace(/\s+/g, ' ').trim().toUpperCase();
       if (!text) return true;
-      return /^(SUSPENSE|BANK|CASH|DONATION|ONLINE|UPI|NEFT|IMPS|RTGS|TOTAL|GRAND TOTAL|OPENING BALANCE|CLOSING BALANCE)$/.test(text)
-        || /SUSPENSE A\/?C|BANK A\/?C|TOTAL$/.test(text);
+      return /^(SUSPENSE|BANK|CASH|DONATION|ONLINE|UPI|NEFT|IMPS|RTGS|CLG|CAM|TOTAL|GRAND TOTAL|OPENING BALANCE|CLOSING BALANCE|JEEVDAYA|JIVDAYA|PAID VIA CRED)$/.test(text)
+        || /SUSPENSE A\/?C|BANK A\/?C|TOTAL$|CASH DEP|\bBANK\b/.test(text);
+    }
+    
+    function suspenseCleanNarrationPart(value) {
+      return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+    
+    function suspenseStructuredNarration(row) {
+      const values = [
+        suspenseGetRaw(row, 'narration'),
+        suspenseGetRaw(row, 'reference'),
+        suspenseGetRaw(row, 'party'),
+        suspenseGetRaw(row, 'ledger'),
+      ].map(suspenseCleanNarrationPart).filter(Boolean);
+    
+      return values.find(value => /^(?:UPI|CLG|CAM|NEFT|IMPS|RTGS|CHEQUE|CHQ)\//i.test(value))
+        || values[0]
+        || '';
     }
     
     function suspenseCandidateDonor(row) {
-      const party = String(suspenseGetRaw(row, 'party') || '').trim();
-      if (party && !suspenseTextLooksGenericParty(party)) return party;
-      const ledger = String(suspenseGetRaw(row, 'ledger') || '').trim();
-      if (ledger && !suspenseTextLooksGenericParty(ledger)) return ledger;
+      const narration = suspenseStructuredNarration(row);
+      const parts = narration.split('/').map(suspenseCleanNarrationPart);
+      const mode = String(parts[0] || '').toUpperCase();
+    
+      // UPI/<UTR>/<label or name>/<UPI ID>/<bank>/...
+      // Prefer the UPI ID because it is the most reliable donor identifier.
+      if (mode === 'UPI') {
+        const upiId = parts.slice(2).find(part => /^[^\s/@]+@[^\s/]*$/i.test(part));
+        if (upiId) return upiId;
+    
+        const labelledName = parts[2];
+        if (labelledName && !suspenseTextLooksGenericParty(labelledName)) return labelledName;
+      }
+    
+      // CLG/<donor name>/<cheque number>/<bank>/...
+      if (mode === 'CLG' || mode === 'CHEQUE' || mode === 'CHQ') {
+        const chequeDonor = parts[1];
+        if (chequeDonor && !suspenseTextLooksGenericParty(chequeDonor)) return chequeDonor;
+      }
+    
+      // Fall back to genuinely mapped party/ledger fields, but never use a whole
+      // structured narration or a bank ledger as the donor name.
+      const party = suspenseCleanNarrationPart(suspenseGetRaw(row, 'party'));
+      if (party && !suspenseTextLooksGenericParty(party) && !party.includes('/')) return party;
+    
+      const ledger = suspenseCleanNarrationPart(suspenseGetRaw(row, 'ledger'));
+      if (ledger && !suspenseTextLooksGenericParty(ledger) && !ledger.includes('/')) return ledger;
+    
       return null;
     }
     
     function suspenseExtractReference(row) {
-      const direct = String(suspenseGetRaw(row, 'reference') || '').trim();
-      if (direct) return direct;
+      const direct = suspenseCleanNarrationPart(suspenseGetRaw(row, 'reference'));
+    
+      // Use a dedicated reference column only when it contains a single reference,
+      // not when the full narration was accidentally mapped to it.
+      if (direct && !direct.includes('/') && /^[A-Z0-9._-]{4,40}$/i.test(direct)) {
+        return direct;
+      }
+    
+      const source = suspenseStructuredNarration(row);
+    
+      // UPI/<UTR>/...
+      let match = source.match(/^UPI\/([0-9]{10,18})(?:\/|$)/i);
+      if (match) return match[1];
+    
+      // CLG/<donor>/<cheque number>/...
+      match = source.match(/^(?:CLG|CHEQUE|CHQ)\/[^/]*\/([^/]+)/i);
+      if (match) return suspenseCleanNarrationPart(match[1]);
+    
+      // CAM/<reference>/...
+      match = source.match(/^CAM\/([^/]+)/i);
+      if (match) return suspenseCleanNarrationPart(match[1]);
     
       const haystack = [
+        direct,
+        source,
         suspenseGetRaw(row, 'narration'),
         suspenseGetRaw(row, 'party'),
         suspenseGetRaw(row, 'ledger'),
-      ].map(v => String(v || '')).join(' ');
+      ].map(suspenseCleanNarrationPart).join(' ');
     
       const patterns = [
         /\bUPI[\s/:_-]*([0-9]{10,18})\b/i,
@@ -5016,9 +5078,10 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         /\bUTR[\s/:_-]*([A-Z0-9]{8,30})\b/i,
         /\b([0-9]{12})\b/,
       ];
+    
       for (const pattern of patterns) {
-        const match = haystack.match(pattern);
-        if (match) return match[1];
+        const fallbackMatch = haystack.match(pattern);
+        if (fallbackMatch) return fallbackMatch[1];
       }
       return null;
     }
@@ -5029,12 +5092,12 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         suspenseGetRaw(row, 'narration'),
         suspenseGetRaw(row, 'voucher_type'),
         suspenseGetRaw(row, 'ledger'),
-      ].map(v => String(v || '').toUpperCase()).join(' ');
+      ].map(value => String(value || '').toUpperCase()).join(' ');
     
-      if (/CHEQUE|CHQ/.test(text)) return 'Cheque';
+      if (/\bCLG\b|CHEQUE|CHQ/.test(text)) return 'Cheque';
       if (/UPI|QR/.test(text)) return 'UPI/QR';
       if (/NEFT|IMPS|RTGS|BANK TRANSFER|ECS|ACH/.test(text)) return 'Bank Transfer';
-      if (/\bCASH\b/.test(text)) return 'Cash';
+      if (/\bCASH\b|\bCAM\b/.test(text)) return 'Cash';
       return null;
     }
     
