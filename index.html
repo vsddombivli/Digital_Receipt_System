@@ -2042,7 +2042,7 @@
                   </p>
                   <div class="form-grid" id="suspense-mapping-grid"></div>
                   <div class="btn-row" style="margin-top:14px;">
-                    <button class="btn btn-secondary btn-sm" onclick="applySuspenseMapping()">Apply Mapping & Rebuild Preview</button>
+                    <button class="btn btn-primary btn-sm" onclick="applySuspenseMapping()">💾 Save Mapping & Build Preview</button>
                   </div>
                 </div>
               </div>
@@ -2084,6 +2084,7 @@
                     Create Suspense Receipts
                   </button>
                   <button class="btn btn-secondary" onclick="downloadSuspensePreview()">⬇️ Download Preview</button>
+                  <button class="btn btn-secondary" onclick="editSuspenseMapping()">⚙️ Edit Mapping</button>
                 </div>
               </div>
         
@@ -4585,6 +4586,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
     const SUSPENSE_BUCKET = 'suspense-imports';
     const SUSPENSE_IMPORT_CHUNK_SIZE = 200;
     const SUSPENSE_QUEUE_PAGE_SIZE = 50;
+    const SUSPENSE_MAPPING_STORAGE_KEY = 'vsd_suspense_tally_mapping_v1';
     
     let _suspenseWorkbook = null;
     let _suspenseWorkbookBuffer = null;
@@ -4832,7 +4834,74 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
     
       return mapping;
     }
+    function suspenseMappingIsCompatible(mapping, headers = _suspenseHeaders) {
+      if (!mapping || typeof mapping !== 'object') return false;
+      if (!mapping.amount && !mapping.credit) return false;
     
+      const available = new Set(headers || []);
+      return Object.values(mapping).every(header => !header || available.has(header));
+    }
+    
+    function suspenseReadLocalSavedMapping(headers = _suspenseHeaders) {
+      try {
+        const raw = localStorage.getItem(SUSPENSE_MAPPING_STORAGE_KEY);
+        if (!raw) return null;
+    
+        const saved = JSON.parse(raw);
+        const mapping = saved?.mapping || saved;
+        return suspenseMappingIsCompatible(mapping, headers) ? mapping : null;
+      } catch (error) {
+        console.warn('Unable to read saved suspense mapping:', error);
+        return null;
+      }
+    }
+    
+    function suspenseWriteLocalSavedMapping(mapping) {
+      try {
+        localStorage.setItem(SUSPENSE_MAPPING_STORAGE_KEY, JSON.stringify({
+          version: 1,
+          mapping,
+          headers: _suspenseHeaders,
+          saved_at: new Date().toISOString(),
+        }));
+        return true;
+      } catch (error) {
+        console.error('Unable to save suspense mapping:', error);
+        return false;
+      }
+    }
+    
+    async function suspenseLoadSavedMapping(headers = _suspenseHeaders) {
+      const localMapping = suspenseReadLocalSavedMapping(headers);
+      if (localMapping) return { mapping: localMapping, source: 'saved browser mapping' };
+    
+      // Cross-device fallback: reuse the newest mapping already used in a completed import.
+      if (isDB()) {
+        const { data, error } = await _supa
+          .from('suspense_import_batches')
+          .select('column_mapping,uploaded_at')
+          .not('column_mapping', 'is', null)
+          .order('uploaded_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+    
+        if (!error && suspenseMappingIsCompatible(data?.column_mapping, headers)) {
+          suspenseWriteLocalSavedMapping(data.column_mapping);
+          return { mapping: data.column_mapping, source: 'latest saved import mapping' };
+        }
+      }
+    
+      return null;
+    }
+    
+    function editSuspenseMapping() {
+      suspenseRenderMapping();
+      const wrap = document.getElementById('suspense-mapping-wrap');
+      if (wrap) {
+        wrap.style.display = 'block';
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
     function suspenseBuildSourceRows(sheetName) {
       const ws = _suspenseWorkbook.Sheets[sheetName];
       if (!ws) throw new Error('Selected worksheet was not found');
@@ -4885,7 +4954,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       grid.querySelectorAll('[data-suspense-map]').forEach(select => {
         select.value = _suspenseColumnMap[select.dataset.suspenseMap] || '';
       });
-      document.getElementById('suspense-mapping-wrap').style.display = 'block';
+      //document.getElementById('suspense-mapping-wrap').style.display = 'block';
     }
     
     function suspenseReadMappingFromUI() {
@@ -5323,10 +5392,30 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
     
       try {
         if (!_suspenseWorkbook) await suspenseLoadWorkbook(file);
-        const sheetName = document.getElementById('suspense-sheet').value || _suspenseWorkbook.SheetNames[0];
+    
+        const sheetName = document.getElementById('suspense-sheet').value
+          || _suspenseWorkbook.SheetNames[0];
+    
         suspenseBuildSourceRows(sheetName);
-        await suspenseBuildParsedRows();
-        suspenseSetStatus(`Analysis complete. ${_suspenseSourceRows.length} non-blank source rows found.`, 'success');
+    
+        const saved = await suspenseLoadSavedMapping(_suspenseHeaders);
+        if (saved) {
+          _suspenseColumnMap = saved.mapping;
+          suspenseRenderMapping(); // pre-populates controls for later Edit Mapping
+          document.getElementById('suspense-mapping-wrap').style.display = 'none';
+          await suspenseBuildParsedRows();
+          suspenseSetStatus(
+            `${saved.source} applied. ${_suspenseSourceRows.length} non-blank source rows found.`,
+            'success'
+          );
+        } else {
+          // First run, or the Tally headers changed.
+          _suspenseColumnMap = suspenseAutoMapColumns(_suspenseHeaders);
+          suspenseRenderMapping();
+          document.getElementById('suspense-preview-wrap').style.display = 'none';
+          document.getElementById('suspense-mapping-wrap').style.display = 'block';
+          suspenseSetStatus('Column mapping is required once. Review it and click Save Mapping & Build Preview.');
+        }
       } catch (error) {
         console.error(error);
         suspenseSetStatus(error.message || 'Unable to analyse file', 'error');
@@ -5339,26 +5428,60 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
     
     async function suspenseSheetChanged() {
       if (!_suspenseWorkbook) return;
+    
       try {
         suspenseBuildSourceRows(document.getElementById('suspense-sheet').value);
-        await suspenseBuildParsedRows();
+    
+        const saved = await suspenseLoadSavedMapping(_suspenseHeaders);
+        if (saved) {
+          _suspenseColumnMap = saved.mapping;
+          suspenseRenderMapping();
+          document.getElementById('suspense-mapping-wrap').style.display = 'none';
+          await suspenseBuildParsedRows();
+        } else {
+          _suspenseColumnMap = suspenseAutoMapColumns(_suspenseHeaders);
+          suspenseRenderMapping();
+          document.getElementById('suspense-preview-wrap').style.display = 'none';
+          document.getElementById('suspense-mapping-wrap').style.display = 'block';
+        }
       } catch (error) {
         showToast(error.message || 'Unable to read worksheet', 'error');
       }
     }
     
     async function applySuspenseMapping() {
-      _suspenseColumnMap = suspenseReadMappingFromUI();
-      if (!_suspenseColumnMap.amount && !_suspenseColumnMap.credit) {
+      const mapping = suspenseReadMappingFromUI();
+    
+      if (!mapping.amount && !mapping.credit) {
         showToast('Map either Amount or Credit Amount', 'error');
         return;
       }
+    
+      if (!suspenseMappingIsCompatible(mapping, _suspenseHeaders)) {
+        showToast('One or more mapped columns are not available in this worksheet', 'error');
+        return;
+      }
+    
+      _suspenseColumnMap = mapping;
+    
+      if (!suspenseWriteLocalSavedMapping(mapping)) {
+        showToast('Unable to save mapping in this browser', 'error');
+        return;
+      }
+    
       await suspenseBuildParsedRows();
+      document.getElementById('suspense-mapping-wrap').style.display = 'none';
+      suspenseSetStatus('Mapping saved and preview rebuilt.', 'success');
+      showToast('✅ Tally column mapping saved', 'success');
     }
     
     async function suspenseBuildParsedRows() {
       const fy = document.getElementById('suspense-fy').value.trim();
-      _suspenseColumnMap = suspenseReadMappingFromUI();
+    
+      if (!suspenseMappingIsCompatible(_suspenseColumnMap, _suspenseHeaders)) {
+        throw new Error('Saved mapping does not match the selected worksheet');
+      }
+    
       _suspenseParsedRows = _suspenseSourceRows.map(row => suspenseNormalizeRow(row, fy));
       _suspenseAnalysedFY = fy;
       suspenseRenderPreview();
@@ -5560,7 +5683,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         for (let offset = 0; offset < payloadRows.length; offset += SUSPENSE_IMPORT_CHUNK_SIZE) {
           const chunk = payloadRows.slice(offset, offset + SUSPENSE_IMPORT_CHUNK_SIZE);
           const finalize = offset + chunk.length >= payloadRows.length;
-          btn.textContent = `⏳ Creating ${Math.min(offset + chunk.length, payloadRows.length)} / ${payloadRows.length}…`;
+          btn.textContent = `⏳ Creating ${selected.length} receipt${selected.length === 1 ? '' : 's'} · processing ${Math.min(offset + chunk.length, payloadRows.length)} / ${payloadRows.length} source rows…`;
           finalResult = await suspenseInvoke('suspense-import', { batch, rows: chunk, finalize });
         }
     
