@@ -2234,228 +2234,262 @@
             📄 10BD Certificate
           </div>
           <div class="admin-section-body collapsed" id="tenbd-section-body">
-            <div style="padding:14px 0;">
-              <div class="card" style="padding:16px;margin-bottom:0;">
-                <div class="card-title" style="font-size:1rem;margin-bottom:12px;">
-                  Receipt Book Entry File Generator
+            <div style="padding:14px 0 0;">
+
+              <!-- 10BD Receipt Book Entry File Generator -->
+              <div
+                style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
+                  📘 Receipt Book Entry File Generator
                 </div>
+                <div class="admin-section-body collapsed" id="tenbd-book-generator-section-body">
+                  <div style="padding:14px 0;">
+                    <div class="card" style="padding:16px;margin-bottom:0;">
+                      <div class="card-title" style="font-size:1rem;margin-bottom:12px;">
+                        Receipt Book Entry File Generator
+                      </div>
 
-                <p style="font-size:0.86rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">
-                  Generates the fixed receipt-book Excel format with the requested number of protected receipt rows.
-                  The default is 50. Donor-entry columns remain editable.
-                </p>
+                      <p style="font-size:0.86rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">
+                        Generates the fixed receipt-book Excel format with the requested number of protected receipt
+                        rows.
+                        The default is 50. Donor-entry columns remain editable.
+                      </p>
 
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Financial Year <span class="required">*</span></label>
-                    <input type="text" id="tenbd-fy" maxlength="7" placeholder="2026-27"
-                      oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDFilePreview()">
-                    <div class="helper-text">Defaults to the current financial year. Finance may change it before
-                      generation.</div>
-                  </div>
+                      <div class="form-grid">
+                        <div class="form-group">
+                          <label>Financial Year <span class="required">*</span></label>
+                          <input type="text" id="tenbd-fy" maxlength="7" placeholder="2026-27"
+                            oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDFilePreview()">
+                          <div class="helper-text">Defaults to the current financial year. Finance may change it before
+                            generation.</div>
+                        </div>
 
-                  <div class="form-group">
-                    <label>Receipt Book No. <span class="required">*</span></label>
-                    <input type="text" id="tenbd-book-no" maxlength="20" placeholder="1261"
-                      oninput="this.value=this.value.replace(/[^0-9A-Za-z_-]/g,'');update10BDFilePreview()">
-                  </div>
-                  <div class="form-group">
-                    <label>Receipt Prefix <span class="required">*</span></label>
-                    <input type="text" id="tenbd-prefix" maxlength="10" value="D"
-                      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\/-]/g,'');update10BDFilePreview()">
-                    <div class="helper-text">Defaults to D. One space is added before the receipt number.</div>
-                  </div>
+                        <div class="form-group">
+                          <label>Receipt Book No. <span class="required">*</span></label>
+                          <input type="text" id="tenbd-book-no" maxlength="20" placeholder="1261"
+                            oninput="this.value=this.value.replace(/[^0-9A-Za-z_-]/g,'');update10BDFilePreview()">
+                        </div>
+                        <div class="form-group">
+                          <label>Receipt Prefix <span class="required">*</span></label>
+                          <input type="text" id="tenbd-prefix" maxlength="10" value="D"
+                            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\/-]/g,'');update10BDFilePreview()">
+                          <div class="helper-text">Defaults to D. One space is added before the receipt number.</div>
+                        </div>
 
-                  <div class="form-group">
-                    <label>Receipt Start Number <span class="required">*</span></label>
-                    <input type="number" id="tenbd-start-no" min="1" step="1" placeholder="63001"
-                      oninput="update10BDFilePreview()">
-                    <div class="helper-text">The selected prefix is added automatically with one space before the
-                      number.</div>
-                  </div>
+                        <div class="form-group">
+                          <label>Receipt Start Number <span class="required">*</span></label>
+                          <input type="number" id="tenbd-start-no" min="1" step="1" placeholder="63001"
+                            oninput="update10BDFilePreview()">
+                          <div class="helper-text">The selected prefix is added automatically with one space before the
+                            number.</div>
+                        </div>
 
-                  <div class="form-group">
-                    <label>Number of Receipts <span class="required">*</span></label>
-                    <input type="number" id="tenbd-receipt-count" min="1" step="1" value="50"
-                      oninput="update10BDFilePreview()">
-                    <div class="helper-text">Defaults to 50. Change this when a receipt book contains a different
-                      quantity.</div>
-                  </div>
+                        <div class="form-group">
+                          <label>Number of Receipts <span class="required">*</span></label>
+                          <input type="number" id="tenbd-receipt-count" min="1" step="1" value="50"
+                            oninput="update10BDFilePreview()">
+                          <div class="helper-text">Defaults to 50. Change this when a receipt book contains a different
+                            quantity.</div>
+                        </div>
 
-                  <div class="form-group">
-                    <label>Receipt End Number</label>
-                    <input type="number" id="tenbd-end-no" readonly
-                      style="background:#f5f0e8;color:var(--muted);cursor:not-allowed;">
-                    <div class="helper-text">Calculated automatically from the start number and receipt count.</div>
-                  </div>
-                </div>
+                        <div class="form-group">
+                          <label>Receipt End Number</label>
+                          <input type="number" id="tenbd-end-no" readonly
+                            style="background:#f5f0e8;color:var(--muted);cursor:not-allowed;">
+                          <div class="helper-text">Calculated automatically from the start number and receipt count.
+                          </div>
+                        </div>
+                      </div>
 
-                <div id="tenbd-file-preview"
-                  style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;color:var(--muted);">
-                  Enter the financial year, book number, and receipt range.
-                </div>
+                      <div id="tenbd-file-preview"
+                        style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;color:var(--muted);">
+                        Enter the financial year, book number, and receipt range.
+                      </div>
 
-                <div class="btn-row">
-                  <button class="btn btn-primary" id="tenbd-generate-btn" onclick="generate10BDReceiptBookFile()">
-                    ⬇️ Generate Protected Excel
-                  </button>
-                  <button class="btn btn-secondary" onclick="reset10BDReceiptBookForm()">
-                    ↺ Reset
-                  </button>
-                </div>
+                      <div class="btn-row">
+                        <button class="btn btn-primary" id="tenbd-generate-btn" onclick="generate10BDReceiptBookFile()">
+                          ⬇️ Generate Protected Excel
+                        </button>
+                        <button class="btn btn-secondary" onclick="reset10BDReceiptBookForm()">
+                          ↺ Reset
+                        </button>
+                      </div>
 
-                <div id="tenbd-status" style="display:none;margin-top:12px;font-size:0.86rem;"></div>
-              </div>
-
-              <!-- Insert this card inside the existing 10BD Certificate section,
-              immediately after the Receipt Book Entry File Generator card. -->
-              <div class="card" id="tenbd-master-card" style="margin-top:18px;">
-                <div class="card-title">Master File Creator</div>
-                <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
-                  Merge completed receipt-book workbooks into one master workbook. Processing is fully local in the
-                  browser;
-                  no file or row is saved to Supabase. Exact duplicate receipt rows are skipped. Changed duplicate
-                  receipt
-                  numbers require confirmation before replacement.
-                </p>
-
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Financial Year <span class="required">*</span></label>
-                    <input type="text" id="tenbd-master-fy" maxlength="7" placeholder="2026-27"
-                      oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDMasterFileSummary()">
-                    <div class="helper-text">Used only in the filename when creating a new master workbook.</div>
-                  </div>
-
-                  <div class="form-group">
-                    <label>Existing Master File <span
-                        style="color:var(--muted);font-weight:400;">(optional)</span></label>
-                    <input type="file" id="tenbd-master-existing" accept=".xlsx"
-                      onchange="update10BDMasterFileSummary()"
-                      style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
-                    <div class="helper-text">Select the last master workbook when adding or correcting records.</div>
-                  </div>
-
-                  <div class="form-group full">
-                    <label>Completed Receipt-Book Files <span class="required">*</span></label>
-                    <input type="file" id="tenbd-master-sources" accept=".xlsx" multiple
-                      onchange="update10BDMasterFileSummary()"
-                      style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
-                    <div class="helper-text">Select one or more completed fixed-format receipt-book workbooks.</div>
-                  </div>
-                </div>
-
-                <div id="tenbd-master-file-summary"
-                  style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;line-height:1.6;">
-                  Select completed receipt-book files to create a master workbook.
-                </div>
-
-                <div class="btn-row">
-                  <button class="btn btn-primary" id="tenbd-master-generate-btn" onclick="generate10BDMasterFile()">
-                    Generate / Update Master File
-                  </button>
-                  <button class="btn btn-secondary" onclick="reset10BDMasterForm()">Reset</button>
-                </div>
-
-                <div id="tenbd-master-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
-              </div>
-
-              <!-- Insert this card inside the existing 10BD Certificate section,
-              immediately after the Master File Creator card. -->
-              <div class="card" id="tenbd-final-card" style="margin-top:18px;">
-                <div class="card-title">Form 10BD Upload File Generator</div>
-                <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
-                  Convert the final 10BD master workbook into the fixed Income Tax Form 10BD CSV format.
-                  Processing is fully local in the browser; no input file or donor record is uploaded to Supabase.
-                </p>
-
-                <div class="form-grid">
-                  <div class="form-group">
-                    <label>Financial Year <span class="required">*</span></label>
-                    <input type="text" id="tenbd-final-fy" maxlength="7" placeholder="2026-27"
-                      oninput="this.value=this.value.replace(/[^0-9-]/g,'');tenBDFinalFileChanged()">
-                    <div class="helper-text">Defaults to the current financial year and is used in the output filename.
+                      <div id="tenbd-status" style="display:none;margin-top:12px;font-size:0.86rem;"></div>
                     </div>
-                  </div>
-
-                  <div class="form-group">
-                    <label>Final 10BD Master File <span class="required">*</span></label>
-                    <input type="file" id="tenbd-final-master" accept=".xlsx" onchange="tenBDFinalFileChanged()"
-                      style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
-                    <div class="helper-text">Select the final master workbook generated by the Master File Creator.
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:14px;">
-                  <div
-                    style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
-                    <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">URN
-                    </div>
-                    <div class="mono" style="font-size:0.86rem;font-weight:600;margin-top:3px;">AAATV2881JF20214</div>
-                  </div>
-                  <div
-                    style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
-                    <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">URN
-                      Issue Date</div>
-                    <div style="font-size:0.86rem;font-weight:600;margin-top:3px;">28/May/2021</div>
-                  </div>
-                  <div
-                    style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
-                    <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">Output
-                    </div>
-                    <div id="tenbd-final-output-name" style="font-size:0.86rem;font-weight:600;margin-top:3px;">
-                      Form10BD_Donations.csv</div>
-                  </div>
-                </div>
-
-                <div class="btn-row">
-                  <button class="btn btn-primary" id="tenbd-final-analyse-btn" onclick="analyse10BDFinalMaster()">
-                    Analyse Master File
-                  </button>
-                  <button class="btn btn-secondary" onclick="reset10BDFinalForm()">Reset</button>
-                </div>
-
-                <div id="tenbd-final-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
-
-                <div id="tenbd-final-preview-wrap" style="display:none;margin-top:18px;">
-                  <div class="stats-grid" id="tenbd-final-stats"></div>
-
-                  <div class="card" style="padding:16px;margin-bottom:14px;">
-                    <div class="card-title" style="font-size:1rem;margin-bottom:12px;">Validation Preview</div>
-                    <div class="table-wrap" style="max-height:430px;overflow:auto;">
-                      <table class="data-table">
-                        <thead style="position:sticky;top:0;z-index:2;">
-                          <tr>
-                            <th>Receipt</th>
-                            <th>Donor Name</th>
-                            <th>PAN</th>
-                            <th>Amount</th>
-                            <th>Result</th>
-                          </tr>
-                        </thead>
-                        <tbody id="tenbd-final-preview-tbody"></tbody>
-                      </table>
-                    </div>
-                    <div id="tenbd-final-preview-note" style="margin-top:10px;font-size:0.82rem;color:var(--muted);">
-                    </div>
-                  </div>
-
-                  <div class="btn-row" style="margin-top:0;">
-                    <button class="btn btn-success" id="tenbd-final-download-btn" onclick="download10BDFinalCSV()"
-                      disabled>
-                      Download Form 10BD CSV
-                    </button>
                   </div>
                 </div>
               </div>
+
+              <!-- 10BD Master File Creator -->
+              <div
+                style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
+                  📚 Master File Creator
+                </div>
+                <div class="admin-section-body collapsed" id="tenbd-master-section-body">
+                  <div style="padding:14px 0;">
+                    <div class="card" id="tenbd-master-card" style="padding:16px;margin-bottom:0;">
+                      <div class="card-title">Master File Creator</div>
+                      <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
+                        Merge completed receipt-book workbooks into one master workbook. Processing is fully local in
+                        the browser;
+                        no file or row is saved to Supabase. Exact duplicate receipt rows are skipped. Changed duplicate
+                        receipt
+                        numbers require confirmation before replacement.
+                      </p>
+
+                      <div class="form-grid">
+                        <div class="form-group">
+                          <label>Financial Year <span class="required">*</span></label>
+                          <input type="text" id="tenbd-master-fy" maxlength="7" placeholder="2026-27"
+                            oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDMasterFileSummary()">
+                          <div class="helper-text">Used only in the filename when creating a new master workbook.</div>
+                        </div>
+
+                        <div class="form-group">
+                          <label>Existing Master File <span
+                              style="color:var(--muted);font-weight:400;">(optional)</span></label>
+                          <input type="file" id="tenbd-master-existing" accept=".xlsx"
+                            onchange="update10BDMasterFileSummary()"
+                            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                          <div class="helper-text">Select the last master workbook when adding or correcting records.
+                          </div>
+                        </div>
+
+                        <div class="form-group full">
+                          <label>Completed Receipt-Book Files <span class="required">*</span></label>
+                          <input type="file" id="tenbd-master-sources" accept=".xlsx" multiple
+                            onchange="update10BDMasterFileSummary()"
+                            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                          <div class="helper-text">Select one or more completed fixed-format receipt-book workbooks.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div id="tenbd-master-file-summary"
+                        style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;line-height:1.6;">
+                        Select completed receipt-book files to create a master workbook.
+                      </div>
+
+                      <div class="btn-row">
+                        <button class="btn btn-primary" id="tenbd-master-generate-btn"
+                          onclick="generate10BDMasterFile()">
+                          Generate / Update Master File
+                        </button>
+                        <button class="btn btn-secondary" onclick="reset10BDMasterForm()">Reset</button>
+                      </div>
+
+                      <div id="tenbd-master-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Final Form 10BD Upload File Generator -->
+              <div
+                style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
+                  📤 Form 10BD Upload File Generator
+                </div>
+                <div class="admin-section-body collapsed" id="tenbd-final-section-body">
+                  <div style="padding:14px 0;">
+                    <div class="card" id="tenbd-final-card" style="margin-top:18px;">
+                      <div class="card-title">Form 10BD Upload File Generator</div>
+                      <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
+                        Convert the final 10BD master workbook into the fixed Income Tax Form 10BD CSV format.
+                        Processing is fully local in the browser; no input file or donor record is uploaded to Supabase.
+                      </p>
+
+                      <div class="form-grid">
+                        <div class="form-group">
+                          <label>Financial Year <span class="required">*</span></label>
+                          <input type="text" id="tenbd-final-fy" maxlength="7" placeholder="2026-27"
+                            oninput="this.value=this.value.replace(/[^0-9-]/g,'');tenBDFinalFileChanged()">
+                          <div class="helper-text">Defaults to the current financial year and is used in the output
+                            filename.</div>
+                        </div>
+
+                        <div class="form-group">
+                          <label>Final 10BD Master File <span class="required">*</span></label>
+                          <input type="file" id="tenbd-final-master" accept=".xlsx" onchange="tenBDFinalFileChanged()"
+                            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                          <div class="helper-text">Select the final master workbook generated by the Master File
+                            Creator.</div>
+                        </div>
+                      </div>
+
+                      <div
+                        style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:14px;">
+                        <div
+                          style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
+                          <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">
+                            URN</div>
+                          <div class="mono" style="font-size:0.86rem;font-weight:600;margin-top:3px;">AAATV2881JF20214
+                          </div>
+                        </div>
+                        <div
+                          style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
+                          <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">
+                            URN Issue Date</div>
+                          <div style="font-size:0.86rem;font-weight:600;margin-top:3px;">28/May/2021</div>
+                        </div>
+                        <div
+                          style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
+                          <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">
+                            Output</div>
+                          <div id="tenbd-final-output-name" style="font-size:0.86rem;font-weight:600;margin-top:3px;">
+                            Form10BD_Donations.csv</div>
+                        </div>
+                      </div>
+
+                      <div class="btn-row">
+                        <button class="btn btn-primary" id="tenbd-final-analyse-btn" onclick="analyse10BDFinalMaster()">
+                          Analyse Master File
+                        </button>
+                        <button class="btn btn-secondary" onclick="reset10BDFinalForm()">Reset</button>
+                      </div>
+
+                      <div id="tenbd-final-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
+
+                      <div id="tenbd-final-preview-wrap" style="display:none;margin-top:18px;">
+                        <div class="stats-grid" id="tenbd-final-stats"></div>
+
+                        <div class="card" style="padding:16px;margin-bottom:14px;">
+                          <div class="card-title" style="font-size:1rem;margin-bottom:12px;">Validation Preview</div>
+                          <div class="table-wrap" style="max-height:430px;overflow:auto;">
+                            <table class="data-table">
+                              <thead style="position:sticky;top:0;z-index:2;">
+                                <tr>
+                                  <th>Receipt</th>
+                                  <th>Donor Name</th>
+                                  <th>PAN</th>
+                                  <th>Amount</th>
+                                  <th>Result</th>
+                                </tr>
+                              </thead>
+                              <tbody id="tenbd-final-preview-tbody"></tbody>
+                            </table>
+                          </div>
+                          <div id="tenbd-final-preview-note"
+                            style="margin-top:10px;font-size:0.82rem;color:var(--muted);"></div>
+                        </div>
+
+                        <div class="btn-row" style="margin-top:0;">
+                          <button class="btn btn-success" id="tenbd-final-download-btn" onclick="download10BDFinalCSV()"
+                            disabled>
+                            Download Form 10BD CSV
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
-
         </div>
-
-
         <!-- Results -->
         <div id="recon-results" style="display:none;margin-top:20px;">
 
