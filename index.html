@@ -2250,6 +2250,8 @@
                     <label>Financial Year <span class="required">*</span></label>
                     <input type="text" id="tenbd-fy" maxlength="7" placeholder="2026-27"
                       oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDFilePreview()">
+                    <div class="helper-text">Defaults to the current financial year. Finance may change it before
+                      generation.</div>
                   </div>
 
                   <div class="form-group">
@@ -2257,12 +2259,19 @@
                     <input type="text" id="tenbd-book-no" maxlength="20" placeholder="1261"
                       oninput="this.value=this.value.replace(/[^0-9A-Za-z_-]/g,'');update10BDFilePreview()">
                   </div>
+                  <div class="form-group">
+                    <label>Receipt Prefix <span class="required">*</span></label>
+                    <input type="text" id="tenbd-prefix" maxlength="10" value="D"
+                      oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\/-]/g,'');update10BDFilePreview()">
+                    <div class="helper-text">Defaults to D. One space is added before the receipt number.</div>
+                  </div>
 
                   <div class="form-group">
                     <label>Receipt Start Number <span class="required">*</span></label>
                     <input type="number" id="tenbd-start-no" min="1" step="1" placeholder="63001"
                       oninput="update10BDFilePreview()">
-                    <div class="helper-text">The file adds the fixed prefix `D ` automatically.</div>
+                    <div class="helper-text">The selected prefix is added automatically with one space before the
+                      number.</div>
                   </div>
 
                   <div class="form-group">
@@ -3140,7 +3149,12 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
           const fyInput = document.getElementById('outreach-fy');
           if (fyInput && !fyInput.value) fyInput.value = currentFY();
         }
-        if (id === 'finance' && suspenseHasAccess()) loadSuspenseDashboard();
+        if (id === 'finance') {
+          if (typeof suspenseHasAccess === 'function' && suspenseHasAccess()) {
+            loadSuspenseDashboard();
+          }
+          load10BDDefaults();
+        }
         //if (id === 'recon') { document.getElementById('recon-results').style.display='none'; }
       }
       //upload payment screenshot
@@ -6413,6 +6427,22 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         const match = String(value || '').trim().match(/^(\d{4})-(\d{2})$/);
         return Boolean(match && ((Number(match[1]) + 1) % 100 === Number(match[2])));
       }
+      function tenBDFormatReceiptNo(prefix, number) {
+        return `${String(prefix || '').trim().toUpperCase()} ${number}`;
+      }
+
+      function load10BDDefaults() {
+        const fy = document.getElementById('tenbd-fy');
+        if (fy && !fy.value) fy.value = currentFY();
+
+        const prefix = document.getElementById('tenbd-prefix');
+        if (prefix && !prefix.value) prefix.value = 'D';
+
+        const count = document.getElementById('tenbd-receipt-count');
+        if (count && !count.value) count.value = '50';
+
+        update10BDFilePreview();
+      }
 
       function tenBDSetStatus(message, type = '') {
         const el = document.getElementById('tenbd-status');
@@ -6428,6 +6458,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       function tenBDReadInputs() {
         const fy = document.getElementById('tenbd-fy')?.value.trim() || '';
         const bookNo = document.getElementById('tenbd-book-no')?.value.trim() || '';
+        const prefix = document.getElementById('tenbd-prefix')?.value.trim().toUpperCase() || '';
         const startNo = Number(document.getElementById('tenbd-start-no')?.value || 0);
         const count = Number(document.getElementById('tenbd-receipt-count')?.value || 0);
         const endNo = Number.isSafeInteger(startNo) && startNo > 0 &&
@@ -6438,7 +6469,22 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         const endInput = document.getElementById('tenbd-end-no');
         if (endInput) endInput.value = endNo || '';
 
-        return { fy, bookNo, startNo, count, endNo };
+        return { fy, bookNo, prefix, startNo, count, endNo };
+      }
+
+      const fy = document.getElementById('tenbd-fy')?.value.trim() || '';
+      const bookNo = document.getElementById('tenbd-book-no')?.value.trim() || '';
+      const startNo = Number(document.getElementById('tenbd-start-no')?.value || 0);
+      const count = Number(document.getElementById('tenbd-receipt-count')?.value || 0);
+      const endNo = Number.isSafeInteger(startNo) && startNo > 0 &&
+        Number.isSafeInteger(count) && count > 0
+        ? startNo + count - 1
+        : 0;
+
+      const endInput = document.getElementById('tenbd-end-no');
+      if (endInput) endInput.value = endNo || '';
+
+      return { fy, bookNo, startNo, count, endNo };
       }
 
       function tenBDValidateInputs(values) {
@@ -6447,6 +6493,12 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         }
         if (!values.bookNo) {
           throw new Error('Receipt book number is required');
+        }
+        if (!values.prefix) {
+          throw new Error('Receipt prefix is required');
+        }
+        if (!/^[A-Z0-9][A-Z0-9\/-]{0,9}$/.test(values.prefix)) {
+          throw new Error('Receipt prefix may contain only letters, numbers, / or -');
         }
         if (!Number.isSafeInteger(values.startNo) || values.startNo <= 0) {
           throw new Error('Enter a valid receipt start number');
@@ -6484,12 +6536,32 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (!el) return;
 
         const values = tenBDReadInputs();
-        if (!values.bookNo || !values.startNo || !values.count || !values.endNo) {
-          el.textContent = 'Enter the financial year, book number, start number, and number of receipts.';
+        if (!values.fy || !values.bookNo || !values.prefix ||
+          !values.startNo || !values.count || !values.endNo) {
+          el.textContent = 'Enter the financial year, book number, prefix, start number, and number of receipts.';
           return;
         }
 
+        const firstReceipt = tenBDFormatReceiptNo(values.prefix, values.startNo);
+        const lastReceipt = tenBDFormatReceiptNo(values.prefix, values.endNo);
+
         el.innerHTML = `
+          <strong>File:</strong> ${String(values.bookNo).replace(/[<>&"']/g, '')}_Book No j.xlsx<br>
+          <strong>Financial year:</strong> ${suspenseEscape(values.fy)}<br>
+          <strong>Receipt range:</strong> ${suspenseEscape(firstReceipt)} to ${suspenseEscape(lastReceipt)}<br>
+          <strong>Rows:</strong> ${values.count}
+        `;
+      }
+      const el = document.getElementById('tenbd-file-preview');
+      if (!el) return;
+
+      const values = tenBDReadInputs();
+      if (!values.bookNo || !values.startNo || !values.count || !values.endNo) {
+        el.textContent = 'Enter the financial year, book number, start number, and number of receipts.';
+        return;
+      }
+
+      el.innerHTML = `
           <strong>File:</strong> ${String(values.bookNo).replace(/[<>&"']/g, '')}_Book No j.xlsx<br>
           <strong>Receipt range:</strong> D ${values.startNo} to D ${values.endNo}<br>
           <strong>Rows:</strong> ${values.count}
@@ -6497,17 +6569,37 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       }
 
       function reset10BDReceiptBookForm() {
-        ['tenbd-fy', 'tenbd-book-no', 'tenbd-start-no', 'tenbd-end-no'].forEach(id => {
+        ['tenbd-book-no', 'tenbd-start-no', 'tenbd-end-no'].forEach(id => {
           const el = document.getElementById(id);
           if (el) el.value = '';
         });
+
+        const fy = document.getElementById('tenbd-fy');
+        if (fy) fy.value = currentFY();
+
+        const prefix = document.getElementById('tenbd-prefix');
+        if (prefix) prefix.value = 'D';
 
         const count = document.getElementById('tenbd-receipt-count');
         if (count) count.value = '50';
 
         const status = document.getElementById('tenbd-status');
         if (status) status.style.display = 'none';
+
         update10BDFilePreview();
+      }
+
+      ['tenbd-fy', 'tenbd-book-no', 'tenbd-start-no', 'tenbd-end-no'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+
+      const count = document.getElementById('tenbd-receipt-count');
+      if (count) count.value = '50';
+
+      const status = document.getElementById('tenbd-status');
+      if (status) status.style.display = 'none';
+      update10BDFilePreview();
       }
 
       function tenBDDownloadBlob(blob, fileName) {
@@ -6576,6 +6668,15 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           const templateTotalRow = tenBDFindTemplateTotalRow(worksheet);
           const templateReceiptCount = templateTotalRow - dataStartRow;
 
+          // The template contains shared formulas in columns A and N.
+          // Remove those formula groups before inserting/deleting rows; their values
+          // and formulas are rebuilt explicitly below. Iterate bottom-up so each
+          // shared-formula master remains available until its clones are cleared.
+          for (let rowNo = templateTotalRow - 1; rowNo >= dataStartRow; rowNo--) {
+            worksheet.getCell(rowNo, 1).value = null;  // Receipt number column A
+            worksheet.getCell(rowNo, 14).value = null; // Row-total column N
+          }
+
           // Resize the template data area to the requested receipt count.
           // The existing row immediately before TOTAL is the style source for added rows.
           if (values.count > templateReceiptCount) {
@@ -6598,7 +6699,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           for (let rowNo = dataStartRow; rowNo <= dataEndRow; rowNo++) {
             const receiptNo = values.startNo + (rowNo - dataStartRow);
             const receiptCell = worksheet.getCell(rowNo, 1);
-            receiptCell.value = `D ${receiptNo}`;
+            receiptCell.value = tenBDFormatReceiptNo(values.prefix, receiptNo);
             receiptCell.numFmt = '@';
 
             for (let colNo = 2; colNo <= 13; colNo++) {
@@ -6707,7 +6808,9 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           tenBDDownloadBlob(blob, outputName);
 
           tenBDSetStatus(
-            `Generated ${outputName} with ${values.count} receipts: D ${values.startNo} to D ${values.endNo}.`,
+            `Generated ${outputName} for FY ${values.fy} with ${values.count} receipts: ` +
+            `${tenBDFormatReceiptNo(values.prefix, values.startNo)} to ` +
+            `${tenBDFormatReceiptNo(values.prefix, values.endNo)}.`,
             'success'
           );
           showToast(`✅ ${outputName} downloaded`, 'success');
@@ -7074,13 +7177,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         }
         switch (action) {
           case 'view': viewReceipt(id); break;
-          case 'edit':
-            if (r?.source_type === 'tally_suspense' && r.source_suspense_id && suspenseHasAccess()) {
-              openSuspenseReview(r.source_suspense_id);
-            } else {
-              editReceipt(id);
-            }
-            break;
+          case 'edit': editReceipt(id); break;
           case 'pdf': downloadById(id, 'pdf'); break;
           case 'screenshot': r && r.screenshot_url ? window.open(r.screenshot_url, '_blank') : showToast('No screenshot', 'error'); break;
           case 'text': r && r.mobile ? sendTextById(id) : showToast('No mobile number', 'error'); break;
