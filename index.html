@@ -2241,8 +2241,8 @@
                 </div>
 
                 <p style="font-size:0.86rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">
-                  Generates the fixed receipt-book Excel format with 50 protected receipt numbers.
-                  Donor-entry columns remain editable.
+                  Generates the fixed receipt-book Excel format with the requested number of protected receipt rows.
+                  The default is 50. Donor-entry columns remain editable.
                 </p>
 
                 <div class="form-grid">
@@ -2266,10 +2266,18 @@
                   </div>
 
                   <div class="form-group">
-                    <label>Receipt End Number <span class="required">*</span></label>
-                    <input type="number" id="tenbd-end-no" min="1" step="1" placeholder="63050"
+                    <label>Number of Receipts <span class="required">*</span></label>
+                    <input type="number" id="tenbd-receipt-count" min="1" step="1" value="50"
                       oninput="update10BDFilePreview()">
-                    <div class="helper-text">The range must contain exactly 50 receipts.</div>
+                    <div class="helper-text">Defaults to 50. Change this when a receipt book contains a different
+                      quantity.</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Receipt End Number</label>
+                    <input type="number" id="tenbd-end-no" readonly
+                      style="background:#f5f0e8;color:var(--muted);cursor:not-allowed;">
+                    <div class="helper-text">Calculated automatically from the start number and receipt count.</div>
                   </div>
                 </div>
 
@@ -6381,7 +6389,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       // ═══════════════════════════════════════════════════════════════════════════════
       const TENBD_TEMPLATE_URL = './assets/receipt-book-format.xlsx';
       const TENBD_SHEET_PASSWORD = 'VSD10BD';
-      const TENBD_RECEIPTS_PER_BOOK = 50;
+      //const TENBD_RECEIPTS_PER_BOOK = 50;
 
       const TENBD_EXPECTED_HEADERS = [
         'R. NO-',
@@ -6421,8 +6429,16 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         const fy = document.getElementById('tenbd-fy')?.value.trim() || '';
         const bookNo = document.getElementById('tenbd-book-no')?.value.trim() || '';
         const startNo = Number(document.getElementById('tenbd-start-no')?.value || 0);
-        const endNo = Number(document.getElementById('tenbd-end-no')?.value || 0);
-        return { fy, bookNo, startNo, endNo };
+        const count = Number(document.getElementById('tenbd-receipt-count')?.value || 0);
+        const endNo = Number.isSafeInteger(startNo) && startNo > 0 &&
+          Number.isSafeInteger(count) && count > 0
+          ? startNo + count - 1
+          : 0;
+
+        const endInput = document.getElementById('tenbd-end-no');
+        if (endInput) endInput.value = endNo || '';
+
+        return { fy, bookNo, startNo, count, endNo };
       }
 
       function tenBDValidateInputs(values) {
@@ -6435,16 +6451,33 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (!Number.isSafeInteger(values.startNo) || values.startNo <= 0) {
           throw new Error('Enter a valid receipt start number');
         }
-        if (!Number.isSafeInteger(values.endNo) || values.endNo <= 0) {
-          throw new Error('Enter a valid receipt end number');
+        if (!Number.isSafeInteger(values.count) || values.count <= 0) {
+          throw new Error('Number of receipts must be a positive whole number');
         }
-        if (values.endNo < values.startNo) {
-          throw new Error('Receipt end number cannot be lower than start number');
+        if (!Number.isSafeInteger(values.endNo) || values.endNo < values.startNo) {
+          throw new Error('Unable to calculate a valid receipt end number');
         }
-        const count = values.endNo - values.startNo + 1;
-        if (count !== TENBD_RECEIPTS_PER_BOOK) {
-          throw new Error(`A receipt book must contain exactly ${TENBD_RECEIPTS_PER_BOOK} receipts`);
-        }
+      }
+
+      if (!tenBDValidateFY(values.fy)) {
+        throw new Error('Enter a valid financial year such as 2026-27');
+      }
+      if (!values.bookNo) {
+        throw new Error('Receipt book number is required');
+      }
+      if (!Number.isSafeInteger(values.startNo) || values.startNo <= 0) {
+        throw new Error('Enter a valid receipt start number');
+      }
+      if (!Number.isSafeInteger(values.endNo) || values.endNo <= 0) {
+        throw new Error('Enter a valid receipt end number');
+      }
+      if (values.endNo < values.startNo) {
+        throw new Error('Receipt end number cannot be lower than start number');
+      }
+      const count = values.endNo - values.startNo + 1;
+      if (count !== TENBD_RECEIPTS_PER_BOOK) {
+        throw new Error(`A receipt book must contain exactly ${TENBD_RECEIPTS_PER_BOOK} receipts`);
+      }
       }
 
       function update10BDFilePreview() {
@@ -6452,20 +6485,16 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (!el) return;
 
         const values = tenBDReadInputs();
-        if (!values.bookNo || !values.startNo || !values.endNo) {
-          el.textContent = 'Enter the financial year, book number, and receipt range.';
+        if (!values.bookNo || !values.startNo || !values.count || !values.endNo) {
+          el.textContent = 'Enter the financial year, book number, start number, and number of receipts.';
           return;
         }
 
-        const count = values.endNo >= values.startNo
-          ? values.endNo - values.startNo + 1
-          : 0;
-
         el.innerHTML = `
-    <strong>File:</strong> ${String(values.bookNo).replace(/[<>&"']/g, '')}_Book No j.xlsx<br>
-    <strong>Receipt range:</strong> D ${values.startNo} to D ${values.endNo}<br>
-    <strong>Rows:</strong> ${count}
-  `;
+          <strong>File:</strong> ${String(values.bookNo).replace(/[<>&"']/g, '')}_Book No j.xlsx<br>
+          <strong>Receipt range:</strong> D ${values.startNo} to D ${values.endNo}<br>
+          <strong>Rows:</strong> ${values.count}
+        `;
       }
 
       function reset10BDReceiptBookForm() {
@@ -6473,6 +6502,10 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           const el = document.getElementById(id);
           if (el) el.value = '';
         });
+
+        const count = document.getElementById('tenbd-receipt-count');
+        if (count) count.value = '50';
+
         const status = document.getElementById('tenbd-status');
         if (status) status.style.display = 'none';
         update10BDFilePreview();
@@ -6487,6 +6520,13 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         link.click();
         link.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+      function tenBDFindTemplateTotalRow(worksheet) {
+        for (let rowNo = 2; rowNo <= worksheet.rowCount; rowNo++) {
+          const value = String(worksheet.getCell(rowNo, 1).value || '').trim().toUpperCase();
+          if (value === 'TOTAL') return rowNo;
+        }
+        throw new Error('Template TOTAL row was not found');
       }
 
       async function generate10BDReceiptBookFile() {
@@ -6533,9 +6573,31 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
             }
           });
 
-          // Clear all donor-entry cells and populate protected receipt numbers.
-          for (let rowNo = 2; rowNo <= 51; rowNo++) {
-            const receiptNo = values.startNo + (rowNo - 2);
+          const dataStartRow = 2;
+          const templateTotalRow = tenBDFindTemplateTotalRow(worksheet);
+          const templateReceiptCount = templateTotalRow - dataStartRow;
+
+          // Resize the template data area to the requested receipt count.
+          // The existing row immediately before TOTAL is the style source for added rows.
+          if (values.count > templateReceiptCount) {
+            worksheet.duplicateRow(
+              templateTotalRow - 1,
+              values.count - templateReceiptCount,
+              true
+            );
+          } else if (values.count < templateReceiptCount) {
+            worksheet.spliceRows(
+              dataStartRow + values.count,
+              templateReceiptCount - values.count
+            );
+          }
+
+          const dataEndRow = dataStartRow + values.count - 1;
+          const totalRowNo = dataEndRow + 1;
+
+          // Clear donor-entry cells and populate protected receipt numbers.
+          for (let rowNo = dataStartRow; rowNo <= dataEndRow; rowNo++) {
+            const receiptNo = values.startNo + (rowNo - dataStartRow);
             const receiptCell = worksheet.getCell(rowNo, 1);
             receiptCell.value = `D ${receiptNo}`;
             receiptCell.numFmt = '@';
@@ -6551,19 +6613,27 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
             };
           }
 
-          // Restore the fixed total row.
-          worksheet.getCell('A52').value = 'TOTAL';
+          // Rebuild the dynamic total row.
+          worksheet.getCell(totalRowNo, 1).value = 'TOTAL';
+          for (let colNo = 2; colNo <= 6; colNo++) {
+            worksheet.getCell(totalRowNo, colNo).value = null;
+          }
+          worksheet.getCell(totalRowNo, 15).value = null;
+
           for (let colNo = 7; colNo <= 13; colNo++) {
             const letter = worksheet.getColumn(colNo).letter;
-            worksheet.getCell(52, colNo).value = {
-              formula: `SUM(${letter}2:${letter}51)`,
+            worksheet.getCell(totalRowNo, colNo).value = {
+              formula: `SUM(${letter}${dataStartRow}:${letter}${dataEndRow})`,
               result: 0
             };
           }
-          worksheet.getCell('N52').value = { formula: 'SUM(N2:N51)', result: 0 };
+          worksheet.getCell(totalRowNo, 14).value = {
+            formula: `SUM(N${dataStartRow}:N${dataEndRow})`,
+            result: 0
+          };
 
-          // Lock every cell first.
-          for (let rowNo = 1; rowNo <= 52; rowNo++) {
+          // Lock every generated cell first.
+          for (let rowNo = 1; rowNo <= totalRowNo; rowNo++) {
             for (let colNo = 1; colNo <= 15; colNo++) {
               worksheet.getCell(rowNo, colNo).protection = {
                 locked: true,
@@ -6572,8 +6642,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
             }
           }
 
-          // Unlock only the cells used for manual donor entry.
-          for (let rowNo = 2; rowNo <= 51; rowNo++) {
+          // Unlock only manual-entry cells for the generated receipt rows.
+          for (let rowNo = dataStartRow; rowNo <= dataEndRow; rowNo++) {
             for (let colNo = 2; colNo <= 13; colNo++) {
               worksheet.getCell(rowNo, colNo).protection = {
                 locked: false,
@@ -6585,7 +6655,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
               hidden: false
             };
 
-            // Derived row total remains locked and its formula is hidden.
             worksheet.getCell(rowNo, 14).protection = {
               locked: true,
               hidden: true
@@ -6593,7 +6662,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           }
 
           for (let colNo = 7; colNo <= 14; colNo++) {
-            worksheet.getCell(52, colNo).protection = {
+            worksheet.getCell(totalRowNo, colNo).protection = {
               locked: true,
               hidden: true
             };
@@ -6606,7 +6675,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
             topLeftCell: 'B2',
             activeCell: 'B2'
           }];
-          worksheet.pageSetup.printArea = 'A1:O52';
+          worksheet.pageSetup.printArea = `A1:O${totalRowNo}`;
 
           await worksheet.protect(TENBD_SHEET_PASSWORD, {
             selectLockedCells: false,
@@ -6639,7 +6708,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           tenBDDownloadBlob(blob, outputName);
 
           tenBDSetStatus(
-            `Generated ${outputName} with D ${values.startNo} to D ${values.endNo}.`,
+            `Generated ${outputName} with ${values.count} receipts: D ${values.startNo} to D ${values.endNo}.`,
             'success'
           );
           showToast(`✅ ${outputName} downloaded`, 'success');
