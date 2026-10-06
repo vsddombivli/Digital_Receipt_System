@@ -11,6 +11,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <link
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Mono:wght@400;500&display=swap"
     rel="stylesheet">
@@ -1985,7 +1986,7 @@
           </div>
           <div class="admin-section-body collapsed" id="suspense-main-section-body">
             <div style="padding:14px 0 0;">
-              
+
               <!-- Suspense Import -->
               <div
                 style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
@@ -2221,6 +2222,72 @@
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10BD CERTIFICATE -->
+        <div
+          style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
+            📄 10BD Certificate
+          </div>
+          <div class="admin-section-body collapsed" id="tenbd-section-body">
+            <div style="padding:14px 0;">
+              <div class="card" style="padding:16px;margin-bottom:0;">
+                <div class="card-title" style="font-size:1rem;margin-bottom:12px;">
+                  Receipt Book Entry File Generator
+                </div>
+
+                <p style="font-size:0.86rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">
+                  Generates the fixed receipt-book Excel format with 50 protected receipt numbers.
+                  Donor-entry columns remain editable.
+                </p>
+
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Financial Year <span class="required">*</span></label>
+                    <input type="text" id="tenbd-fy" maxlength="7" placeholder="2026-27"
+                      oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDFilePreview()">
+                  </div>
+
+                  <div class="form-group">
+                    <label>Receipt Book No. <span class="required">*</span></label>
+                    <input type="text" id="tenbd-book-no" maxlength="20" placeholder="1261"
+                      oninput="this.value=this.value.replace(/[^0-9A-Za-z_-]/g,'');update10BDFilePreview()">
+                  </div>
+
+                  <div class="form-group">
+                    <label>Receipt Start Number <span class="required">*</span></label>
+                    <input type="number" id="tenbd-start-no" min="1" step="1" placeholder="63001"
+                      oninput="update10BDFilePreview()">
+                    <div class="helper-text">The file adds the fixed prefix `D ` automatically.</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Receipt End Number <span class="required">*</span></label>
+                    <input type="number" id="tenbd-end-no" min="1" step="1" placeholder="63050"
+                      oninput="update10BDFilePreview()">
+                    <div class="helper-text">The range must contain exactly 50 receipts.</div>
+                  </div>
+                </div>
+
+                <div id="tenbd-file-preview"
+                  style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;color:var(--muted);">
+                  Enter the financial year, book number, and receipt range.
+                </div>
+
+                <div class="btn-row">
+                  <button class="btn btn-primary" id="tenbd-generate-btn" onclick="generate10BDReceiptBookFile()">
+                    ⬇️ Generate Protected Excel
+                  </button>
+                  <button class="btn btn-secondary" onclick="reset10BDReceiptBookForm()">
+                    ↺ Reset
+                  </button>
+                </div>
+
+                <div id="tenbd-status" style="display:none;margin-top:12px;font-size:0.86rem;"></div>
               </div>
             </div>
           </div>
@@ -6309,6 +6376,282 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           : 'No audit entries.';
       }
 
+      // ═══════════════════════════════════════════════════════════════════════════════
+      // 10BD RECEIPT BOOK EXCEL GENERATOR
+      // ═══════════════════════════════════════════════════════════════════════════════
+      const TENBD_TEMPLATE_URL = './assets/receipt-book-format.xlsx';
+      const TENBD_SHEET_PASSWORD = 'VSD10BD';
+      const TENBD_RECEIPTS_PER_BOOK = 50;
+
+      const TENBD_EXPECTED_HEADERS = [
+        'R. NO-',
+        'DATE',
+        'NAME OF DONOR',
+        'ADDRESS',
+        'CONTACT NO.',
+        'PAN NO.',
+        'JIVDAYA - ANIMAL WELFARE',
+        'ANUKAMPA- SOCIAL WELFARE',
+        'BAL SANSKARAN-EDUCATION',
+        'SADHARMIK BHAKTI',
+        'VAIYAVACH',
+        'SANDHARAN- GENERAL',
+        'OTHER',
+        'TOTAL',
+        'CHEQUE NO./UTR NO.'
+      ];
+
+      function tenBDValidateFY(value) {
+        const match = String(value || '').trim().match(/^(\d{4})-(\d{2})$/);
+        return Boolean(match && ((Number(match[1]) + 1) % 100 === Number(match[2])));
+      }
+
+      function tenBDSetStatus(message, type = '') {
+        const el = document.getElementById('tenbd-status');
+        if (!el) return;
+        el.style.display = 'block';
+        el.style.padding = '10px 12px';
+        el.style.borderRadius = '7px';
+        el.style.background = type === 'error' ? '#fdecea' : type === 'success' ? '#e6f4ea' : '#fff8f0';
+        el.style.color = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--muted)';
+        el.textContent = message;
+      }
+
+      function tenBDReadInputs() {
+        const fy = document.getElementById('tenbd-fy')?.value.trim() || '';
+        const bookNo = document.getElementById('tenbd-book-no')?.value.trim() || '';
+        const startNo = Number(document.getElementById('tenbd-start-no')?.value || 0);
+        const endNo = Number(document.getElementById('tenbd-end-no')?.value || 0);
+        return { fy, bookNo, startNo, endNo };
+      }
+
+      function tenBDValidateInputs(values) {
+        if (!tenBDValidateFY(values.fy)) {
+          throw new Error('Enter a valid financial year such as 2026-27');
+        }
+        if (!values.bookNo) {
+          throw new Error('Receipt book number is required');
+        }
+        if (!Number.isSafeInteger(values.startNo) || values.startNo <= 0) {
+          throw new Error('Enter a valid receipt start number');
+        }
+        if (!Number.isSafeInteger(values.endNo) || values.endNo <= 0) {
+          throw new Error('Enter a valid receipt end number');
+        }
+        if (values.endNo < values.startNo) {
+          throw new Error('Receipt end number cannot be lower than start number');
+        }
+        const count = values.endNo - values.startNo + 1;
+        if (count !== TENBD_RECEIPTS_PER_BOOK) {
+          throw new Error(`A receipt book must contain exactly ${TENBD_RECEIPTS_PER_BOOK} receipts`);
+        }
+      }
+
+      function update10BDFilePreview() {
+        const el = document.getElementById('tenbd-file-preview');
+        if (!el) return;
+
+        const values = tenBDReadInputs();
+        if (!values.bookNo || !values.startNo || !values.endNo) {
+          el.textContent = 'Enter the financial year, book number, and receipt range.';
+          return;
+        }
+
+        const count = values.endNo >= values.startNo
+          ? values.endNo - values.startNo + 1
+          : 0;
+
+        el.innerHTML = `
+    <strong>File:</strong> ${String(values.bookNo).replace(/[<>&"']/g, '')}_Book No j.xlsx<br>
+    <strong>Receipt range:</strong> D ${values.startNo} to D ${values.endNo}<br>
+    <strong>Rows:</strong> ${count}
+  `;
+      }
+
+      function reset10BDReceiptBookForm() {
+        ['tenbd-fy', 'tenbd-book-no', 'tenbd-start-no', 'tenbd-end-no'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = '';
+        });
+        const status = document.getElementById('tenbd-status');
+        if (status) status.style.display = 'none';
+        update10BDFilePreview();
+      }
+
+      function tenBDDownloadBlob(blob, fileName) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      async function generate10BDReceiptBookFile() {
+        if (!['finance', 'superadmin'].includes(currentRole)) {
+          showToast('Finance access is required', 'error');
+          return;
+        }
+        if (typeof ExcelJS === 'undefined') {
+          showToast('Excel generator library is not loaded', 'error');
+          return;
+        }
+
+        const values = tenBDReadInputs();
+        try {
+          tenBDValidateInputs(values);
+        } catch (error) {
+          showToast(error.message, 'error');
+          tenBDSetStatus(error.message, 'error');
+          return;
+        }
+
+        const btn = document.getElementById('tenbd-generate-btn');
+        btn.disabled = true;
+        btn.textContent = '⏳ Generating protected Excel…';
+        tenBDSetStatus('Loading the fixed receipt-book template…');
+
+        try {
+          const response = await fetch(TENBD_TEMPLATE_URL, { cache: 'no-store' });
+          if (!response.ok) {
+            throw new Error(`Template file could not be loaded (${response.status})`);
+          }
+
+          const templateBuffer = await response.arrayBuffer();
+          const workbook = new ExcelJS.Workbook();
+          await workbook.xlsx.load(templateBuffer);
+
+          const worksheet = workbook.worksheets[0];
+          if (!worksheet) throw new Error('Template worksheet was not found');
+
+          TENBD_EXPECTED_HEADERS.forEach((expected, index) => {
+            const actual = String(worksheet.getCell(1, index + 1).value || '').trim();
+            if (actual !== expected) {
+              throw new Error(`Template column ${index + 1} is invalid. Expected: ${expected}`);
+            }
+          });
+
+          // Clear all donor-entry cells and populate protected receipt numbers.
+          for (let rowNo = 2; rowNo <= 51; rowNo++) {
+            const receiptNo = values.startNo + (rowNo - 2);
+            const receiptCell = worksheet.getCell(rowNo, 1);
+            receiptCell.value = `D ${receiptNo}`;
+            receiptCell.numFmt = '@';
+
+            for (let colNo = 2; colNo <= 13; colNo++) {
+              worksheet.getCell(rowNo, colNo).value = null;
+            }
+            worksheet.getCell(rowNo, 15).value = null;
+
+            worksheet.getCell(rowNo, 14).value = {
+              formula: `SUM(G${rowNo}:M${rowNo})`,
+              result: 0
+            };
+          }
+
+          // Restore the fixed total row.
+          worksheet.getCell('A52').value = 'TOTAL';
+          for (let colNo = 7; colNo <= 13; colNo++) {
+            const letter = worksheet.getColumn(colNo).letter;
+            worksheet.getCell(52, colNo).value = {
+              formula: `SUM(${letter}2:${letter}51)`,
+              result: 0
+            };
+          }
+          worksheet.getCell('N52').value = { formula: 'SUM(N2:N51)', result: 0 };
+
+          // Lock every cell first.
+          for (let rowNo = 1; rowNo <= 52; rowNo++) {
+            for (let colNo = 1; colNo <= 15; colNo++) {
+              worksheet.getCell(rowNo, colNo).protection = {
+                locked: true,
+                hidden: false
+              };
+            }
+          }
+
+          // Unlock only the cells used for manual donor entry.
+          for (let rowNo = 2; rowNo <= 51; rowNo++) {
+            for (let colNo = 2; colNo <= 13; colNo++) {
+              worksheet.getCell(rowNo, colNo).protection = {
+                locked: false,
+                hidden: false
+              };
+            }
+            worksheet.getCell(rowNo, 15).protection = {
+              locked: false,
+              hidden: false
+            };
+
+            // Derived row total remains locked and its formula is hidden.
+            worksheet.getCell(rowNo, 14).protection = {
+              locked: true,
+              hidden: true
+            };
+          }
+
+          for (let colNo = 7; colNo <= 14; colNo++) {
+            worksheet.getCell(52, colNo).protection = {
+              locked: true,
+              hidden: true
+            };
+          }
+
+          worksheet.views = [{
+            state: 'frozen',
+            xSplit: 1,
+            ySplit: 1,
+            topLeftCell: 'B2',
+            activeCell: 'B2'
+          }];
+          worksheet.pageSetup.printArea = 'A1:O52';
+
+          await worksheet.protect(TENBD_SHEET_PASSWORD, {
+            selectLockedCells: false,
+            selectUnlockedCells: true,
+            formatCells: false,
+            formatColumns: false,
+            formatRows: false,
+            insertColumns: false,
+            insertRows: false,
+            insertHyperlinks: false,
+            deleteColumns: false,
+            deleteRows: false,
+            sort: false,
+            autoFilter: false,
+            pivotTables: false
+          });
+
+          workbook.creator = 'Vardhman Sanskar Dham';
+          workbook.lastModifiedBy = currentUser?.email || 'Finance';
+          workbook.subject = `FY ${values.fy}; Receipt Book ${values.bookNo}`;
+          workbook.description = `Receipt Book ${values.bookNo}: D ${values.startNo} to D ${values.endNo}`;
+          workbook.calcProperties.fullCalcOnLoad = true;
+          workbook.calcProperties.forceFullCalc = true;
+
+          const outputBuffer = await workbook.xlsx.writeBuffer();
+          const blob = new Blob([outputBuffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          const outputName = `${values.bookNo}_Book No j.xlsx`;
+          tenBDDownloadBlob(blob, outputName);
+
+          tenBDSetStatus(
+            `Generated ${outputName} with D ${values.startNo} to D ${values.endNo}.`,
+            'success'
+          );
+          showToast(`✅ ${outputName} downloaded`, 'success');
+        } catch (error) {
+          console.error('10BD receipt-book generation failed:', error);
+          tenBDSetStatus(error.message || 'Unable to generate file', 'error');
+          showToast(error.message || 'Unable to generate file', 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '⬇️ Generate Protected Excel';
+        }
+      }
       // ══════════════════════════════
       //  BANK RECONCILIATION
       // ══════════════════════════════
