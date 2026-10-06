@@ -6524,47 +6524,26 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       }
 
       function tenBDValidateInputs(values) {
+
         if (!tenBDValidateFY(values.fy)) {
           throw new Error('Enter a valid financial year such as 2026-27');
         }
         if (!values.bookNo) {
           throw new Error('Receipt book number is required');
         }
-        if (!values.prefix) {
-          throw new Error('Receipt prefix is required');
-        }
-        if (!/^[A-Z0-9][A-Z0-9\/-]{0,9}$/.test(values.prefix)) {
-          throw new Error('Receipt prefix may contain only letters, numbers, / or -');
-        }
         if (!Number.isSafeInteger(values.startNo) || values.startNo <= 0) {
           throw new Error('Enter a valid receipt start number');
         }
-        if (!Number.isSafeInteger(values.count) || values.count <= 0) {
-          throw new Error('Number of receipts must be a positive whole number');
+        if (!Number.isSafeInteger(values.endNo) || values.endNo <= 0) {
+          throw new Error('Enter a valid receipt end number');
         }
-        if (!Number.isSafeInteger(values.endNo) || values.endNo < values.startNo) {
-          throw new Error('Unable to calculate a valid receipt end number');
+        if (values.endNo < values.startNo) {
+          throw new Error('Receipt end number cannot be lower than start number');
         }
-      }
-
-      if (!tenBDValidateFY(values.fy)) {
-        throw new Error('Enter a valid financial year such as 2026-27');
-      }
-      if (!values.bookNo) {
-        throw new Error('Receipt book number is required');
-      }
-      if (!Number.isSafeInteger(values.startNo) || values.startNo <= 0) {
-        throw new Error('Enter a valid receipt start number');
-      }
-      if (!Number.isSafeInteger(values.endNo) || values.endNo <= 0) {
-        throw new Error('Enter a valid receipt end number');
-      }
-      if (values.endNo < values.startNo) {
-        throw new Error('Receipt end number cannot be lower than start number');
-      }
-      const count = values.endNo - values.startNo + 1;
-      if (count !== TENBD_RECEIPTS_PER_BOOK) {
-        throw new Error(`A receipt book must contain exactly ${TENBD_RECEIPTS_PER_BOOK} receipts`);
+        const count = values.endNo - values.startNo + 1;
+        if (count !== TENBD_RECEIPTS_PER_BOOK) {
+          throw new Error(`A receipt book must contain exactly ${TENBD_RECEIPTS_PER_BOOK} receipts`);
+        }
       }
 
       function update10BDFilePreview() {
