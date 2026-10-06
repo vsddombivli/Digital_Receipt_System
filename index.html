@@ -2308,7 +2308,57 @@
               </div>
             </div>
           </div>
+          <!-- Insert this card inside the existing 10BD Certificate section,
+            immediately after the Receipt Book Entry File Generator card. -->
+          <div class="card" id="tenbd-master-card" style="margin-top:18px;">
+            <div class="card-title">Master File Creator</div>
+            <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
+              Merge completed receipt-book workbooks into one master workbook. Processing is fully local in the browser;
+              no file or row is saved to Supabase. Exact duplicate receipt rows are skipped. Changed duplicate receipt
+              numbers require confirmation before replacement.
+            </p>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Financial Year <span class="required">*</span></label>
+                <input type="text" id="tenbd-master-fy" maxlength="7" placeholder="2026-27"
+                  oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDMasterFileSummary()">
+                <div class="helper-text">Used only in the filename when creating a new master workbook.</div>
+              </div>
+
+              <div class="form-group">
+                <label>Existing Master File <span style="color:var(--muted);font-weight:400;">(optional)</span></label>
+                <input type="file" id="tenbd-master-existing" accept=".xlsx" onchange="update10BDMasterFileSummary()"
+                  style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                <div class="helper-text">Select the last master workbook when adding or correcting records.</div>
+              </div>
+
+              <div class="form-group full">
+                <label>Completed Receipt-Book Files <span class="required">*</span></label>
+                <input type="file" id="tenbd-master-sources" accept=".xlsx" multiple
+                  onchange="update10BDMasterFileSummary()"
+                  style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                <div class="helper-text">Select one or more completed fixed-format receipt-book workbooks.</div>
+              </div>
+            </div>
+
+            <div id="tenbd-master-file-summary"
+              style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;line-height:1.6;">
+              Select completed receipt-book files to create a master workbook.
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-primary" id="tenbd-master-generate-btn" onclick="generate10BDMasterFile()">
+                Generate / Update Master File
+              </button>
+              <button class="btn btn-secondary" onclick="reset10BDMasterForm()">Reset</button>
+            </div>
+
+            <div id="tenbd-master-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
+          </div>
         </div>
+
+
         <!-- Results -->
         <div id="recon-results" style="display:none;margin-top:20px;">
 
@@ -6442,6 +6492,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (count && !count.value) count.value = '50';
 
         update10BDFilePreview();
+        tenBDMasterLoadDefaults();
       }
 
       function tenBDSetStatus(message, type = '') {
@@ -6780,6 +6831,506 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           btn.textContent = '⬇️ Generate Protected Excel';
         }
       }
+
+      // ============================================================================
+      // 10BD MASTER FILE CREATOR
+      // Requires the existing 10BD generator constants/helpers:
+      //   TENBD_TEMPLATE_URL, TENBD_SHEET_PASSWORD, TENBD_EXPECTED_HEADERS,
+      //   tenBDValidateFY(), tenBDDownloadBlob(), currentFY(), showToast(), ExcelJS.
+      // ============================================================================
+      const TENBD_MASTER_MAX_FILE_SIZE = 25 * 1024 * 1024;
+      const TENBD_MASTER_COLUMN_COUNT = 15;
+      const TENBD_MASTER_DATA_START_ROW = 2;
+
+      function tenBDMasterEscape(value) {
+        return String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function tenBDMasterSetStatus(message, type = '') {
+        const el = document.getElementById('tenbd-master-status');
+        if (!el) return;
+        el.style.display = 'block';
+        el.style.padding = '10px 12px';
+        el.style.borderRadius = '7px';
+        el.style.background = type === 'error' ? '#fdecea' : type === 'success' ? '#e6f4ea' : '#fff8f0';
+        el.style.color = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--muted)';
+        el.textContent = message;
+      }
+
+      function tenBDMasterLoadDefaults() {
+        const fy = document.getElementById('tenbd-master-fy');
+        if (fy && !fy.value) fy.value = currentFY();
+        update10BDMasterFileSummary();
+      }
+
+      function reset10BDMasterForm() {
+        const existing = document.getElementById('tenbd-master-existing');
+        const sources = document.getElementById('tenbd-master-sources');
+        const fy = document.getElementById('tenbd-master-fy');
+        const status = document.getElementById('tenbd-master-status');
+
+        if (existing) existing.value = '';
+        if (sources) sources.value = '';
+        if (fy) fy.value = currentFY();
+        if (status) status.style.display = 'none';
+        update10BDMasterFileSummary();
+      }
+
+      function update10BDMasterFileSummary() {
+        const el = document.getElementById('tenbd-master-file-summary');
+        if (!el) return;
+
+        const existing = document.getElementById('tenbd-master-existing')?.files?.[0] || null;
+        const sources = Array.from(document.getElementById('tenbd-master-sources')?.files || []);
+        const fy = document.getElementById('tenbd-master-fy')?.value.trim() || currentFY();
+        const outputName = existing?.name || `10BD_Master_${fy}.xlsx`;
+
+        const sourceNames = sources.length
+          ? sources.map(file => tenBDMasterEscape(file.name)).join('<br>')
+          : 'No completed receipt-book file selected.';
+
+        el.innerHTML = `
+    <strong>Existing master:</strong> ${existing ? tenBDMasterEscape(existing.name) : 'None - a new master will be created'}<br>
+    <strong>Completed files selected:</strong> ${sources.length}<br>
+    <span style="display:block;margin:4px 0 4px 14px;color:var(--muted);max-height:90px;overflow:auto;">${sourceNames}</span>
+    <strong>Download filename:</strong> ${tenBDMasterEscape(outputName)}
+  `;
+      }
+
+      function tenBDMasterNormalizeHeader(value) {
+        return String(value ?? '').replace(/\s+/g, ' ').trim().toUpperCase();
+      }
+
+      function tenBDMasterCellValue(cell) {
+        const value = cell?.value;
+        if (value === null || value === undefined) return null;
+        if (value instanceof Date) return new Date(value.getTime());
+
+        if (typeof value === 'object') {
+          if (Array.isArray(value.richText)) {
+            return value.richText.map(part => String(part?.text || '')).join('');
+          }
+          if (Object.prototype.hasOwnProperty.call(value, 'result')) {
+            const result = value.result;
+            return result instanceof Date ? new Date(result.getTime()) : (result ?? null);
+          }
+          if (Object.prototype.hasOwnProperty.call(value, 'text')) {
+            return value.text ?? '';
+          }
+        }
+
+        return value;
+      }
+
+      function tenBDMasterParseAmount(value) {
+        if (value === null || value === undefined || value === '') return null;
+        if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+
+        const cleaned = String(value)
+          .replace(/[\s,]/g, '')
+          .replace(/^(?:RS\.?|INR|RUPEES?)?/i, '')
+          .replace(/[^0-9.+-]/g, '');
+        if (!cleaned) return null;
+        const parsed = Number(cleaned);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+
+      function tenBDMasterDateKey(value) {
+        if (!(value instanceof Date) || Number.isNaN(value.getTime())) return '';
+        const year = value.getFullYear();
+        const month = String(value.getMonth() + 1).padStart(2, '0');
+        const day = String(value.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+
+      function tenBDMasterCanonicalValue(value) {
+        if (value === null || value === undefined) return '';
+        if (value instanceof Date) return tenBDMasterDateKey(value);
+        if (typeof value === 'number') {
+          return Number.isFinite(value) ? Number(value.toFixed(6)) : '';
+        }
+        if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+        return String(value).replace(/\s+/g, ' ').trim();
+      }
+
+      function tenBDMasterReceiptKey(value) {
+        return String(value ?? '').toUpperCase().replace(/\s+/g, '').trim();
+      }
+
+      function tenBDMasterRowHasInput(values) {
+        // A is always pre-populated and N is a derived formula. Ignore both when
+        // deciding whether a receipt row was actually completed by Finance.
+        const inputIndexes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14];
+        return inputIndexes.some(index => {
+          const value = values[index];
+          if (value instanceof Date) return !Number.isNaN(value.getTime());
+          if (typeof value === 'number') return Number.isFinite(value) && value !== 0;
+          return String(value ?? '').trim() !== '';
+        });
+      }
+
+      function tenBDMasterFindTotalRow(worksheet, fileName = 'Workbook') {
+        for (let rowNo = 2; rowNo <= worksheet.rowCount; rowNo++) {
+          const value = tenBDMasterCellValue(worksheet.getCell(rowNo, 1));
+          if (String(value ?? '').trim().toUpperCase() === 'TOTAL') return rowNo;
+        }
+        throw new Error(`${fileName}: TOTAL row was not found`);
+      }
+
+      function tenBDMasterValidateHeaders(worksheet, fileName = 'Workbook') {
+        if (!Array.isArray(TENBD_EXPECTED_HEADERS) || TENBD_EXPECTED_HEADERS.length !== TENBD_MASTER_COLUMN_COUNT) {
+          throw new Error('10BD expected-header configuration is missing');
+        }
+
+        TENBD_EXPECTED_HEADERS.forEach((expected, index) => {
+          const actual = tenBDMasterCellValue(worksheet.getCell(1, index + 1));
+          if (tenBDMasterNormalizeHeader(actual) !== tenBDMasterNormalizeHeader(expected)) {
+            throw new Error(
+              `${fileName}: invalid column ${index + 1}. Expected "${expected}" but found "${actual ?? ''}"`
+            );
+          }
+        });
+      }
+
+      function tenBDMasterCloneValue(value) {
+        if (value instanceof Date) return new Date(value.getTime());
+        return value;
+      }
+
+      function tenBDMasterBuildRecord(worksheet, rowNo, fileName) {
+        const values = new Array(TENBD_MASTER_COLUMN_COUNT).fill(null);
+
+        for (let colNo = 1; colNo <= TENBD_MASTER_COLUMN_COUNT; colNo++) {
+          if (colNo >= 7 && colNo <= 13) {
+            values[colNo - 1] = tenBDMasterParseAmount(tenBDMasterCellValue(worksheet.getCell(rowNo, colNo)));
+          } else if (colNo !== 14) {
+            values[colNo - 1] = tenBDMasterCellValue(worksheet.getCell(rowNo, colNo));
+          }
+        }
+
+        values[13] = values.slice(6, 13).reduce((sum, value) => sum + Number(value || 0), 0);
+        if (!tenBDMasterRowHasInput(values)) return null;
+
+        const receiptKey = tenBDMasterReceiptKey(values[0]);
+        if (!receiptKey) {
+          throw new Error(`${fileName}: completed row ${rowNo} has no receipt number`);
+        }
+
+        const signature = JSON.stringify(values.slice(1).map(tenBDMasterCanonicalValue));
+        return {
+          receiptKey,
+          receiptNo: String(values[0] ?? '').replace(/\s+/g, ' ').trim(),
+          values: values.map(tenBDMasterCloneValue),
+          signature,
+          sourceFile: fileName,
+          sourceRow: rowNo
+        };
+      }
+
+      async function tenBDMasterReadWorkbook(file, mode = 'source') {
+        if (!file) throw new Error('Workbook file is missing');
+        if (file.size > TENBD_MASTER_MAX_FILE_SIZE) {
+          throw new Error(`${file.name}: file exceeds the 25 MB limit`);
+        }
+
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(await file.arrayBuffer());
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) throw new Error(`${file.name}: worksheet was not found`);
+
+        tenBDMasterValidateHeaders(worksheet, file.name);
+        const totalRow = tenBDMasterFindTotalRow(worksheet, file.name);
+        const rows = [];
+        let blankRows = 0;
+        const seen = new Map();
+
+        for (let rowNo = TENBD_MASTER_DATA_START_ROW; rowNo < totalRow; rowNo++) {
+          const record = tenBDMasterBuildRecord(worksheet, rowNo, file.name);
+          if (!record) {
+            blankRows++;
+            continue;
+          }
+
+          if (mode === 'master' && seen.has(record.receiptKey)) {
+            const previous = seen.get(record.receiptKey);
+            if (previous.signature !== record.signature) {
+              throw new Error(
+                `${file.name}: existing master contains conflicting duplicate receipt ${record.receiptNo}`
+              );
+            }
+            continue;
+          }
+
+          seen.set(record.receiptKey, record);
+          rows.push(record);
+        }
+
+        return { rows, blankRows, sheetName: worksheet.name };
+      }
+
+      function tenBDMasterMerge(existingRows, sourceGroups) {
+        const merged = new Map();
+        let exactDuplicates = 0;
+        let added = 0;
+        const replacementKeys = new Set();
+
+        existingRows.forEach(record => merged.set(record.receiptKey, record));
+
+        sourceGroups.forEach(group => {
+          group.rows.forEach(record => {
+            const current = merged.get(record.receiptKey);
+            if (!current) {
+              merged.set(record.receiptKey, record);
+              added++;
+              return;
+            }
+
+            if (current.signature === record.signature) {
+              exactDuplicates++;
+              return;
+            }
+
+            // Map.set() replaces the data but retains the original position when the
+            // receipt already existed in the master. The last selected source file wins.
+            merged.set(record.receiptKey, record);
+            replacementKeys.add(record.receiptKey);
+          });
+        });
+
+        return {
+          rows: Array.from(merged.values()),
+          added,
+          exactDuplicates,
+          replacementCount: replacementKeys.size
+        };
+      }
+
+      function tenBDMasterSetProtection(cell, locked, hidden = false) {
+        cell.protection = { locked: Boolean(locked), hidden: Boolean(hidden) };
+      }
+
+      async function tenBDMasterBuildOutputWorkbook(records, fy) {
+        const response = await fetch(TENBD_TEMPLATE_URL, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`Template file could not be loaded (${response.status})`);
+
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(await response.arrayBuffer());
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) throw new Error('Template worksheet was not found');
+
+        tenBDMasterValidateHeaders(worksheet, 'Receipt-book template');
+        const templateTotalRow = tenBDMasterFindTotalRow(worksheet, 'Receipt-book template');
+        const templateDataCount = templateTotalRow - TENBD_MASTER_DATA_START_ROW;
+        const requiredDataCount = records.length;
+        if (requiredDataCount < 1) throw new Error('No completed receipt records were found');
+
+        // Break the template shared-formula groups before changing row count. This
+        // prevents ExcelJS from looking for a deleted shared-formula master cell.
+        for (let rowNo = templateTotalRow - 1; rowNo >= TENBD_MASTER_DATA_START_ROW; rowNo--) {
+          worksheet.getCell(rowNo, 1).value = null;
+          worksheet.getCell(rowNo, 14).value = null;
+        }
+
+        if (requiredDataCount > templateDataCount) {
+          worksheet.duplicateRow(templateTotalRow - 1, requiredDataCount - templateDataCount, true);
+        } else if (requiredDataCount < templateDataCount) {
+          worksheet.spliceRows(
+            TENBD_MASTER_DATA_START_ROW + requiredDataCount,
+            templateDataCount - requiredDataCount
+          );
+        }
+
+        const totalRowNo = TENBD_MASTER_DATA_START_ROW + requiredDataCount;
+        const totals = new Array(7).fill(0);
+
+        records.forEach((record, index) => {
+          const rowNo = TENBD_MASTER_DATA_START_ROW + index;
+
+          for (let colNo = 1; colNo <= TENBD_MASTER_COLUMN_COUNT; colNo++) {
+            const cell = worksheet.getCell(rowNo, colNo);
+            if (colNo === 14) {
+              cell.value = {
+                formula: `SUM(G${rowNo}:M${rowNo})`,
+                result: Number(record.values[13] || 0)
+              };
+            } else {
+              cell.value = tenBDMasterCloneValue(record.values[colNo - 1]);
+            }
+          }
+
+          for (let amountIndex = 0; amountIndex < 7; amountIndex++) {
+            totals[amountIndex] += Number(record.values[6 + amountIndex] || 0);
+          }
+
+          for (let colNo = 1; colNo <= 16; colNo++) {
+            const editable = (colNo >= 2 && colNo <= 13) || colNo === 15;
+            tenBDMasterSetProtection(worksheet.getCell(rowNo, colNo), !editable, colNo === 14);
+          }
+          worksheet.getCell(rowNo, 1).numFmt = '@';
+        });
+
+        // Rebuild the dynamic grand-total row.
+        for (let colNo = 1; colNo <= 16; colNo++) {
+          worksheet.getCell(totalRowNo, colNo).value = null;
+          tenBDMasterSetProtection(worksheet.getCell(totalRowNo, colNo), true, colNo >= 7 && colNo <= 14);
+        }
+        worksheet.getCell(totalRowNo, 1).value = 'TOTAL';
+
+        for (let colNo = 7; colNo <= 13; colNo++) {
+          const letter = worksheet.getColumn(colNo).letter;
+          worksheet.getCell(totalRowNo, colNo).value = {
+            formula: `SUM(${letter}2:${letter}${totalRowNo - 1})`,
+            result: totals[colNo - 7]
+          };
+        }
+        const grandTotal = totals.reduce((sum, value) => sum + value, 0);
+        worksheet.getCell(totalRowNo, 14).value = {
+          formula: `SUM(N2:N${totalRowNo - 1})`,
+          result: grandTotal
+        };
+
+        for (let colNo = 1; colNo <= 16; colNo++) {
+          tenBDMasterSetProtection(worksheet.getCell(1, colNo), true, false);
+        }
+
+        worksheet.name = 'Master';
+        worksheet.views = [{
+          state: 'frozen',
+          xSplit: 1,
+          ySplit: 1,
+          topLeftCell: 'B2',
+          activeCell: 'B2'
+        }];
+        worksheet.pageSetup.printArea = `A1:O${totalRowNo}`;
+
+        await worksheet.protect(TENBD_SHEET_PASSWORD, {
+          selectLockedCells: false,
+          selectUnlockedCells: true,
+          formatCells: false,
+          formatColumns: false,
+          formatRows: false,
+          insertColumns: false,
+          insertRows: false,
+          insertHyperlinks: false,
+          deleteColumns: false,
+          deleteRows: false,
+          sort: false,
+          autoFilter: false,
+          pivotTables: false
+        });
+
+        workbook.creator = 'Vardhman Sanskar Dham';
+        workbook.lastModifiedBy = currentUser?.email || 'Finance';
+        workbook.subject = `10BD Master Workbook - FY ${fy}`;
+        workbook.description = `Client-side consolidated 10BD receipt master containing ${records.length} unique receipt records.`;
+        workbook.calcProperties.fullCalcOnLoad = true;
+        workbook.calcProperties.forceFullCalc = true;
+        workbook.calcProperties.calcMode = 'auto';
+
+        return workbook;
+      }
+
+      async function generate10BDMasterFile() {
+        if (!['finance', 'superadmin'].includes(currentRole)) {
+          showToast('Finance access is required', 'error');
+          return;
+        }
+        if (typeof ExcelJS === 'undefined') {
+          showToast('Excel generator library is not loaded', 'error');
+          return;
+        }
+
+        const existingFile = document.getElementById('tenbd-master-existing')?.files?.[0] || null;
+        const sourceFiles = Array.from(document.getElementById('tenbd-master-sources')?.files || []);
+        const fy = document.getElementById('tenbd-master-fy')?.value.trim() || '';
+
+        if (!tenBDValidateFY(fy)) {
+          tenBDMasterSetStatus('Enter a valid financial year such as 2026-27', 'error');
+          showToast('Enter a valid financial year', 'error');
+          return;
+        }
+        if (!sourceFiles.length) {
+          tenBDMasterSetStatus('Select at least one completed receipt-book file', 'error');
+          showToast('Select completed receipt-book files', 'error');
+          return;
+        }
+
+        const btn = document.getElementById('tenbd-master-generate-btn');
+        btn.disabled = true;
+        btn.textContent = 'Reading workbooks...';
+        tenBDMasterSetStatus('Validating fixed-format files and reading completed rows...');
+
+        try {
+          let existingRows = [];
+          let blankRows = 0;
+
+          if (existingFile) {
+            const existing = await tenBDMasterReadWorkbook(existingFile, 'master');
+            existingRows = existing.rows;
+            blankRows += existing.blankRows;
+          }
+
+          const sourceGroups = [];
+          for (let index = 0; index < sourceFiles.length; index++) {
+            btn.textContent = `Reading ${index + 1} / ${sourceFiles.length}...`;
+            const group = await tenBDMasterReadWorkbook(sourceFiles[index], 'source');
+            sourceGroups.push(group);
+            blankRows += group.blankRows;
+          }
+
+          const mergeResult = tenBDMasterMerge(existingRows, sourceGroups);
+
+          if (mergeResult.replacementCount > 0) {
+            const noun = mergeResult.replacementCount === 1 ? 'record' : 'records';
+            const confirmed = window.confirm(
+              `${mergeResult.replacementCount} existing ${noun} will be replaced with new data. Continue?`
+            );
+            if (!confirmed) {
+              tenBDMasterSetStatus('Cancelled. The existing master file was not changed.', '');
+              return;
+            }
+          }
+
+          if (existingFile && mergeResult.added === 0 && mergeResult.replacementCount === 0) {
+            tenBDMasterSetStatus(
+              `No changes found. ${mergeResult.exactDuplicates} exact duplicate record(s) were skipped.`,
+              'success'
+            );
+            showToast('No changes found in the selected files', 'success');
+            return;
+          }
+
+          btn.textContent = 'Building master workbook...';
+          const workbook = await tenBDMasterBuildOutputWorkbook(mergeResult.rows, fy);
+          const outputBuffer = await workbook.xlsx.writeBuffer();
+          const blob = new Blob([outputBuffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          const outputName = existingFile?.name || `10BD_Master_${fy}.xlsx`;
+          tenBDDownloadBlob(blob, outputName);
+
+          tenBDMasterSetStatus(
+            `Downloaded ${outputName}: ${mergeResult.rows.length} total unique records, ` +
+            `${mergeResult.added} added, ${mergeResult.replacementCount} replaced, ` +
+            `${mergeResult.exactDuplicates} exact duplicates skipped, ${blankRows} blank rows ignored.`,
+            'success'
+          );
+          showToast(`${outputName} downloaded`, 'success');
+        } catch (error) {
+          console.error('10BD master creation failed:', error);
+          tenBDMasterSetStatus(error.message || 'Unable to create master file', 'error');
+          showToast(error.message || 'Unable to create master file', 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Generate / Update Master File';
+        }
+      }
+
       // ══════════════════════════════
       //  BANK RECONCILIATION
       // ══════════════════════════════
