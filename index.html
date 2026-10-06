@@ -6537,21 +6537,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           <strong>Rows:</strong> ${values.count}
         `;
       }
-      const el = document.getElementById('tenbd-file-preview');
-      if (!el) return;
-
-      const values = tenBDReadInputs();
-      if (!values.bookNo || !values.startNo || !values.count || !values.endNo) {
-        el.textContent = 'Enter the financial year, book number, start number, and number of receipts.';
-        return;
-      }
-
-      el.innerHTML = `
-          <strong>File:</strong> ${String(values.bookNo).replace(/[<>&"']/g, '')}_Book No j.xlsx<br>
-          <strong>Receipt range:</strong> D ${values.startNo} to D ${values.endNo}<br>
-          <strong>Rows:</strong> ${values.count}
-        `;
-      }
 
       function reset10BDReceiptBookForm() {
         ['tenbd-book-no', 'tenbd-start-no', 'tenbd-end-no'].forEach(id => {
@@ -6572,19 +6557,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (status) status.style.display = 'none';
 
         update10BDFilePreview();
-      }
-
-      ['tenbd-fy', 'tenbd-book-no', 'tenbd-start-no', 'tenbd-end-no'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-
-      const count = document.getElementById('tenbd-receipt-count');
-      if (count) count.value = '50';
-
-      const status = document.getElementById('tenbd-status');
-      if (status) status.style.display = 'none';
-      update10BDFilePreview();
       }
 
       function tenBDDownloadBlob(blob, fileName) {
