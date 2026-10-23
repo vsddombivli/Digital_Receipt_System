@@ -589,7 +589,7 @@
       document.getElementById('r-ref').textContent = r.payment_ref || '–';
       document.getElementById('r-bank-name').textContent = r.bank_name || '';
       document.getElementById('r-branch-name').textContent = r.branch_name || '';
-      document.getElementById('r-volunteer').textContent = r.volunteer || '';
+      document.getElementById('r-volunteer').textContent = r.volunteer || r.generated_by || '';
       document.getElementById('r-donor-sig').textContent = r.donor_name || '';
       document.getElementById('r-amount').textContent = `₹${parseFloat(r.total_amount || 0).toLocaleString('en-IN')}`;
       document.getElementById('r-words').textContent = numberToWords(parseFloat(r.total_amount || 0)) + ' Rupees Only';
