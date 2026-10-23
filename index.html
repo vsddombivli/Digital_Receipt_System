@@ -1931,10 +1931,16 @@
               <button class="btn btn-primary" onclick="runReconciliation()">🔍 Run Reconciliation</button>
             </div>
             <div id="recon-results" style="display:none;margin-top:20px;">
+
+              <!-- Summary cards -->
               <div class="stats-grid" id="recon-stats" style="margin-bottom:20px;"></div>
+
+              <!-- Matched -->
               <div class="card" style="margin-bottom:16px;">
-                <div class="card-title" style="color:var(--success);">✅ Matched Transactions (<span
-                    id="matched-count">0</span>)</div>
+                <div class="card-title" style="color:var(--success);">
+                  ✅ Matched Transactions (<span id="matched-count">0</span>)
+                </div>
+
                 <div class="table-wrap">
                   <table class="data-table">
                     <thead>
@@ -1952,11 +1958,18 @@
                   </table>
                 </div>
               </div>
+
+              <!-- Unmatched Bank -->
               <div class="card" style="margin-bottom:16px;">
-                <div class="card-title" style="color:var(--danger);">❌ In Bank but No Receipt (<span
-                    id="unmatched-bank-count">0</span>)</div>
-                <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">These transactions appear in bank
-                  statement but no matching receipt found.</p>
+                <div class="card-title" style="color:var(--danger);">
+                  ❌ In Bank but No Receipt (<span id="unmatched-bank-count">0</span>)
+                </div>
+
+                <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">
+                  These transactions appear in the bank statement but no matching receipt was found.
+                  Possible missing receipts.
+                </p>
+
                 <div class="table-wrap">
                   <table class="data-table">
                     <thead>
@@ -1970,6 +1983,68 @@
                     <tbody id="unmatched-bank-tbody"></tbody>
                   </table>
                 </div>
+              </div>
+
+              <!-- Unmatched Receipts -->
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title" style="color:#f39c12;">
+                  ⚠️ Receipt but No Bank Entry
+                  (<span id="unmatched-receipt-count">0</span>)
+                </div>
+
+                <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">
+                  These receipts exist in the system but have no matching bank transaction.
+                  Possible pending or incorrect UTR.
+                </p>
+
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Receipt No</th>
+                        <th>Date</th>
+                        <th>Donor</th>
+                        <th>Amount</th>
+                        <th>Ref No</th>
+                        <th>Payment</th>
+                      </tr>
+                    </thead>
+                    <tbody id="unmatched-receipt-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Amount mismatch -->
+              <div class="card">
+                <div class="card-title" style="color:#9b59b6;">
+                  💰 Amount Mismatch (<span id="mismatch-count">0</span>)
+                </div>
+
+                <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">
+                  Reference matched but amounts differ. Needs investigation.
+                </p>
+
+                <div class="table-wrap">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Reference</th>
+                        <th>Bank Amount</th>
+                        <th>Receipt Amount</th>
+                        <th>Difference</th>
+                        <th>Donor</th>
+                        <th>Receipt No</th>
+                      </tr>
+                    </thead>
+                    <tbody id="mismatch-tbody"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="btn-row" style="margin-top:16px;">
+                <button class="btn btn-secondary" onclick="exportReconExcel()">
+                  📊 Export Reconciliation Report
+                </button>
               </div>
             </div>
           </div>
@@ -2227,260 +2302,191 @@
           </div>
         </div>
 
-        <!-- 10BD CERTIFICATE -->
+        <!-- 10BD CERTIFICATE - complete replacement block. Replace current 10BD Certificate section with this. -->
         <div
           style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
-          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
-            📄 10BD Certificate
-          </div>
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">📄 10BD Certificate</div>
           <div class="admin-section-body collapsed" id="tenbd-section-body">
             <div style="padding:14px 0 0;">
 
-              <!-- 10BD Receipt Book Entry File Generator -->
+              <!-- Receipt Book Entry File Generator -->
               <div
                 style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
-                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
-                  📘 Receipt Book Entry File Generator
-                </div>
+                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">📘 Receipt Book Entry
+                  File Generator</div>
                 <div class="admin-section-body collapsed" id="tenbd-book-generator-section-body">
                   <div style="padding:14px 0;">
-                    <div class="card" style="padding:16px;margin-bottom:0;">
-                      <div class="card-title" style="font-size:1rem;margin-bottom:12px;">
-                        Receipt Book Entry File Generator
+                    <p style="font-size:0.86rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">
+                      Generates the protected fixed receipt-book Excel format. Donor-entry columns remain editable. The
+                      receipt
+                      count is fixed at 50.
+                    </p>
+
+                    <div class="form-grid">
+                      <div class="form-group">
+                        <label>Receipt Book No. <span class="required">*</span></label>
+                        <input type="text" id="tenbd-book-no" maxlength="20" placeholder="1261"
+                          oninput="this.value=this.value.replace(/[^0-9A-Za-z_-]/g,'');update10BDFilePreview()">
                       </div>
 
-                      <p style="font-size:0.86rem;color:var(--muted);margin-bottom:16px;line-height:1.5;">
-                        Generates the fixed receipt-book Excel format with the requested number of protected receipt
-                        rows.
-                        The default is 50. Donor-entry columns remain editable.
-                      </p>
-
-                      <div class="form-grid">
-                        <div class="form-group">
-                          <label>Financial Year <span class="required">*</span></label>
-                          <input type="text" id="tenbd-fy" maxlength="7" placeholder="2026-27"
-                            oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDFilePreview()">
-                          <div class="helper-text">Defaults to the current financial year. Finance may change it before
-                            generation.</div>
-                        </div>
-
-                        <div class="form-group">
-                          <label>Receipt Book No. <span class="required">*</span></label>
-                          <input type="text" id="tenbd-book-no" maxlength="20" placeholder="1261"
-                            oninput="this.value=this.value.replace(/[^0-9A-Za-z_-]/g,'');update10BDFilePreview()">
-                        </div>
-                        <div class="form-group">
-                          <label>Receipt Prefix <span class="required">*</span></label>
-                          <input type="text" id="tenbd-prefix" maxlength="10" value="D"
-                            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\/-]/g,'');update10BDFilePreview()">
-                          <div class="helper-text">Defaults to D. One space is added before the receipt number.</div>
-                        </div>
-
-                        <div class="form-group">
-                          <label>Receipt Start Number <span class="required">*</span></label>
-                          <input type="number" id="tenbd-start-no" min="1" step="1" placeholder="63001"
-                            oninput="update10BDFilePreview()">
-                          <div class="helper-text">The selected prefix is added automatically with one space before the
-                            number.</div>
-                        </div>
-
-                        <div class="form-group">
-                          <label>Number of Receipts <span class="required">*</span></label>
-                          <input type="number" id="tenbd-receipt-count" min="1" step="1" value="50"
-                            oninput="update10BDFilePreview()">
-                          <div class="helper-text">Defaults to 50. Change this when a receipt book contains a different
-                            quantity.</div>
-                        </div>
-
-                        <div class="form-group">
-                          <label>Receipt End Number</label>
-                          <input type="number" id="tenbd-end-no" readonly
-                            style="background:#f5f0e8;color:var(--muted);cursor:not-allowed;">
-                          <div class="helper-text">Calculated automatically from the start number and receipt count.
-                          </div>
-                        </div>
+                      <div class="form-group">
+                        <label>Receipt Prefix <span class="required">*</span></label>
+                        <input type="text" id="tenbd-prefix" maxlength="10" value="D"
+                          oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9\/-]/g,'');update10BDFilePreview()">
+                        <div class="helper-text">Defaults to D. One space is added before the receipt number.</div>
                       </div>
 
-                      <div id="tenbd-file-preview"
-                        style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;color:var(--muted);">
-                        Enter the financial year, book number, and receipt range.
+                      <div class="form-group">
+                        <label>Receipt Start Number <span class="required">*</span></label>
+                        <input type="number" id="tenbd-start-no" min="1" step="1" placeholder="63001"
+                          oninput="update10BDFilePreview()">
                       </div>
 
-                      <div class="btn-row">
-                        <button class="btn btn-primary" id="tenbd-generate-btn" onclick="generate10BDReceiptBookFile()">
-                          ⬇️ Generate Protected Excel
-                        </button>
-                        <button class="btn btn-secondary" onclick="reset10BDReceiptBookForm()">
-                          ↺ Reset
-                        </button>
+                      <div class="form-group">
+                        <label>Number of Receipts</label>
+                        <input type="number" id="tenbd-receipt-count" min="50" max="50" step="1" value="50" disabled
+                          style="background:#f5f0e8;color:var(--muted);cursor:not-allowed;">
+                        <div class="helper-text">Fixed at 50 receipts per book.</div>
                       </div>
 
-                      <div id="tenbd-status" style="display:none;margin-top:12px;font-size:0.86rem;"></div>
+                      <div class="form-group">
+                        <label>Receipt End Number</label>
+                        <input type="number" id="tenbd-end-no" readonly
+                          style="background:#f5f0e8;color:var(--muted);cursor:not-allowed;">
+                        <div class="helper-text">Calculated automatically from the start number.</div>
+                      </div>
                     </div>
+
+                    <div id="tenbd-file-preview"
+                      style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;color:var(--muted);">
+                      Enter the book number and receipt start number.
+                    </div>
+
+                    <div class="btn-row">
+                      <button class="btn btn-primary" id="tenbd-generate-btn" onclick="generate10BDReceiptBookFile()">
+                        ⬇️ Generate Protected Excel
+                      </button>
+                      <button class="btn btn-secondary" onclick="reset10BDReceiptBookForm()">↺ Reset</button>
+                    </div>
+                    <div id="tenbd-status" style="display:none;margin-top:12px;font-size:0.86rem;"></div>
                   </div>
                 </div>
               </div>
 
-              <!-- 10BD Master File Creator -->
+              <!-- Master File Creator -->
               <div
                 style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
-                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
-                  📚 Master File Creator
+                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">📚 Master File Creator
                 </div>
                 <div class="admin-section-body collapsed" id="tenbd-master-section-body">
-                  <div style="padding:14px 0;">
-                    <div class="card" id="tenbd-master-card" style="padding:16px;margin-bottom:0;">
-                      <div class="card-title">Master File Creator</div>
-                      <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
-                        Merge completed receipt-book workbooks into one master workbook. Processing is fully local in
-                        the browser;
-                        no file or row is saved to Supabase. Exact duplicate receipt rows are skipped. Changed duplicate
-                        receipt
-                        numbers require confirmation before replacement.
-                      </p>
+                  <div class="card" id="tenbd-master-card" style="padding:16px;margin:14px 0 0;">
+                    <div class="card-title">Master File Creator</div>
+                    <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
+                      Merge completed receipt-book workbooks into one master workbook. Processing is fully local in the
+                      browser;
+                      no file or row is saved to Supabase. Exact duplicate receipt rows are skipped. Changed duplicate
+                      receipt
+                      numbers require confirmation before replacement. New records receive 10BD Generation Status = NO.
+                    </p>
 
-                      <div class="form-grid">
-                        <div class="form-group">
-                          <label>Financial Year <span class="required">*</span></label>
-                          <input type="text" id="tenbd-master-fy" maxlength="7" placeholder="2026-27"
-                            oninput="this.value=this.value.replace(/[^0-9-]/g,'');update10BDMasterFileSummary()">
-                          <div class="helper-text">Used only in the filename when creating a new master workbook.</div>
-                        </div>
-
-                        <div class="form-group">
-                          <label>Existing Master File <span
-                              style="color:var(--muted);font-weight:400;">(optional)</span></label>
-                          <input type="file" id="tenbd-master-existing" accept=".xlsx"
-                            onchange="update10BDMasterFileSummary()"
-                            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
-                          <div class="helper-text">Select the last master workbook when adding or correcting records.
-                          </div>
-                        </div>
-
-                        <div class="form-group full">
-                          <label>Completed Receipt-Book Files <span class="required">*</span></label>
-                          <input type="file" id="tenbd-master-sources" accept=".xlsx" multiple
-                            onchange="update10BDMasterFileSummary()"
-                            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
-                          <div class="helper-text">Select one or more completed fixed-format receipt-book workbooks.
-                          </div>
+                    <div class="form-grid">
+                      <div class="form-group">
+                        <label>Existing Master File <span
+                            style="color:var(--muted);font-weight:400;">(optional)</span></label>
+                        <input type="file" id="tenbd-master-existing" accept=".xlsx"
+                          onchange="update10BDMasterFileSummary()"
+                          style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                        <div class="helper-text">Select the last master workbook when adding or correcting records.
                         </div>
                       </div>
 
-                      <div id="tenbd-master-file-summary"
-                        style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;line-height:1.6;">
-                        Select completed receipt-book files to create a master workbook.
+                      <div class="form-group full">
+                        <label>Completed Receipt-Book Files <span class="required">*</span></label>
+                        <input type="file" id="tenbd-master-sources" accept=".xlsx" multiple
+                          onchange="update10BDMasterFileSummary()"
+                          style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                        <div class="helper-text">Select one or more completed fixed-format receipt-book workbooks.</div>
                       </div>
-
-                      <div class="btn-row">
-                        <button class="btn btn-primary" id="tenbd-master-generate-btn"
-                          onclick="generate10BDMasterFile()">
-                          Generate / Update Master File
-                        </button>
-                        <button class="btn btn-secondary" onclick="reset10BDMasterForm()">Reset</button>
-                      </div>
-
-                      <div id="tenbd-master-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
                     </div>
+
+                    <div id="tenbd-master-file-summary"
+                      style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;line-height:1.6;">
+                      Select completed receipt-book files to create a master workbook.
+                    </div>
+
+                    <div class="btn-row">
+                      <button class="btn btn-primary" id="tenbd-master-generate-btn" onclick="generate10BDMasterFile()">
+                        Generate / Update Master File
+                      </button>
+                      <button class="btn btn-secondary" onclick="reset10BDMasterForm()">Reset</button>
+                    </div>
+                    <div id="tenbd-master-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
                   </div>
                 </div>
               </div>
 
-              <!-- Final Form 10BD Upload File Generator -->
+              <!-- Form 10BD Upload Generator -->
               <div
                 style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
-                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
-                  📤 Form 10BD Upload File Generator
-                </div>
+                <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">🧾 Form 10BD Upload
+                  Generator</div>
                 <div class="admin-section-body collapsed" id="tenbd-final-section-body">
-                  <div style="padding:14px 0;">
-                    <div class="card" id="tenbd-final-card" style="margin-top:18px;">
-                      <div class="card-title">Form 10BD Upload File Generator</div>
-                      <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
-                        Convert the final 10BD master workbook into the fixed Income Tax Form 10BD CSV format.
-                        Processing is fully local in the browser; no input file or donor record is uploaded to Supabase.
-                      </p>
+                  <div class="card" style="padding:16px;margin:14px 0 0;">
+                    <div class="card-title">Form 10BD Upload Generator</div>
+                    <p style="font-size:0.88rem;color:var(--muted);line-height:1.55;margin-bottom:16px;">
+                      Upload the final master workbook. The app validates PAN-eligible rows, creates the Income Tax Form
+                      10BD CSV,
+                      and downloads an updated master workbook with 10BD Generation Status changed to YES for generated
+                      rows.
+                    </p>
 
-                      <div class="form-grid">
-                        <div class="form-group">
-                          <label>Financial Year <span class="required">*</span></label>
-                          <input type="text" id="tenbd-final-fy" maxlength="7" placeholder="2026-27"
-                            oninput="this.value=this.value.replace(/[^0-9-]/g,'');tenBDFinalFileChanged()">
-                          <div class="helper-text">Defaults to the current financial year and is used in the output
-                            filename.</div>
-                        </div>
-
-                        <div class="form-group">
-                          <label>Final 10BD Master File <span class="required">*</span></label>
-                          <input type="file" id="tenbd-final-master" accept=".xlsx" onchange="tenBDFinalFileChanged()"
-                            style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
-                          <div class="helper-text">Select the final master workbook generated by the Master File
-                            Creator.</div>
+                    <div class="form-grid">
+                      <div class="form-group full">
+                        <label>Final Master File <span class="required">*</span></label>
+                        <input type="file" id="tenbd-final-master" accept=".xlsx" onchange="tenBDFinalFileChanged()"
+                          style="padding:8px;border:1.5px dashed var(--border);border-radius:7px;width:100%;background:#fff;">
+                        <div class="helper-text">Rows with missing PAN are skipped. Rows already marked YES are skipped.
                         </div>
                       </div>
+                    </div>
 
-                      <div
-                        style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:14px;">
-                        <div
-                          style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
-                          <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">
-                            URN</div>
-                          <div class="mono" style="font-size:0.86rem;font-weight:600;margin-top:3px;">AAATV2881JF20214
-                          </div>
-                        </div>
-                        <div
-                          style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
-                          <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">
-                            URN Issue Date</div>
-                          <div style="font-size:0.86rem;font-weight:600;margin-top:3px;">28/May/2021</div>
-                        </div>
-                        <div
-                          style="padding:10px 12px;background:var(--cream);border:1px solid var(--border);border-radius:8px;">
-                          <div style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;font-weight:600;">
-                            Output</div>
-                          <div id="tenbd-final-output-name" style="font-size:0.86rem;font-weight:600;margin-top:3px;">
-                            Form10BD_Donations.csv</div>
-                        </div>
+                    <div
+                      style="margin-top:14px;padding:12px 14px;background:var(--cream);border:1px solid var(--border);border-radius:8px;font-size:0.86rem;color:var(--muted);">
+                      <strong>CSV output:</strong> <span id="tenbd-final-output-name">Form10BD_Donations.csv</span><br>
+                      <strong>Hardcoded values:</strong> ID Code = Permanent Account Number, Section = Section 80G, URN
+                      = AAATV2881JF20214, Donation Type = Others.
+                    </div>
+
+                    <div class="btn-row">
+                      <button class="btn btn-primary" id="tenbd-final-analyse-btn" onclick="analyse10BDFinalMaster()">
+                        Analyse Master File
+                      </button>
+                      <button class="btn btn-success" id="tenbd-final-download-btn" onclick="download10BDFinalCSV()"
+                        disabled>
+                        Download 10BD CSV + Updated Master
+                      </button>
+                      <button class="btn btn-secondary" onclick="reset10BDFinalForm()">Reset</button>
+                    </div>
+                    <div id="tenbd-final-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
+
+                    <div id="tenbd-final-preview-wrap" style="display:none;margin-top:18px;">
+                      <div class="stats-grid" id="tenbd-final-stats"></div>
+                      <div class="table-wrap" style="max-height:430px;overflow:auto;">
+                        <table class="data-table">
+                          <thead>
+                            <tr>
+                              <th>Receipt</th>
+                              <th>Donor</th>
+                              <th>PAN</th>
+                              <th>Address</th>
+                              <th>Amount</th>
+                              <th>Result</th>
+                            </tr>
+                          </thead>
+                          <tbody id="tenbd-final-preview-tbody"></tbody>
+                        </table>
                       </div>
-
-                      <div class="btn-row">
-                        <button class="btn btn-primary" id="tenbd-final-analyse-btn" onclick="analyse10BDFinalMaster()">
-                          Analyse Master File
-                        </button>
-                        <button class="btn btn-secondary" onclick="reset10BDFinalForm()">Reset</button>
-                      </div>
-
-                      <div id="tenbd-final-status" style="display:none;margin-top:14px;font-size:0.88rem;"></div>
-
-                      <div id="tenbd-final-preview-wrap" style="display:none;margin-top:18px;">
-                        <div class="stats-grid" id="tenbd-final-stats"></div>
-
-                        <div class="card" style="padding:16px;margin-bottom:14px;">
-                          <div class="card-title" style="font-size:1rem;margin-bottom:12px;">Validation Preview</div>
-                          <div class="table-wrap" style="max-height:430px;overflow:auto;">
-                            <table class="data-table">
-                              <thead style="position:sticky;top:0;z-index:2;">
-                                <tr>
-                                  <th>Receipt</th>
-                                  <th>Donor Name</th>
-                                  <th>PAN</th>
-                                  <th>Amount</th>
-                                  <th>Result</th>
-                                </tr>
-                              </thead>
-                              <tbody id="tenbd-final-preview-tbody"></tbody>
-                            </table>
-                          </div>
-                          <div id="tenbd-final-preview-note"
-                            style="margin-top:10px;font-size:0.82rem;color:var(--muted);"></div>
-                        </div>
-
-                        <div class="btn-row" style="margin-top:0;">
-                          <button class="btn btn-success" id="tenbd-final-download-btn" onclick="download10BDFinalCSV()"
-                            disabled>
-                            Download Form 10BD CSV
-                          </button>
-                        </div>
+                      <div id="tenbd-final-preview-note" style="margin-top:10px;font-size:0.82rem;color:var(--muted);">
                       </div>
                     </div>
                   </div>
@@ -2490,107 +2496,7 @@
             </div>
           </div>
         </div>
-        <!-- Results -->
-        <div id="recon-results" style="display:none;margin-top:20px;">
 
-          <!-- Summary cards -->
-          <div class="stats-grid" id="recon-stats" style="margin-bottom:20px;"></div>
-
-          <!-- Matched -->
-          <div class="card" style="margin-bottom:16px;">
-            <div class="card-title" style="color:var(--success);">✅ Matched Transactions (<span
-                id="matched-count">0</span>)
-            </div>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Reference</th>
-                    <th>Bank Amount</th>
-                    <th>Receipt No</th>
-                    <th>Receipt Amount</th>
-                    <th>Donor</th>
-                    <th>Date</th>
-                    <th>Match</th>
-                  </tr>
-                </thead>
-                <tbody id="matched-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Unmatched Bank -->
-          <div class="card" style="margin-bottom:16px;">
-            <div class="card-title" style="color:var(--danger);">❌ In Bank but No Receipt (<span
-                id="unmatched-bank-count">0</span>)</div>
-            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">These transactions appear in bank
-              statement
-              but no matching receipt found. Possible missing receipts.</p>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Reference</th>
-                    <th>Amount</th>
-                    <th>Description</th>
-                  </tr>
-                </thead>
-                <tbody id="unmatched-bank-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Unmatched Receipts -->
-          <div class="card" style="margin-bottom:16px;">
-            <div class="card-title" style="color:#f39c12;">⚠️ Receipt but No Bank Entry (<span
-                id="unmatched-receipt-count">0</span>)</div>
-            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">These receipts exist in system but no
-              matching bank transaction. Possible pending or incorrect UTR.</p>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Receipt No</th>
-                    <th>Date</th>
-                    <th>Donor</th>
-                    <th>Amount</th>
-                    <th>Ref No</th>
-                    <th>Payment</th>
-                  </tr>
-                </thead>
-                <tbody id="unmatched-receipt-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- Amount mismatch -->
-          <div class="card">
-            <div class="card-title" style="color:#9b59b6;">💰 Amount Mismatch (<span id="mismatch-count">0</span>)</div>
-            <p style="font-size:0.85rem;color:var(--muted);margin-bottom:10px;">Reference matched but amounts differ.
-              Needs
-              investigation.</p>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Reference</th>
-                    <th>Bank Amount</th>
-                    <th>Receipt Amount</th>
-                    <th>Difference</th>
-                    <th>Donor</th>
-                    <th>Receipt No</th>
-                  </tr>
-                </thead>
-                <tbody id="mismatch-tbody"></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="btn-row" style="margin-top:16px;">
-            <button class="btn btn-secondary" onclick="exportReconExcel()">📊 Export Reconciliation Report</button>
-          </div>
-        </div>
       </div>
     </div><!-- /main -->
     <!-- INSERT immediately before the existing "VIEW RECEIPT MODAL" comment. -->
@@ -5458,71 +5364,9 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       }
 
       function suspenseCandidateDonor(row) {
-        const source = suspenseStructuredNarration(row);
-        const slashParts = source.split('/').map(suspenseCleanNarrationPart);
-        const mode = String(slashParts[0] || '').toUpperCase();
-
-        // UPI/<UTR>/<purpose or description>/<donor UPI handle>/<bank>/<hash>
-        // The fourth segment is preferred because Tally/Bank narrations usually place
-        // Jivdaya, Donation, UPI, 80G, or another purpose in the third segment.
-        if (mode === 'UPI') {
-          const preferred = slashParts[3];
-          if (suspenseLooksLikeDonorPart(preferred)) return preferred;
-
-          for (let i = 3; i < slashParts.length; i++) {
-            if (suspenseLooksLikeBankOrTail(slashParts[i])) break;
-            if (suspenseLooksLikeDonorPart(slashParts[i])) return slashParts[i];
-          }
-
-          const fallback = slashParts[2];
-          if (suspenseLooksLikeDonorPart(fallback)) return fallback;
-        }
-
-        // CLG/<donor name>/<cheque number>/<bank>/...
-        if (mode === 'CLG' || mode === 'CHEQUE' || mode === 'CHQ') {
-          return suspenseLooksLikeDonorPart(slashParts[1]) ? slashParts[1] : null;
-        }
-
-        // BIL/INFT/<reference>/<donor name>[/<additional donor description>]
-        if (mode === 'BIL' && String(slashParts[1] || '').toUpperCase() === 'INFT') {
-          return suspenseJoinDonorParts(slashParts, 3);
-        }
-
-        // MMT/IMPS/<reference>/<purpose or 0>/<donor name>/<bank>
-        if (mode === 'MMT' && String(slashParts[1] || '').toUpperCase() === 'IMPS') {
-          return suspenseJoinDonorParts(slashParts, 3);
-        }
-
-        // Direct IMPS/<reference>/<donor>/<bank> or RTGS equivalent.
-        if (mode === 'IMPS' || mode === 'RTGS') {
-          return suspenseJoinDonorParts(slashParts, 2);
-        }
-
-        // NEFT-<reference>-<donor>-0001...-<account>-<bank code>
-        if (/^NEFT-/i.test(source)) {
-          const parts = source.split('-').map(suspenseCleanNarrationPart);
-          const markerIndex = parts.findIndex((part, index) => index >= 2 && /^0001/i.test(part));
-          const donorParts = markerIndex > 2 ? parts.slice(2, markerIndex) : parts.slice(2, 3);
-          const donor = donorParts.filter(suspenseLooksLikeDonorPart).join(' - ');
-          if (donor) return donor;
-        }
-
-        // BY CASH - <location> - <donor name>
-        if (/^BY\s+CASH\b/i.test(source)) {
-          const parts = source.split(/\s*-\s*/).map(suspenseCleanNarrationPart);
-          for (let i = parts.length - 1; i >= 1; i--) {
-            if (suspenseLooksLikeDonorPart(parts[i])) return parts[i];
-          }
-        }
-
-        // Use actual mapped party/ledger fields only when they are not the complete
-        // structured narration, a purpose label, or a bank ledger.
-        const party = suspenseCleanNarrationPart(suspenseGetRaw(row, 'party'));
-        if (party && !party.includes('/') && suspenseLooksLikeDonorPart(party)) return party;
-
-        const ledger = suspenseCleanNarrationPart(suspenseGetRaw(row, 'ledger'));
-        if (ledger && !ledger.includes('/') && suspenseLooksLikeDonorPart(ledger)) return ledger;
-
+        // Deliberately keep donor blank during Tally suspense import.
+        // Narration often contains UPI IDs, payer labels, bank text, campaign text,
+        // or partial names. Finance will review and enter the correct donor before issue.
         return null;
       }
 
@@ -6604,18 +6448,11 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         'CHEQUE NO./UTR NO.'
       ];
 
-      function tenBDValidateFY(value) {
-        const match = String(value || '').trim().match(/^(\d{4})-(\d{2})$/);
-        return Boolean(match && ((Number(match[1]) + 1) % 100 === Number(match[2])));
-      }
       function tenBDFormatReceiptNo(prefix, number) {
         return `${String(prefix || '').trim().toUpperCase()} ${number}`;
       }
 
       function load10BDDefaults() {
-        const fy = document.getElementById('tenbd-fy');
-        if (fy && !fy.value) fy.value = currentFY();
-
         const prefix = document.getElementById('tenbd-prefix');
         if (prefix && !prefix.value) prefix.value = 'D';
 
@@ -6639,26 +6476,22 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       }
 
       function tenBDReadInputs() {
-        const fy = document.getElementById('tenbd-fy')?.value.trim() || '';
         const bookNo = document.getElementById('tenbd-book-no')?.value.trim() || '';
         const prefix = document.getElementById('tenbd-prefix')?.value.trim().toUpperCase() || '';
         const startNo = Number(document.getElementById('tenbd-start-no')?.value || 0);
-        const count = Number(document.getElementById('tenbd-receipt-count')?.value || 0);
-        const endNo = Number.isSafeInteger(startNo) && startNo > 0 &&
-          Number.isSafeInteger(count) && count > 0
-          ? startNo + count - 1
-          : 0;
+        const count = 50;
+        const endNo = Number.isSafeInteger(startNo) && startNo > 0 ? startNo + count - 1 : 0;
 
         const endInput = document.getElementById('tenbd-end-no');
         if (endInput) endInput.value = endNo || '';
 
-        return { fy, bookNo, prefix, startNo, count, endNo };
+        const countInput = document.getElementById('tenbd-receipt-count');
+        if (countInput) countInput.value = '50';
+
+        return { bookNo, prefix, startNo, count, endNo };
       }
 
       function tenBDValidateInputs(values) {
-        if (!tenBDValidateFY(values.fy)) {
-          throw new Error('Enter a valid financial year such as 2026-27');
-        }
         if (!values.bookNo) {
           throw new Error('Receipt book number is required');
         }
@@ -6668,8 +6501,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (!Number.isSafeInteger(values.startNo) || values.startNo <= 0) {
           throw new Error('Enter a valid receipt start number');
         }
-        if (!Number.isSafeInteger(values.count) || values.count <= 0) {
-          throw new Error('Number of receipts must be a positive whole number');
+        if (values.count !== 50) {
+          throw new Error('Receipt count must be 50');
         }
         if (!Number.isSafeInteger(values.endNo) || values.endNo < values.startNo) {
           throw new Error('Unable to calculate a valid receipt end number');
@@ -6681,9 +6514,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (!el) return;
 
         const values = tenBDReadInputs();
-        if (!values.fy || !values.bookNo || !values.prefix ||
-          !values.startNo || !values.count || !values.endNo) {
-          el.textContent = 'Enter the financial year, book number, prefix, start number, and number of receipts.';
+        if (!values.bookNo || !values.prefix || !values.startNo || !values.endNo) {
+          el.textContent = 'Enter the book number and receipt start number.';
           return;
         }
 
@@ -6691,10 +6523,9 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         const lastReceipt = tenBDFormatReceiptNo(values.prefix, values.endNo);
 
         el.innerHTML = `
-          <strong>File:</strong> ${String(values.bookNo).replace(/[<>&"']/g, '')}_Book No j.xlsx<br>
-          <strong>Financial year:</strong> ${suspenseEscape(values.fy)}<br>
+          <strong>File:</strong> ${suspenseEscape(values.bookNo)}_Book No j.xlsx<br>
           <strong>Receipt range:</strong> ${suspenseEscape(firstReceipt)} to ${suspenseEscape(lastReceipt)}<br>
-          <strong>Rows:</strong> ${values.count}
+          <strong>Rows:</strong> 50
         `;
       }
 
@@ -6703,9 +6534,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           const el = document.getElementById(id);
           if (el) el.value = '';
         });
-
-        const fy = document.getElementById('tenbd-fy');
-        if (fy) fy.value = currentFY();
 
         const prefix = document.getElementById('tenbd-prefix');
         if (prefix) prefix.value = 'D';
@@ -6912,8 +6740,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
           workbook.creator = 'Vardhman Sanskar Dham';
           workbook.lastModifiedBy = currentUser?.email || 'Finance';
-          workbook.subject = `FY ${values.fy}; Receipt Book ${values.bookNo}`;
-          workbook.description = `Receipt Book ${values.bookNo}: D ${values.startNo} to D ${values.endNo}`;
+          workbook.subject = `Receipt Book ${values.bookNo}`;
+          workbook.description = `Receipt Book ${values.bookNo}: ${tenBDFormatReceiptNo(values.prefix, values.startNo)} to ${tenBDFormatReceiptNo(values.prefix, values.endNo)}`;
           workbook.calcProperties.fullCalcOnLoad = true;
           workbook.calcProperties.forceFullCalc = true;
 
@@ -6925,7 +6753,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           tenBDDownloadBlob(blob, outputName);
 
           tenBDSetStatus(
-            `Generated ${outputName} for FY ${values.fy} with ${values.count} receipts: ` +
+            `Generated ${outputName} with ${values.count} receipts: ` +
             `${tenBDFormatReceiptNo(values.prefix, values.startNo)} to ` +
             `${tenBDFormatReceiptNo(values.prefix, values.endNo)}.`,
             'success'
@@ -6942,14 +6770,20 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       }
 
       // ============================================================================
-      // 10BD MASTER FILE CREATOR
-      // Requires the existing 10BD generator constants/helpers:
-      //   TENBD_TEMPLATE_URL, TENBD_SHEET_PASSWORD, TENBD_EXPECTED_HEADERS,
-      //   tenBDValidateFY(), tenBDDownloadBlob(), currentFY(), showToast(), ExcelJS.
+      // 10BD MASTER FILE CREATOR - V2
+      // Fully client-side. Merges completed receipt-book workbooks into one master.
+      // Adds final columns: BOOK NO and 10BD GENERATION STATUS.
+      // Requires: TENBD_TEMPLATE_URL, TENBD_SHEET_PASSWORD, TENBD_EXPECTED_HEADERS,
+      // tenBDDownloadBlob(), showToast(), currentRole, currentUser, ExcelJS.
       // ============================================================================
       const TENBD_MASTER_MAX_FILE_SIZE = 25 * 1024 * 1024;
-      const TENBD_MASTER_COLUMN_COUNT = 15;
+      const TENBD_BOOK_COLUMN_COUNT = 15;
+      const TENBD_MASTER_COLUMN_COUNT = 17;
       const TENBD_MASTER_DATA_START_ROW = 2;
+      const TENBD_MASTER_BOOK_NO_HEADER = 'BOOK NO';
+      const TENBD_MASTER_STATUS_HEADER = '10BD GENERATION STATUS';
+      const TENBD_STATUS_NO = 'NO';
+      const TENBD_STATUS_YES = 'YES';
 
       function tenBDMasterEscape(value) {
         return String(value ?? '')
@@ -6972,20 +6806,15 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       }
 
       function tenBDMasterLoadDefaults() {
-        const fy = document.getElementById('tenbd-master-fy');
-        if (fy && !fy.value) fy.value = currentFY();
         update10BDMasterFileSummary();
       }
 
       function reset10BDMasterForm() {
         const existing = document.getElementById('tenbd-master-existing');
         const sources = document.getElementById('tenbd-master-sources');
-        const fy = document.getElementById('tenbd-master-fy');
         const status = document.getElementById('tenbd-master-status');
-
         if (existing) existing.value = '';
         if (sources) sources.value = '';
-        if (fy) fy.value = currentFY();
         if (status) status.style.display = 'none';
         update10BDMasterFileSummary();
       }
@@ -6996,11 +6825,10 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
         const existing = document.getElementById('tenbd-master-existing')?.files?.[0] || null;
         const sources = Array.from(document.getElementById('tenbd-master-sources')?.files || []);
-        const fy = document.getElementById('tenbd-master-fy')?.value.trim() || currentFY();
-        const outputName = existing?.name || `10BD_Master_${fy}.xlsx`;
+        const outputName = existing?.name || '10BD_Master.xlsx';
 
         const sourceNames = sources.length
-          ? sources.map(file => tenBDMasterEscape(file.name)).join('<br>')
+          ? sources.map(file => `${tenBDMasterEscape(file.name)} → Book No: ${tenBDMasterEscape(tenBDMasterExtractBookNo(file.name) || 'Not detected')}`).join('<br>')
           : 'No completed receipt-book file selected.';
 
         el.innerHTML = `
@@ -7021,16 +6849,12 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (value instanceof Date) return new Date(value.getTime());
 
         if (typeof value === 'object') {
-          if (Array.isArray(value.richText)) {
-            return value.richText.map(part => String(part?.text || '')).join('');
-          }
+          if (Array.isArray(value.richText)) return value.richText.map(part => String(part?.text || '')).join('');
           if (Object.prototype.hasOwnProperty.call(value, 'result')) {
             const result = value.result;
             return result instanceof Date ? new Date(result.getTime()) : (result ?? null);
           }
-          if (Object.prototype.hasOwnProperty.call(value, 'text')) {
-            return value.text ?? '';
-          }
+          if (Object.prototype.hasOwnProperty.call(value, 'text')) return value.text ?? '';
         }
 
         return value;
@@ -7039,7 +6863,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       function tenBDMasterParseAmount(value) {
         if (value === null || value === undefined || value === '') return null;
         if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-
         const cleaned = String(value)
           .replace(/[\s,]/g, '')
           .replace(/^(?:RS\.?|INR|RUPEES?)?/i, '')
@@ -7060,9 +6883,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       function tenBDMasterCanonicalValue(value) {
         if (value === null || value === undefined) return '';
         if (value instanceof Date) return tenBDMasterDateKey(value);
-        if (typeof value === 'number') {
-          return Number.isFinite(value) ? Number(value.toFixed(6)) : '';
-        }
+        if (typeof value === 'number') return Number.isFinite(value) ? Number(value.toFixed(6)) : '';
         if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
         return String(value).replace(/\s+/g, ' ').trim();
       }
@@ -7071,9 +6892,24 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         return String(value ?? '').toUpperCase().replace(/\s+/g, '').trim();
       }
 
+      function tenBDMasterExtractBookNo(fileName) {
+        const base = String(fileName || '')
+          .replace(/\.[^.]+$/, '')
+          .replace(/%20/g, ' ')
+          .trim();
+        let match = base.match(/^(.+?)\s*_?\s*Book\s*No/i);
+        if (match) return match[1].replace(/[_-]+$/g, '').trim();
+        match = base.match(/^([A-Za-z0-9_-]+)/);
+        return match ? match[1].replace(/[_-]+$/g, '').trim() : '';
+      }
+
+      function tenBDMasterNormalizeStatus(value) {
+        const text = String(value || '').trim().toUpperCase();
+        return text === TENBD_STATUS_YES ? TENBD_STATUS_YES : TENBD_STATUS_NO;
+      }
+
       function tenBDMasterRowHasInput(values) {
-        // A is always pre-populated and N is a derived formula. Ignore both when
-        // deciding whether a receipt row was actually completed by Finance.
+        // A is receipt no, N is formula total, P/Q are metadata. Ignore these.
         const inputIndexes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14];
         return inputIndexes.some(index => {
           const value = values[index];
@@ -7091,19 +6927,30 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         throw new Error(`${fileName}: TOTAL row was not found`);
       }
 
-      function tenBDMasterValidateHeaders(worksheet, fileName = 'Workbook') {
-        if (!Array.isArray(TENBD_EXPECTED_HEADERS) || TENBD_EXPECTED_HEADERS.length !== TENBD_MASTER_COLUMN_COUNT) {
+      function tenBDMasterValidateBookHeaders(worksheet, fileName = 'Workbook') {
+        if (!Array.isArray(TENBD_EXPECTED_HEADERS) || TENBD_EXPECTED_HEADERS.length < TENBD_BOOK_COLUMN_COUNT) {
           throw new Error('10BD expected-header configuration is missing');
         }
 
-        TENBD_EXPECTED_HEADERS.forEach((expected, index) => {
+        TENBD_EXPECTED_HEADERS.slice(0, TENBD_BOOK_COLUMN_COUNT).forEach((expected, index) => {
           const actual = tenBDMasterCellValue(worksheet.getCell(1, index + 1));
           if (tenBDMasterNormalizeHeader(actual) !== tenBDMasterNormalizeHeader(expected)) {
-            throw new Error(
-              `${fileName}: invalid column ${index + 1}. Expected "${expected}" but found "${actual ?? ''}"`
-            );
+            throw new Error(`${fileName}: invalid column ${index + 1}. Expected "${expected}" but found "${actual ?? ''}"`);
           }
         });
+      }
+
+      function tenBDMasterValidateMasterHeadersIfPresent(worksheet, fileName = 'Workbook') {
+        tenBDMasterValidateBookHeaders(worksheet, fileName);
+        const bookNoHeader = tenBDMasterCellValue(worksheet.getCell(1, 16));
+        const statusHeader = tenBDMasterCellValue(worksheet.getCell(1, 17));
+
+        if (bookNoHeader && tenBDMasterNormalizeHeader(bookNoHeader) !== tenBDMasterNormalizeHeader(TENBD_MASTER_BOOK_NO_HEADER)) {
+          throw new Error(`${fileName}: invalid column 16. Expected "${TENBD_MASTER_BOOK_NO_HEADER}" but found "${bookNoHeader}"`);
+        }
+        if (statusHeader && tenBDMasterNormalizeHeader(statusHeader) !== tenBDMasterNormalizeHeader(TENBD_MASTER_STATUS_HEADER)) {
+          throw new Error(`${fileName}: invalid column 17. Expected "${TENBD_MASTER_STATUS_HEADER}" but found "${statusHeader}"`);
+        }
       }
 
       function tenBDMasterCloneValue(value) {
@@ -7111,10 +6958,10 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         return value;
       }
 
-      function tenBDMasterBuildRecord(worksheet, rowNo, fileName) {
+      function tenBDMasterBuildRecord(worksheet, rowNo, fileName, mode = 'source') {
         const values = new Array(TENBD_MASTER_COLUMN_COUNT).fill(null);
 
-        for (let colNo = 1; colNo <= TENBD_MASTER_COLUMN_COUNT; colNo++) {
+        for (let colNo = 1; colNo <= TENBD_BOOK_COLUMN_COUNT; colNo++) {
           if (colNo >= 7 && colNo <= 13) {
             values[colNo - 1] = tenBDMasterParseAmount(tenBDMasterCellValue(worksheet.getCell(rowNo, colNo)));
           } else if (colNo !== 14) {
@@ -7126,11 +6973,20 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (!tenBDMasterRowHasInput(values)) return null;
 
         const receiptKey = tenBDMasterReceiptKey(values[0]);
-        if (!receiptKey) {
-          throw new Error(`${fileName}: completed row ${rowNo} has no receipt number`);
-        }
+        if (!receiptKey) throw new Error(`${fileName}: completed row ${rowNo} has no receipt number`);
 
-        const signature = JSON.stringify(values.slice(1).map(tenBDMasterCanonicalValue));
+        const sourceBookNo = tenBDMasterExtractBookNo(fileName);
+        values[15] = mode === 'master'
+          ? (tenBDMasterCellValue(worksheet.getCell(rowNo, 16)) || sourceBookNo || '')
+          : sourceBookNo;
+        values[16] = mode === 'master'
+          ? tenBDMasterNormalizeStatus(tenBDMasterCellValue(worksheet.getCell(rowNo, 17)))
+          : TENBD_STATUS_NO;
+
+        // Signature excludes status so an already-generated master row does not appear
+        // changed when the same source row is selected again.
+        const signature = JSON.stringify(values.slice(1, 16).map(tenBDMasterCanonicalValue));
+
         return {
           receiptKey,
           receiptNo: String(values[0] ?? '').replace(/\s+/g, ' ').trim(),
@@ -7143,23 +6999,23 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
       async function tenBDMasterReadWorkbook(file, mode = 'source') {
         if (!file) throw new Error('Workbook file is missing');
-        if (file.size > TENBD_MASTER_MAX_FILE_SIZE) {
-          throw new Error(`${file.name}: file exceeds the 25 MB limit`);
-        }
+        if (file.size > TENBD_MASTER_MAX_FILE_SIZE) throw new Error(`${file.name}: file exceeds the 25 MB limit`);
 
         const workbook = new ExcelJS.Workbook();
         await workbook.xlsx.load(await file.arrayBuffer());
         const worksheet = workbook.worksheets[0];
         if (!worksheet) throw new Error(`${file.name}: worksheet was not found`);
 
-        tenBDMasterValidateHeaders(worksheet, file.name);
+        if (mode === 'master') tenBDMasterValidateMasterHeadersIfPresent(worksheet, file.name);
+        else tenBDMasterValidateBookHeaders(worksheet, file.name);
+
         const totalRow = tenBDMasterFindTotalRow(worksheet, file.name);
         const rows = [];
         let blankRows = 0;
         const seen = new Map();
 
         for (let rowNo = TENBD_MASTER_DATA_START_ROW; rowNo < totalRow; rowNo++) {
-          const record = tenBDMasterBuildRecord(worksheet, rowNo, file.name);
+          const record = tenBDMasterBuildRecord(worksheet, rowNo, file.name, mode);
           if (!record) {
             blankRows++;
             continue;
@@ -7168,9 +7024,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           if (mode === 'master' && seen.has(record.receiptKey)) {
             const previous = seen.get(record.receiptKey);
             if (previous.signature !== record.signature) {
-              throw new Error(
-                `${file.name}: existing master contains conflicting duplicate receipt ${record.receiptNo}`
-              );
+              throw new Error(`${file.name}: existing master contains conflicting duplicate receipt ${record.receiptNo}`);
             }
             continue;
           }
@@ -7198,14 +7052,10 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
               added++;
               return;
             }
-
             if (current.signature === record.signature) {
               exactDuplicates++;
               return;
             }
-
-            // Map.set() replaces the data but retains the original position when the
-            // receipt already existed in the master. The last selected source file wins.
             merged.set(record.receiptKey, record);
             replacementKeys.add(record.receiptKey);
           });
@@ -7223,7 +7073,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         cell.protection = { locked: Boolean(locked), hidden: Boolean(hidden) };
       }
 
-      async function tenBDMasterBuildOutputWorkbook(records, fy) {
+      async function tenBDMasterBuildOutputWorkbook(records) {
         const response = await fetch(TENBD_TEMPLATE_URL, { cache: 'no-store' });
         if (!response.ok) throw new Error(`Template file could not be loaded (${response.status})`);
 
@@ -7232,14 +7082,12 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         const worksheet = workbook.worksheets[0];
         if (!worksheet) throw new Error('Template worksheet was not found');
 
-        tenBDMasterValidateHeaders(worksheet, 'Receipt-book template');
+        tenBDMasterValidateBookHeaders(worksheet, 'Receipt-book template');
         const templateTotalRow = tenBDMasterFindTotalRow(worksheet, 'Receipt-book template');
         const templateDataCount = templateTotalRow - TENBD_MASTER_DATA_START_ROW;
         const requiredDataCount = records.length;
         if (requiredDataCount < 1) throw new Error('No completed receipt records were found');
 
-        // Break the template shared-formula groups before changing row count. This
-        // prevents ExcelJS from looking for a deleted shared-formula master cell.
         for (let rowNo = templateTotalRow - 1; rowNo >= TENBD_MASTER_DATA_START_ROW; rowNo--) {
           worksheet.getCell(rowNo, 1).value = null;
           worksheet.getCell(rowNo, 14).value = null;
@@ -7248,25 +7096,20 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (requiredDataCount > templateDataCount) {
           worksheet.duplicateRow(templateTotalRow - 1, requiredDataCount - templateDataCount, true);
         } else if (requiredDataCount < templateDataCount) {
-          worksheet.spliceRows(
-            TENBD_MASTER_DATA_START_ROW + requiredDataCount,
-            templateDataCount - requiredDataCount
-          );
+          worksheet.spliceRows(TENBD_MASTER_DATA_START_ROW + requiredDataCount, templateDataCount - requiredDataCount);
         }
 
         const totalRowNo = TENBD_MASTER_DATA_START_ROW + requiredDataCount;
         const totals = new Array(7).fill(0);
+        worksheet.getCell(1, 16).value = TENBD_MASTER_BOOK_NO_HEADER;
+        worksheet.getCell(1, 17).value = TENBD_MASTER_STATUS_HEADER;
 
         records.forEach((record, index) => {
           const rowNo = TENBD_MASTER_DATA_START_ROW + index;
-
           for (let colNo = 1; colNo <= TENBD_MASTER_COLUMN_COUNT; colNo++) {
             const cell = worksheet.getCell(rowNo, colNo);
             if (colNo === 14) {
-              cell.value = {
-                formula: `SUM(G${rowNo}:M${rowNo})`,
-                result: Number(record.values[13] || 0)
-              };
+              cell.value = { formula: `SUM(G${rowNo}:M${rowNo})`, result: Number(record.values[13] || 0) };
             } else {
               cell.value = tenBDMasterCloneValue(record.values[colNo - 1]);
             }
@@ -7276,15 +7119,16 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
             totals[amountIndex] += Number(record.values[6 + amountIndex] || 0);
           }
 
-          for (let colNo = 1; colNo <= 16; colNo++) {
+          for (let colNo = 1; colNo <= TENBD_MASTER_COLUMN_COUNT; colNo++) {
             const editable = (colNo >= 2 && colNo <= 13) || colNo === 15;
             tenBDMasterSetProtection(worksheet.getCell(rowNo, colNo), !editable, colNo === 14);
           }
           worksheet.getCell(rowNo, 1).numFmt = '@';
+          worksheet.getCell(rowNo, 16).numFmt = '@';
+          worksheet.getCell(rowNo, 17).numFmt = '@';
         });
 
-        // Rebuild the dynamic grand-total row.
-        for (let colNo = 1; colNo <= 16; colNo++) {
+        for (let colNo = 1; colNo <= TENBD_MASTER_COLUMN_COUNT; colNo++) {
           worksheet.getCell(totalRowNo, colNo).value = null;
           tenBDMasterSetProtection(worksheet.getCell(totalRowNo, colNo), true, colNo >= 7 && colNo <= 14);
         }
@@ -7292,30 +7136,18 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
         for (let colNo = 7; colNo <= 13; colNo++) {
           const letter = worksheet.getColumn(colNo).letter;
-          worksheet.getCell(totalRowNo, colNo).value = {
-            formula: `SUM(${letter}2:${letter}${totalRowNo - 1})`,
-            result: totals[colNo - 7]
-          };
+          worksheet.getCell(totalRowNo, colNo).value = { formula: `SUM(${letter}2:${letter}${totalRowNo - 1})`, result: totals[colNo - 7] };
         }
         const grandTotal = totals.reduce((sum, value) => sum + value, 0);
-        worksheet.getCell(totalRowNo, 14).value = {
-          formula: `SUM(N2:N${totalRowNo - 1})`,
-          result: grandTotal
-        };
+        worksheet.getCell(totalRowNo, 14).value = { formula: `SUM(N2:N${totalRowNo - 1})`, result: grandTotal };
 
-        for (let colNo = 1; colNo <= 16; colNo++) {
+        for (let colNo = 1; colNo <= TENBD_MASTER_COLUMN_COUNT; colNo++) {
           tenBDMasterSetProtection(worksheet.getCell(1, colNo), true, false);
         }
 
         worksheet.name = 'Master';
-        worksheet.views = [{
-          state: 'frozen',
-          xSplit: 1,
-          ySplit: 1,
-          topLeftCell: 'B2',
-          activeCell: 'B2'
-        }];
-        worksheet.pageSetup.printArea = `A1:O${totalRowNo}`;
+        worksheet.views = [{ state: 'frozen', xSplit: 1, ySplit: 1, topLeftCell: 'B2', activeCell: 'B2' }];
+        worksheet.pageSetup.printArea = `A1:Q${totalRowNo}`;
 
         await worksheet.protect(TENBD_SHEET_PASSWORD, {
           selectLockedCells: false,
@@ -7335,12 +7167,11 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
         workbook.creator = 'Vardhman Sanskar Dham';
         workbook.lastModifiedBy = currentUser?.email || 'Finance';
-        workbook.subject = `10BD Master Workbook - FY ${fy}`;
+        workbook.subject = '10BD Master Workbook';
         workbook.description = `Client-side consolidated 10BD receipt master containing ${records.length} unique receipt records.`;
         workbook.calcProperties.fullCalcOnLoad = true;
         workbook.calcProperties.forceFullCalc = true;
         workbook.calcProperties.calcMode = 'auto';
-
         return workbook;
       }
 
@@ -7356,13 +7187,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
         const existingFile = document.getElementById('tenbd-master-existing')?.files?.[0] || null;
         const sourceFiles = Array.from(document.getElementById('tenbd-master-sources')?.files || []);
-        const fy = document.getElementById('tenbd-master-fy')?.value.trim() || '';
-
-        if (!tenBDValidateFY(fy)) {
-          tenBDMasterSetStatus('Enter a valid financial year such as 2026-27', 'error');
-          showToast('Enter a valid financial year', 'error');
-          return;
-        }
         if (!sourceFiles.length) {
           tenBDMasterSetStatus('Select at least one completed receipt-book file', 'error');
           showToast('Select completed receipt-book files', 'error');
@@ -7377,7 +7201,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         try {
           let existingRows = [];
           let blankRows = 0;
-
           if (existingFile) {
             const existing = await tenBDMasterReadWorkbook(existingFile, 'master');
             existingRows = existing.rows;
@@ -7393,12 +7216,9 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           }
 
           const mergeResult = tenBDMasterMerge(existingRows, sourceGroups);
-
           if (mergeResult.replacementCount > 0) {
             const noun = mergeResult.replacementCount === 1 ? 'record' : 'records';
-            const confirmed = window.confirm(
-              `${mergeResult.replacementCount} existing ${noun} will be replaced with new data. Continue?`
-            );
+            const confirmed = window.confirm(`${mergeResult.replacementCount} existing ${noun} will be replaced with new data. Continue?`);
             if (!confirmed) {
               tenBDMasterSetStatus('Cancelled. The existing master file was not changed.', '');
               return;
@@ -7406,21 +7226,16 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           }
 
           if (existingFile && mergeResult.added === 0 && mergeResult.replacementCount === 0) {
-            tenBDMasterSetStatus(
-              `No changes found. ${mergeResult.exactDuplicates} exact duplicate record(s) were skipped.`,
-              'success'
-            );
+            tenBDMasterSetStatus(`No changes found. ${mergeResult.exactDuplicates} exact duplicate record(s) were skipped.`, 'success');
             showToast('No changes found in the selected files', 'success');
             return;
           }
 
           btn.textContent = 'Building master workbook...';
-          const workbook = await tenBDMasterBuildOutputWorkbook(mergeResult.rows, fy);
+          const workbook = await tenBDMasterBuildOutputWorkbook(mergeResult.rows);
           const outputBuffer = await workbook.xlsx.writeBuffer();
-          const blob = new Blob([outputBuffer], {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-          });
-          const outputName = existingFile?.name || `10BD_Master_${fy}.xlsx`;
+          const blob = new Blob([outputBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          const outputName = existingFile?.name || '10BD_Master.xlsx';
           tenBDDownloadBlob(blob, outputName);
 
           tenBDMasterSetStatus(
@@ -7441,10 +7256,12 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       }
 
       // ============================================================================
-      // FORM 10BD FINAL CSV GENERATOR
-      // Requires the existing 10BD Master File Creator helpers:
-      //   tenBDMasterReadWorkbook(), tenBDValidateFY(), tenBDDownloadBlob(),
-      //   currentFY(), showToast(), currentRole.
+      // FORM 10BD FINAL CSV GENERATOR - V2
+      // Generates Income Tax Form 10BD CSV from the 10BD master workbook and also
+      // downloads an updated master workbook with 10BD GENERATION STATUS = YES for
+      // rows included in the generated CSV.
+      // Requires: 10BD Master File Creator V2 helpers, tenBDDownloadBlob(), showToast(),
+      // currentRole, ExcelJS.
       // ============================================================================
       const TENBD_FINAL_HEADERS = [
         'Sl. No.',
@@ -7464,10 +7281,10 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       const TENBD_FINAL_ID_CODE = 'Permanent Account Number';
       const TENBD_FINAL_SECTION_CODE = 'Section 80G';
       const TENBD_FINAL_URN = 'AAATV2881JF20214';
-      // Exact format used by the supplied Income Tax reference CSV.
       const TENBD_FINAL_URN_DATE = '28/May/2021';
       const TENBD_FINAL_DONATION_TYPE = 'Others';
       const TENBD_FINAL_RECEIPT_MODE = 'Electronic modes including account payee cheque/draft';
+      const TENBD_FINAL_OUTPUT_NAME = 'Form10BD_Donations.csv';
       const TENBD_FINAL_PREVIEW_LIMIT = 250;
 
       let _tenBDFinalAnalysis = null;
@@ -7492,22 +7309,15 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         el.textContent = message;
       }
 
-      function tenBDFinalOutputName(fy) {
-        return `Form10BD_Donations_${String(fy || '').trim() || currentFY()}.csv`;
-      }
-
       function tenBDFinalLoadDefaults() {
-        const fy = document.getElementById('tenbd-final-fy');
-        if (fy && !fy.value) fy.value = currentFY();
         const output = document.getElementById('tenbd-final-output-name');
-        if (output) output.textContent = tenBDFinalOutputName(fy?.value || currentFY());
+        if (output) output.textContent = TENBD_FINAL_OUTPUT_NAME;
       }
 
       function tenBDFinalFileChanged() {
         _tenBDFinalAnalysis = null;
-        const fy = document.getElementById('tenbd-final-fy')?.value.trim() || currentFY();
         const output = document.getElementById('tenbd-final-output-name');
-        if (output) output.textContent = tenBDFinalOutputName(fy);
+        if (output) output.textContent = TENBD_FINAL_OUTPUT_NAME;
         const preview = document.getElementById('tenbd-final-preview-wrap');
         if (preview) preview.style.display = 'none';
         const status = document.getElementById('tenbd-final-status');
@@ -7518,9 +7328,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
       function reset10BDFinalForm() {
         const file = document.getElementById('tenbd-final-master');
-        const fy = document.getElementById('tenbd-final-fy');
         if (file) file.value = '';
-        if (fy) fy.value = currentFY();
         tenBDFinalFileChanged();
       }
 
@@ -7541,7 +7349,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
       function tenBDFinalSanitizeDonorName(value) {
         const original = tenBDFinalNormalizeText(value);
-        // Keep letters, numbers, spaces and only these special characters: . , - _
         const sanitized = original
           .replace(/[^\p{L}\p{N}\s.,_-]+/gu, ' ')
           .replace(/\s+/g, ' ')
@@ -7557,20 +7364,34 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       function tenBDFinalFormatAmount(value) {
         const amount = tenBDFinalAmount(value);
         if (amount === null) return '';
-        return Number.isInteger(amount)
-          ? String(amount)
-          : amount.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+        return Number.isInteger(amount) ? String(amount) : amount.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
       }
 
       function tenBDFinalAnalyseRecord(record) {
+        const currentStatus = tenBDMasterNormalizeStatus(record.values[16]);
         const pan = tenBDFinalNormalizePAN(record.values[5]);
         const donor = tenBDFinalSanitizeDonorName(record.values[2]);
-        const address = tenBDFinalNormalizeText(record.values[3]);
+        const address = tenBDFinalNormalizeText(record.values[3]) || 'MUMBAI';
         const amount = tenBDFinalAmount(record.values[13]);
         const errors = [];
 
+        if (currentStatus === TENBD_STATUS_YES) {
+          return {
+            receiptKey: record.receiptKey,
+            receiptNo: record.receiptNo,
+            donorName: donor.value,
+            pan,
+            address,
+            amount,
+            status: 'skipped_already_generated',
+            errors: [],
+            nameChanged: donor.changed
+          };
+        }
+
         if (!pan) {
           return {
+            receiptKey: record.receiptKey,
             receiptNo: record.receiptNo,
             donorName: donor.value,
             pan: '',
@@ -7587,6 +7408,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         if (amount === null || amount <= 0) errors.push('Invalid amount');
 
         return {
+          receiptKey: record.receiptKey,
           receiptNo: record.receiptNo,
           donorName: donor.value,
           originalDonorName: donor.original,
@@ -7609,7 +7431,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           TENBD_FINAL_URN,
           TENBD_FINAL_URN_DATE,
           row.donorName,
-          row.address,
+          row.address || 'MUMBAI',
           TENBD_FINAL_DONATION_TYPE,
           TENBD_FINAL_RECEIPT_MODE,
           tenBDFinalFormatAmount(row.amount)
@@ -7626,8 +7448,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           ['Completed Rows', analysis.totalRows, '📄'],
           ['PAN Eligible', analysis.panEligible, '✅'],
           ['No PAN Skipped', analysis.noPanSkipped, '⏭️'],
+          ['Already Generated', analysis.alreadyGenerated, '🔒'],
           ['Blocking Errors', analysis.errorCount, '❌'],
-          ['Names Cleaned', analysis.namesChanged, '🧹'],
           ['Eligible Amount', `₹${analysis.totalAmount.toLocaleString('en-IN')}`, '💰']
         ].map(([label, value, icon]) => `
     <div class="stat-card"><div style="font-size:1.3rem">${icon}</div>
@@ -7645,6 +7467,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
               : '<span class="badge" style="background:#e6f4ea;color:var(--success)">Valid</span>';
           } else if (row.status === 'skipped_no_pan') {
             result = '<span class="badge" style="background:#f0f0f0;color:var(--muted)">Skipped · No PAN</span>';
+          } else if (row.status === 'skipped_already_generated') {
+            result = '<span class="badge" style="background:#e3f2fd;color:#1565c0">Skipped · Already YES</span>';
           } else {
             bg = 'background:#fff5f5;';
             result = `<span class="badge" style="background:#fdecea;color:var(--danger)">${tenBDFinalEscape(row.errors.join(', '))}</span>`;
@@ -7654,6 +7478,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       <td class="mono">${tenBDFinalEscape(row.receiptNo || '—')}</td>
       <td>${tenBDFinalEscape(row.donorName || '—')}</td>
       <td class="mono">${tenBDFinalEscape(row.pan || '—')}</td>
+      <td>${tenBDFinalEscape(row.address || '—')}</td>
       <td style="text-align:right">${row.amount && row.amount > 0 ? '₹' + Number(row.amount).toLocaleString('en-IN') : '—'}</td>
       <td>${result}</td>
     </tr>`;
@@ -7661,10 +7486,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
         document.getElementById('tenbd-final-preview-note').textContent =
           `${analysis.rows.length} completed row(s) checked. ` +
-          `${analysis.noPanSkipped} row(s) without PAN will not be included. ` +
-          (analysis.rows.length > TENBD_FINAL_PREVIEW_LIMIT
-            ? `Preview shows the first ${TENBD_FINAL_PREVIEW_LIMIT} rows. `
-            : '') +
+          `${analysis.noPanSkipped} row(s) without PAN skipped. ` +
+          `${analysis.alreadyGenerated} already-generated row(s) skipped. ` +
           (analysis.errorCount
             ? 'Correct all blocking errors in the master workbook and analyse it again.'
             : `${analysis.panEligible} valid Form 10BD row(s) are ready for download.`);
@@ -7684,11 +7507,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         }
 
         const file = document.getElementById('tenbd-final-master')?.files?.[0] || null;
-        const fy = document.getElementById('tenbd-final-fy')?.value.trim() || '';
-        if (!tenBDValidateFY(fy)) {
-          tenBDFinalSetStatus('Enter a valid financial year such as 2026-27', 'error');
-          return;
-        }
         if (!file) {
           tenBDFinalSetStatus('Select the final 10BD master workbook', 'error');
           return;
@@ -7705,17 +7523,19 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           const validRows = rows.filter(row => row.status === 'valid');
           const errors = rows.filter(row => row.status === 'error');
           const noPanSkipped = rows.filter(row => row.status === 'skipped_no_pan').length;
+          const alreadyGenerated = rows.filter(row => row.status === 'skipped_already_generated').length;
           const namesChanged = validRows.filter(row => row.nameChanged).length;
           const totalAmount = validRows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
 
           _tenBDFinalAnalysis = {
             fileName: file.name,
-            fy,
+            masterRecords: master.rows,
             rows,
             validRows,
             totalRows: rows.length,
             panEligible: validRows.length,
             noPanSkipped,
+            alreadyGenerated,
             namesChanged,
             errorCount: errors.length,
             totalAmount
@@ -7723,17 +7543,11 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
           tenBDFinalRenderAnalysis(_tenBDFinalAnalysis);
           if (errors.length) {
-            tenBDFinalSetStatus(
-              `${errors.length} PAN-eligible row(s) have blocking validation errors. Correct the master workbook and analyse again.`,
-              'error'
-            );
+            tenBDFinalSetStatus(`${errors.length} PAN-eligible row(s) have blocking validation errors. Correct the master workbook and analyse again.`, 'error');
           } else if (!validRows.length) {
-            tenBDFinalSetStatus('No valid PAN-eligible rows were found.', 'error');
+            tenBDFinalSetStatus('No new valid PAN-eligible rows were found.', 'error');
           } else {
-            tenBDFinalSetStatus(
-              `${validRows.length} valid PAN-eligible row(s) are ready. ${noPanSkipped} row(s) without PAN were skipped.`,
-              'success'
-            );
+            tenBDFinalSetStatus(`${validRows.length} valid PAN-eligible row(s) are ready. ${noPanSkipped} no-PAN and ${alreadyGenerated} already-generated row(s) were skipped.`, 'success');
           }
         } catch (error) {
           console.error('Form 10BD analysis failed:', error);
@@ -7748,27 +7562,19 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
       function tenBDFinalCsvEscape(value) {
         const text = String(value ?? '');
-        return /[",\r\n]/.test(text)
-          ? `"${text.replace(/"/g, '""')}"`
-          : text;
+        return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
       }
 
       function tenBDFinalBuildCSV(validRows) {
         const rows = [TENBD_FINAL_HEADERS, ...tenBDFinalBuildOutputRows(validRows)];
-        return '\uFEFF' + rows
-          .map(row => row.map(tenBDFinalCsvEscape).join(','))
-          .join('\r\n');
+        return '\uFEFF' + rows.map(row => row.map(tenBDFinalCsvEscape).join(',')).join('\r\n');
       }
 
-      function download10BDFinalCSV() {
+      async function download10BDFinalCSV() {
         const analysis = _tenBDFinalAnalysis;
-        const currentFy = document.getElementById('tenbd-final-fy')?.value.trim() || '';
-        if (!analysis) {
+        const file = document.getElementById('tenbd-final-master')?.files?.[0] || null;
+        if (!analysis || !file) {
           showToast('Analyse the master workbook first', 'error');
-          return;
-        }
-        if (analysis.fy !== currentFy) {
-          showToast('Financial year changed. Analyse the master workbook again.', 'error');
           return;
         }
         if (analysis.errorCount > 0) {
@@ -7776,22 +7582,37 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           return;
         }
         if (!analysis.validRows.length) {
-          showToast('No valid PAN-eligible rows are available', 'error');
+          showToast('No new valid PAN-eligible rows are available', 'error');
           return;
         }
 
-        const csv = tenBDFinalBuildCSV(analysis.validRows);
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-        const outputName = tenBDFinalOutputName(analysis.fy);
-        tenBDDownloadBlob(blob, outputName);
-        tenBDFinalSetStatus(
-          `Downloaded ${outputName} with ${analysis.validRows.length} valid row(s). ` +
-          `${analysis.noPanSkipped} row(s) without PAN were skipped.`,
-          'success'
-        );
-        showToast(`${outputName} downloaded`, 'success');
-      }
+        try {
+          const csv = tenBDFinalBuildCSV(analysis.validRows);
+          tenBDDownloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), TENBD_FINAL_OUTPUT_NAME);
 
+          const generatedKeys = new Set(analysis.validRows.map(row => row.receiptKey));
+          const updatedRecords = analysis.masterRecords.map(record => {
+            const copy = { ...record, values: record.values.map(tenBDMasterCloneValue) };
+            if (generatedKeys.has(copy.receiptKey)) copy.values[16] = TENBD_STATUS_YES;
+            return copy;
+          });
+          const updatedWorkbook = await tenBDMasterBuildOutputWorkbook(updatedRecords);
+          const outputBuffer = await updatedWorkbook.xlsx.writeBuffer();
+          const updatedMasterBlob = new Blob([outputBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+          tenBDDownloadBlob(updatedMasterBlob, file.name);
+
+          tenBDFinalSetStatus(
+            `Downloaded ${TENBD_FINAL_OUTPUT_NAME} with ${analysis.validRows.length} valid row(s). ` +
+            `Also downloaded updated master file with 10BD status marked YES for generated rows.`,
+            'success'
+          );
+          showToast('10BD CSV and updated master downloaded', 'success');
+        } catch (error) {
+          console.error('Form 10BD download failed:', error);
+          tenBDFinalSetStatus(error.message || 'Unable to download Form 10BD files', 'error');
+          showToast(error.message || 'Unable to download Form 10BD files', 'error');
+        }
+      }
 
       // ══════════════════════════════
       //  BANK RECONCILIATION
@@ -8467,15 +8288,73 @@ _Vardhman Sanskar Dham, Mumbai_`;
       }
 
       function toggleAdminSection(header) {
-        header.classList.toggle('collapsed');
-        const body = header.nextElementSibling;
-        if (body && body.classList.contains('admin-section-body')) {
-          body.classList.toggle('collapsed');
+        const body = header?.nextElementSibling;
+
+        if (!body || !body.classList.contains('admin-section-body')) {
+          return;
         }
 
-        // Load bulk list when opened
-        if (body.id === 'bulk-section-body' && !body.classList.contains('collapsed')) {
-          loadBulkList();
+        const opening = body.classList.contains('collapsed');
+        const panel = header.closest('.panel') || document;
+
+        // Keep parent dropdowns open when opening a nested dropdown.
+        const ancestorBodies = new Set();
+        let ancestorBody = header.parentElement?.closest('.admin-section-body');
+
+        while (ancestorBody) {
+          ancestorBodies.add(ancestorBody);
+          ancestorBody = ancestorBody.parentElement?.closest('.admin-section-body');
+        }
+
+        function closeSection(sectionBody) {
+          sectionBody.classList.add('collapsed');
+
+          const sectionHeader = sectionBody.previousElementSibling;
+          if (sectionHeader?.classList.contains('admin-section-header')) {
+            sectionHeader.classList.add('collapsed');
+          }
+
+          // Also reset every nested dropdown inside the closed section.
+          sectionBody.querySelectorAll('.admin-section-body').forEach(childBody => {
+            childBody.classList.add('collapsed');
+
+            const childHeader = childBody.previousElementSibling;
+            if (childHeader?.classList.contains('admin-section-header')) {
+              childHeader.classList.add('collapsed');
+            }
+          });
+        }
+
+        if (opening) {
+          // Close all unrelated open dropdowns on the same tab.
+          panel.querySelectorAll('.admin-section-body:not(.collapsed)').forEach(openBody => {
+            if (openBody !== body && !ancestorBodies.has(openBody)) {
+              closeSection(openBody);
+            }
+          });
+
+          // Ensure the parent path remains open for nested dropdowns.
+          ancestorBodies.forEach(parentBody => {
+            parentBody.classList.remove('collapsed');
+
+            const parentHeader = parentBody.previousElementSibling;
+            if (parentHeader?.classList.contains('admin-section-header')) {
+              parentHeader.classList.remove('collapsed');
+            }
+          });
+
+          header.classList.remove('collapsed');
+          body.classList.remove('collapsed');
+
+          // Existing bulk section loader.
+          if (
+            body.id === 'bulk-section-body' &&
+            typeof renderBulk === 'function'
+          ) {
+            renderBulk();
+          }
+        } else {
+          closeSection(body);
         }
       }
 
