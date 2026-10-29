@@ -3309,6 +3309,9 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
           // Auto-fill current FY
           const fyInput = document.getElementById('outreach-fy');
           if (fyInput && !fyInput.value) fyInput.value = currentFY();
+          if (currentRole === 'superadmin' && typeof loadSafetyBackupDefaults === 'function') {
+            loadSafetyBackupDefaults();
+          }
         }
         if (id === 'finance') {
           if (typeof suspenseHasAccess === 'function' && suspenseHasAccess()) {
@@ -4566,6 +4569,11 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
 
         const fyStopSection = document.getElementById('fy-stop-section');
         if (fyStopSection) fyStopSection.style.display = currentRole === 'superadmin' ? 'block' : 'none';
+        
+        const safetyBackupSection = document.getElementById('safety-backup-section');
+        if (safetyBackupSection) {
+          safetyBackupSection.style.display = currentRole === 'superadmin' ? '' : 'none';
+        }
         // ── Summary tab — no suspense data shown (handled in loadStats) ──
       }
 
