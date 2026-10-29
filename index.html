@@ -1550,6 +1550,80 @@
             </div>
           </div>
         </div>
+        <!-- CURRENT-FY SAFETY BACKUP — insert before the FY Stop Date Control block -->
+        <div id="safety-backup-section"
+          style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+          <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">
+            ☁️ Current Financial Year Safety Backup
+          </div>
+          <div class="admin-section-body collapsed" id="safety-backup-section-body">
+            <div
+              style="background:#e6f4ea;border:1px solid #a5d6a7;border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:0.86rem;line-height:1.55;color:#1b5e20;">
+              <strong>Non-destructive backup</strong><br>
+              This creates an authenticated Cloudinary archive and separately copies available payment screenshots and
+              original
+              suspense files. It does not edit or delete any production receipt, counter, donor, suspense, or audit row.
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Financial Year <span class="required">*</span></label>
+                <input type="text" id="safety-backup-fy" maxlength="7" placeholder="2026-27"
+                  oninput="this.value=this.value.replace(/[^0-9-]/g,'')">
+                <div class="helper-text">Defaults to the current financial year.</div>
+              </div>
+
+              <div class="form-group">
+                <label>Media Backup</label>
+                <label
+                  style="display:flex;align-items:center;gap:8px;text-transform:none;font-size:0.9rem;color:var(--ink);font-weight:400;margin-top:8px;">
+                  <input type="checkbox" id="safety-backup-media" checked style="width:18px;height:18px;">
+                  Copy screenshots and suspense source files to authenticated Cloudinary assets
+                </label>
+              </div>
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-primary" id="safety-backup-run-btn" onclick="runSafetyBackup()">
+                ☁️ Create & Verify Backup
+              </button>
+              <button class="btn btn-secondary" onclick="loadSafetyBackups()">↻ Refresh History</button>
+            </div>
+
+            <div id="safety-backup-status"
+              style="display:none;margin-top:14px;padding:12px 14px;border-radius:8px;font-size:0.86rem;line-height:1.55;">
+            </div>
+
+            <div style="margin-top:18px;">
+              <div class="card-title" style="font-size:1rem;margin-bottom:10px;">Backup History</div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Created</th>
+                      <th>FY</th>
+                      <th>Status</th>
+                      <th>Rows</th>
+                      <th>Media</th>
+                      <th>Archive</th>
+                      <th>Verified</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="safety-backup-history-tbody">
+                    <tr>
+                      <td colspan="8" style="text-align:center;color:var(--muted);">Open this section or click Refresh.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style="margin-top:8px;font-size:0.78rem;color:var(--muted);">
+                Archive download links expire after five minutes. Cloudinary credentials never enter the browser.
+              </div>
+            </div>
+          </div>
+        </div>
 
         <!-- FY Stop Date Control — superadmin only -->
         <div
@@ -7612,6 +7686,334 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
           tenBDFinalSetStatus(error.message || 'Unable to download Form 10BD files', 'error');
           showToast(error.message || 'Unable to download Form 10BD files', 'error');
         }
+      }
+
+      // ============================================================================
+      // CURRENT-FY SAFETY BACKUP
+      // Requires Edge Function: vsd-backup
+      // Superadmin only. No production data is deleted.
+      // ============================================================================
+      const SAFETY_BACKUP_FUNCTION = 'vsd-backup';
+      let _safetyBackupBusy = false;
+      let _safetyBackupRows = [];
+
+      function safetyBackupEscape(value) {
+        return String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function safetyBackupSetStatus(message, type = '') {
+        const el = document.getElementById('safety-backup-status');
+        if (!el) return;
+        el.style.display = 'block';
+        el.style.background = type === 'error'
+          ? '#fdecea'
+          : type === 'success'
+            ? '#e6f4ea'
+            : '#fff8f0';
+        el.style.border = type === 'error'
+          ? '1px solid #f5c6cb'
+          : type === 'success'
+            ? '1px solid #a5d6a7'
+            : '1px solid var(--border)';
+        el.style.color = type === 'error'
+          ? 'var(--danger)'
+          : type === 'success'
+            ? 'var(--success)'
+            : 'var(--muted)';
+        el.textContent = message;
+      }
+
+      async function safetyBackupInvoke(action, payload = {}) {
+        if (!isDB()) throw new Error('Supabase is not connected');
+
+        const { data, error } = await _supa.functions.invoke(SAFETY_BACKUP_FUNCTION, {
+          body: { action, ...payload },
+        });
+
+        if (error) {
+          let message = error.message || 'Backup function failed';
+          try {
+            if (error.context && typeof error.context.json === 'function') {
+              const body = await error.context.json();
+              message = body?.error || body?.message || message;
+            }
+          } catch (_) {
+            // Keep the original message.
+          }
+          throw new Error(message);
+        }
+
+        if (!data?.ok) throw new Error(data?.error || 'Backup function failed');
+        return data.data;
+      }
+
+      function loadSafetyBackupDefaults() {
+        const section = document.getElementById('safety-backup-section');
+        if (section) section.style.display = currentRole === 'superadmin' ? '' : 'none';
+        if (currentRole !== 'superadmin') return;
+
+        const fy = document.getElementById('safety-backup-fy');
+        if (fy && !fy.value) fy.value = currentFY();
+        loadSafetyBackups();
+      }
+
+      function safetyBackupValidateFY(value) {
+        const match = String(value || '').trim().match(/^(\d{4})-(\d{2})$/);
+        return Boolean(match && ((Number(match[1]) + 1) % 100 === Number(match[2])));
+      }
+
+      async function runSafetyBackup() {
+        if (currentRole !== 'superadmin') {
+          showToast('Only Super Admin can create backups', 'error');
+          return;
+        }
+        if (_safetyBackupBusy) return;
+
+        const financialYear = document.getElementById('safety-backup-fy')?.value.trim() || '';
+        const includeMedia = Boolean(document.getElementById('safety-backup-media')?.checked);
+        if (!safetyBackupValidateFY(financialYear)) {
+          showToast('Enter a valid financial year such as 2026-27', 'error');
+          return;
+        }
+
+        const mediaText = includeMedia
+          ? 'Available screenshots and suspense source files will also be copied to authenticated Cloudinary assets.'
+          : 'Only the database archive will be created; media files will not be copied.';
+        if (!window.confirm(
+          `Create a non-destructive safety backup for FY ${financialYear}?\n\n${mediaText}\n\nNo production data will be deleted.`,
+        )) return;
+
+        const button = document.getElementById('safety-backup-run-btn');
+        _safetyBackupBusy = true;
+        if (button) {
+          button.disabled = true;
+          button.textContent = 'Preparing backup...';
+        }
+
+        try {
+          safetyBackupSetStatus(`Preparing FY ${financialYear} snapshot...`);
+          const prepared = await safetyBackupInvoke('prepare', {
+            financial_year: financialYear,
+            include_media: includeMedia,
+          });
+          await continueSafetyBackup(prepared.backup.id, prepared);
+        } catch (error) {
+          console.error('Safety backup failed:', error);
+          safetyBackupSetStatus(error.message || 'Backup failed', 'error');
+          showToast(error.message || 'Backup failed', 'error');
+        } finally {
+          _safetyBackupBusy = false;
+          if (button) {
+            button.disabled = false;
+            button.textContent = '☁️ Create & Verify Backup';
+          }
+          await loadSafetyBackups();
+        }
+      }
+
+      async function resumeSafetyBackup(backupId) {
+        if (currentRole !== 'superadmin') return;
+        if (_safetyBackupBusy) return;
+
+        const button = document.getElementById('safety-backup-run-btn');
+        _safetyBackupBusy = true;
+        if (button) button.disabled = true;
+
+        try {
+          const status = await safetyBackupInvoke('status', { backup_id: backupId });
+          await continueSafetyBackup(backupId, status);
+        } catch (error) {
+          console.error('Backup resume failed:', error);
+          safetyBackupSetStatus(error.message || 'Unable to resume backup', 'error');
+          showToast(error.message || 'Unable to resume backup', 'error');
+        } finally {
+          _safetyBackupBusy = false;
+          if (button) button.disabled = false;
+          await loadSafetyBackups();
+        }
+      }
+
+      async function continueSafetyBackup(backupId, initialState = null) {
+        let state = initialState || await safetyBackupInvoke('status', { backup_id: backupId });
+        let backup = state.backup;
+        let counts = state.media_counts || {};
+
+        if (['completed', 'completed_with_warnings'].includes(backup.status)) {
+          safetyBackupSetStatus('Backup already completed. Verifying the Cloudinary archive...');
+          const verification = await safetyBackupInvoke('verify', { backup_id: backupId });
+          safetyBackupSetStatus(verification.message, 'success');
+          showToast('✅ Backup verified', 'success');
+          return;
+        }
+
+        let loopGuard = 0;
+        while (Number(counts.remaining || 0) > 0) {
+          loopGuard++;
+          if (loopGuard > 1000) throw new Error('Media backup stopped after too many batches');
+
+          safetyBackupSetStatus(
+            `Copying protected media: ${Number(counts.completed || 0)} / ${Number(counts.total || 0)} completed; ` +
+            `${Number(counts.remaining || 0)} remaining...`,
+          );
+
+          const batch = await safetyBackupInvoke('process_media', {
+            backup_id: backupId,
+            limit: 8,
+          });
+          backup = batch.backup;
+          counts = batch.media_counts || {};
+
+          if (Number(batch.processed || 0) === 0 && Number(counts.remaining || 0) > 0) {
+            throw new Error(
+              'No media item could be claimed. Another backup call may still be running; refresh and resume after a few minutes.',
+            );
+          }
+        }
+
+        let allowMediaFailures = false;
+        if (Number(counts.failed || 0) > 0) {
+          allowMediaFailures = window.confirm(
+            `${counts.failed} media file(s) could not be copied after three attempts.\n\n` +
+            'Create and verify the database archive anyway? The failures will remain clearly listed in the media index.',
+          );
+          if (!allowMediaFailures) {
+            safetyBackupSetStatus(
+              `${counts.failed} media file(s) need attention. The database remains unchanged; use Resume later to retry/finalize.`,
+              'error',
+            );
+            return;
+          }
+        }
+
+        safetyBackupSetStatus('Building JSON/CSV/schema archive and uploading it to authenticated Cloudinary storage...');
+        const finalized = await safetyBackupInvoke('finalize', {
+          backup_id: backupId,
+          allow_media_failures: allowMediaFailures,
+        });
+
+        safetyBackupSetStatus('Archive uploaded. Downloading it back once to verify SHA-256...');
+        const verification = await safetyBackupInvoke('verify', { backup_id: backupId });
+
+        const completed = finalized.backup;
+        safetyBackupSetStatus(
+          `Backup verified: ${completed.archive_file_name}. ${verification.message}`,
+          'success',
+        );
+        showToast('✅ Cloudinary safety backup completed and verified', 'success');
+      }
+
+      async function loadSafetyBackups() {
+        const tbody = document.getElementById('safety-backup-history-tbody');
+        if (!tbody || currentRole !== 'superadmin' || !isDB()) return;
+
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);">Loading backups...</td></tr>';
+        try {
+          const result = await safetyBackupInvoke('list', { limit: 20 });
+          _safetyBackupRows = result.backups || [];
+          renderSafetyBackupHistory();
+        } catch (error) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--danger);">${safetyBackupEscape(error.message)}</td></tr>`;
+        }
+      }
+
+      function renderSafetyBackupHistory() {
+        const tbody = document.getElementById('safety-backup-history-tbody');
+        if (!tbody) return;
+
+        if (!_safetyBackupRows.length) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--muted);">No safety backups yet.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = _safetyBackupRows.map(row => {
+          const rows = row.row_counts || {};
+          const media = row.media_counts || {};
+          const completed = ['completed', 'completed_with_warnings'].includes(row.status);
+          const resumable = ['preparing', 'media_pending', 'media_processing', 'ready_to_finalize', 'failed'].includes(row.status);
+          const rowCount = Number(rows.receipts || rows.receipts_at_cutoff || 0);
+          const mediaLabel = `${Number(media.completed || 0)}/${Number(media.total || 0)}` +
+            (Number(media.failed || 0) ? ` · ${Number(media.failed)} failed` : '');
+          const status = safetyBackupStatusBadge(row.status);
+          const archive = row.archive_file_name
+            ? `${safetyBackupEscape(row.archive_file_name)}<br><span style="font-size:0.72rem;color:var(--muted);">${safetyBackupFormatBytes(row.archive_bytes)}</span>`
+            : '—';
+          const verified = row.verified_at
+            ? `<span style="color:var(--success);">✅ ${new Date(row.verified_at).toLocaleString('en-IN')}</span>`
+            : '—';
+
+          return `<tr>
+      <td style="white-space:nowrap;">${row.created_at ? new Date(row.created_at).toLocaleString('en-IN') : '—'}</td>
+      <td class="mono">${safetyBackupEscape(row.financial_year)}</td>
+      <td>${status}${row.error_message ? `<br><span style="font-size:0.72rem;color:var(--danger);">${safetyBackupEscape(row.error_message)}</span>` : ''}</td>
+      <td style="text-align:center;">${rowCount}</td>
+      <td style="white-space:nowrap;">${mediaLabel}</td>
+      <td style="max-width:210px;word-break:break-word;">${archive}</td>
+      <td>${verified}</td>
+      <td style="white-space:nowrap;">
+        ${resumable ? `<button class="btn btn-secondary btn-sm" onclick="resumeSafetyBackup('${row.id}')">Resume</button>` : ''}
+        ${completed ? `<button class="btn btn-secondary btn-sm" onclick="verifySafetyBackup('${row.id}')">Verify</button>` : ''}
+        ${completed ? `<button class="btn btn-primary btn-sm" onclick="downloadSafetyBackup('${row.id}')">Download</button>` : ''}
+      </td>
+    </tr>`;
+        }).join('');
+      }
+
+      function safetyBackupStatusBadge(status) {
+        const map = {
+          preparing: ['Preparing', '#fff3e0', '#9a5b00'],
+          media_pending: ['Media Pending', '#fff3e0', '#9a5b00'],
+          media_processing: ['Copying Media', '#fff3e0', '#9a5b00'],
+          ready_to_finalize: ['Ready to Finalize', '#e3f2fd', '#1565c0'],
+          finalizing: ['Finalizing', '#e3f2fd', '#1565c0'],
+          completed: ['Completed', '#e6f4ea', 'var(--success)'],
+          completed_with_warnings: ['Completed with Warnings', '#fff3e0', '#9a5b00'],
+          failed: ['Failed / Resumable', '#fdecea', 'var(--danger)'],
+        };
+        const item = map[status] || [status || 'Unknown', '#f3f4f6', '#374151'];
+        return `<span class="badge" style="background:${item[1]};color:${item[2]};">${safetyBackupEscape(item[0])}</span>`;
+      }
+
+      async function verifySafetyBackup(backupId) {
+        try {
+          safetyBackupSetStatus('Downloading the archive from Cloudinary and checking SHA-256...');
+          const result = await safetyBackupInvoke('verify', { backup_id: backupId });
+          safetyBackupSetStatus(result.message, 'success');
+          showToast('✅ Backup verified', 'success');
+          await loadSafetyBackups();
+        } catch (error) {
+          safetyBackupSetStatus(error.message || 'Verification failed', 'error');
+          showToast(error.message || 'Verification failed', 'error');
+        }
+      }
+
+      async function downloadSafetyBackup(backupId) {
+        try {
+          const result = await safetyBackupInvoke('download_url', { backup_id: backupId });
+          const link = document.createElement('a');
+          link.href = result.url;
+          link.target = '_blank';
+          link.rel = 'noopener';
+          link.download = result.file_name || '';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          showToast('Secure backup download started', 'success');
+        } catch (error) {
+          showToast(error.message || 'Unable to download backup', 'error');
+        }
+      }
+
+      function safetyBackupFormatBytes(value) {
+        const bytes = Number(value || 0);
+        if (!bytes) return '0 B';
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
       }
 
       // ══════════════════════════════
