@@ -6107,7 +6107,7 @@ clearPendingAtomicReceiptState();
         if (/GRAND TOTAL|OPENING BALANCE|CLOSING BALANCE|^TOTAL\b|\bTOTAL$/.test(allText)) flags.push('POSSIBLE_TOTAL_ROW');
         if (amountInfo.reason) flags.push(amountInfo.reason);
 
-        const eligible = Boolean(amountInfo.amount && amountInfo.amount > 0 && !amountInfo.rejected && !flags.includes('POSSIBLE_TOTAL_ROW'));
+        const eligible = Boolean(amountInfo.amount && amountInfo.amount > 0 && !amountInfo.rejected && !flags.includes('POSSIBLE_TOTAL_ROW') && !flags.includes('FY_MISMATCH'));
         const reviewState = 'needs_review'; // Donor identity must be verified before issue.
 
         return {
