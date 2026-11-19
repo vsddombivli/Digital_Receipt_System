@@ -1425,10 +1425,6 @@
             <label>Date <span class="required">*</span></label>
             <input type="date" id="donation-date">
           </div>
-          <div class="form-group vsd-quick-advanced" id="quick-volunteer-group">
-            <label>Volunteer Name <span class="required">*</span></label>
-            <input type="text" id="volunteer-name" placeholder="Your name">
-          </div>
           <div class="form-group full vsd-quick-advanced" id="quick-refvol-group">
             <label>Reference Volunteer <span style="color:var(--muted)">(donor brought by)</span></label>
             <input type="text" id="ref-volunteer-select"
@@ -1438,10 +1434,6 @@
           </div>
           <!-- <input type="hidden" id="ref-volunteer-name"> -->
           <!-- <input type="hidden" id="ref-volunteer-location"> -->
-          <div class="form-group full vsd-quick-advanced" id="quick-remarks-group">
-            <label>Remarks</label>
-            <input type="text" id="remarks" value="Thank you for your contribution and support" disabled>
-          </div>
           <div class="form-group full vsd-quick-advanced" id="quick-notes-group">
             <label>Internal Notes <span style="color:var(--muted);font-weight:400">(optional — not sent to
                 donor)</span></label>
@@ -1452,7 +1444,7 @@
         </div>
         <div class="vsd-quick-only vsd-quick-more">
           <button type="button" id="vsd-quick-more-btn" class="vsd-quick-link" aria-expanded="false"
-            onclick="vsdQuickToggleMore()">＋ More Details (date, volunteer, email, notes)</button>
+            onclick="vsdQuickToggleMore()">＋ More Details (date, reference volunteer, email, notes)</button>
         </div>
       </div>
 
@@ -4141,9 +4133,9 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
 
         const referenceVolunteer = (
           document.getElementById('ref-volunteer-select')?.value ||
-          document.getElementById('volunteer-name')?.value || ''
+          window._volunteerFullName || currentUser?.email?.split('@')[0] || ''
         ).trim();
-        if (!referenceVolunteer) { showToast('Volunteer name is required', 'error'); return; }
+        if (!referenceVolunteer) { showToast('Logged-in volunteer name is unavailable; contact admin', 'error'); return; }
 
         const donationDate = document.getElementById('donation-date').value;
         if (!donationDate) { showToast('Select donation date', 'error'); return; }
@@ -4198,7 +4190,7 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
           donation_date: donationDate,
           reference_volunteer: referenceVolunteer,
           reference_location: window._volunteerLocation || '',
-          remarks: 'Thank you for your contribution and support',
+          remarks: DEFAULT_RECEIPT_REMARK,
           notes: document.getElementById('notes').value.trim(),
         };
 
@@ -4313,6 +4305,7 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
       // Modern Quick Receipt uses the existing account amount inputs as its only source of truth.
       // No separate receipt payload, database write, or counter path is introduced.
       const VSD_QUICK_DEFAULT_FUND = 'ANIMAL WELFARE FUND (JIVDAYA)';
+      const DEFAULT_RECEIPT_REMARK = 'Thank you for your contribution and support';
       function vsdQuickInit() {
         const select = document.getElementById('vsd-quick-fund');
         if (!select || !select.options.length) {
@@ -4382,7 +4375,7 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
         const button = document.getElementById('vsd-quick-more-btn');
         if (button) {
           button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-          button.textContent = expanded ? '− Hide Additional Details' : '＋ More Details (date, volunteer, email, notes)';
+          button.textContent = expanded ? '− Hide Additional Details' : '＋ More Details (date, reference volunteer, email, notes)';
         }
       }
       function vsdQuickPaymentState() {
@@ -5198,7 +5191,6 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         ['donor-name', 'donor-addr', 'donor-mobile', 'donor-email', 'payment-ref', 'bank-name', 'branch-name', 'payment-screenshot'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('donor-pan').value = ''; document.getElementById('donor-pan').disabled = false;
         document.getElementById('donation-date').value = todayStr();
-        document.getElementById('remarks').value = 'Thank you for your contribution and support';
         document.getElementById('total-amount').value = '';
         ACCOUNTS.forEach((_, i) => {
           document.getElementById(`ac-amt-${i}`).value = '';
@@ -5226,7 +5218,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         const moreButton = document.getElementById('vsd-quick-more-btn');
         if (moreButton) {
           moreButton.setAttribute('aria-expanded', 'false');
-          moreButton.textContent = '＋ More Details (date, volunteer, email, notes)';
+          moreButton.textContent = '＋ More Details (date, reference volunteer, email, notes)';
         }
         vsdQuickInit();
       }
@@ -5394,11 +5386,9 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         // Auto-fill volunteer name
         window._volunteerLocation = profile ? (profile.location || '') : '';
         window._volunteerFullName = profile ? (profile.full_name || '') : '';
-        const volInput = document.getElementById('volunteer-name');
-        if (volInput) {
-          volInput.value = profile?.full_name || user.email.split('@')[0];
-          volInput.disabled = true;
-        }
+        // Receipt generator identity comes from authenticated user profile.
+        // It is intentionally not an editable form field.
+        window._volunteerFullName = profile?.full_name || user.email.split('@')[0];
         hideLoginScreen();
         applyVsdThemeAfterLogin();
         applyRoleAccess();
