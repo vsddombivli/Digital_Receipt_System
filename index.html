@@ -2313,6 +2313,14 @@
                     <!-- Analysis summary and preview -->
                     <div id="suspense-preview-wrap" style="display:none;margin-top:18px;">
                       <div class="stats-grid" id="suspense-analysis-stats"></div>
+                      <div class="form-group" style="margin:0 0 12px;max-width:260px;">
+                        <label for="suspense-preview-filter">Filter import preview</label>
+                        <select id="suspense-preview-filter" onchange="suspenseRenderPreview()">
+                          <option value="all">All entries</option>
+                          <option value="eligible">Eligible</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </div>
 
                       <div class="card" style="padding:16px;margin-bottom:14px;">
                         <div class="card-title" style="font-size:1rem;margin-bottom:12px;">
@@ -2429,9 +2437,9 @@
                 </div>
               </div>
 
-              <!-- Suspense Import History -->
-              <div
-                style="background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
+              <!-- Suspense Import History (hidden, implementation retained) -->
+              <div hidden data-feature="suspense-import-history"
+                style="display:none;background:var(--card-bg);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;">
                 <div class="admin-section-header collapsed" onclick="toggleAdminSection(this)">📦 Suspense Import
                   History</div>
                 <div class="admin-section-body collapsed" id="suspense-history-section-body">
@@ -2630,6 +2638,15 @@
 
                     <div id="tenbd-final-preview-wrap" style="display:none;margin-top:18px;">
                       <div class="stats-grid" id="tenbd-final-stats"></div>
+                      <div class="form-group" style="margin:0 0 12px;max-width:260px;">
+                        <label for="tenbd-final-preview-filter">Filter 10BD preview</label>
+                        <select id="tenbd-final-preview-filter" onchange="tenBDFinalRefreshPreview()">
+                          <option value="all">All entries</option>
+                          <option value="valid">Valid</option>
+                          <option value="error">Invalid</option>
+                          <option value="not_eligible">Not eligible / skipped</option>
+                        </select>
+                      </div>
                       <div class="table-wrap" style="max-height:430px;overflow:auto;">
                         <table class="data-table">
                           <thead>
@@ -6071,7 +6088,7 @@ clearPendingAtomicReceiptState();
         const amountInfo = suspenseExtractAmount(sourceRow);
         const sourceDate = suspenseGetRaw(sourceRow, 'date');
         const donationDate = suspenseParseDate(sourceDate);
-        const donorName = suspenseCandidateDonor(sourceRow);
+        const donorName = ''; // Intentionally blank until Finance reviews the suspense receipt.
         const paymentRef = suspenseExtractReference(sourceRow);
         const paymentMethod = suspenseDetectPaymentMethod(sourceRow);
         const voucherNo = String(suspenseGetRaw(sourceRow, 'voucher_no') || '').trim() || null;
@@ -6083,7 +6100,6 @@ clearPendingAtomicReceiptState();
         const missing = [];
         const allText = suspenseRowText(sourceRow);
 
-        if (!donorName) missing.push('donor_name');
         if (!donationDate) missing.push('donation_date');
         if (!paymentMethod) missing.push('payment_method');
         if (!paymentRef && !voucherNo) missing.push('trace_reference');
@@ -6092,9 +6108,7 @@ clearPendingAtomicReceiptState();
         if (amountInfo.reason) flags.push(amountInfo.reason);
 
         const eligible = Boolean(amountInfo.amount && amountInfo.amount > 0 && !amountInfo.rejected && !flags.includes('POSSIBLE_TOTAL_ROW'));
-        const reviewState = missing.length === 0 && !flags.includes('FY_MISMATCH')
-          ? 'ready_to_issue'
-          : 'needs_review';
+        const reviewState = 'needs_review'; // Donor identity must be verified before issue.
 
         return {
           source_row_number: sourceRow.source_row_number,
@@ -6252,7 +6266,7 @@ clearPendingAtomicReceiptState();
       }
 
       function suspenseWarningBadges(row) {
-        const warnings = [...(row.validation_flags || []), ...(row.missing_fields || []).map(x => `MISSING_${x.toUpperCase()}`)];
+        const warnings = [...(row.validation_flags || []), ...(row.missing_fields || []).filter(x => x !== 'donor_name').map(x => `MISSING_${x.toUpperCase()}`)];
         if (!warnings.length) return '<span style="color:var(--success)">Ready</span>';
         return warnings.map(w => `<span class="badge" style="background:#fff3e0;color:#9a5b00;margin:1px;">${suspenseEscape(w)}</span>`).join('');
       }
@@ -6278,7 +6292,10 @@ clearPendingAtomicReceiptState();
           <div class="stat-label">${label}</div>
         </div>`).join('');
 
-        tbody.innerHTML = _suspenseParsedRows.map(row => `
+        const filter = document.getElementById('suspense-preview-filter')?.value || 'all';
+        const displayed = _suspenseParsedRows.filter(row => filter === 'all' ||
+          (filter === 'eligible' && row.eligible) || (filter === 'rejected' && !row.eligible));
+        tbody.innerHTML = displayed.map(row => `
         <tr style="${row.eligible ? '' : 'background:#fff5f5;color:var(--muted);'}">
           <td><input type="checkbox" ${row.selected ? 'checked' : ''} ${row.eligible ? '' : 'disabled'}
             onchange="setSuspenseRowSelected(${row.source_row_number},this.checked)"></td>
@@ -6294,7 +6311,7 @@ clearPendingAtomicReceiptState();
 
         document.getElementById('suspense-preview-wrap').style.display = 'block';
         document.getElementById('suspense-preview-note').textContent =
-          `${eligible.length} eligible rows are selected by default. Rejected debit, total or amount-less rows will not receive S numbers.`;
+          `${displayed.length} of ${_suspenseParsedRows.length} rows shown. ${eligible.filter(r => r.selected).length} eligible rows selected for import. Rejected rows will not receive S numbers.`;
         suspenseUpdateCreateButton();
       }
 
@@ -8032,6 +8049,10 @@ clearPendingAtomicReceiptState();
         ]);
       }
 
+      function tenBDFinalRefreshPreview() {
+        if (_tenBDFinalAnalysis) tenBDFinalRenderAnalysis(_tenBDFinalAnalysis);
+      }
+
       function tenBDFinalRenderAnalysis(analysis) {
         const previewWrap = document.getElementById('tenbd-final-preview-wrap');
         const tbody = document.getElementById('tenbd-final-preview-tbody');
@@ -8051,7 +8072,12 @@ clearPendingAtomicReceiptState();
       <div class="stat-label">${label}</div>
     </div>`).join('');
 
-        const shownRows = analysis.rows.slice(0, TENBD_FINAL_PREVIEW_LIMIT);
+        const filter = document.getElementById('tenbd-final-preview-filter')?.value || 'all';
+        const filteredRows = analysis.rows.filter(row => filter === 'all' ||
+          (filter === 'valid' && row.status === 'valid') ||
+          (filter === 'error' && row.status === 'error') ||
+          (filter === 'not_eligible' && row.status.startsWith('skipped_')));
+        const shownRows = filteredRows.slice(0, TENBD_FINAL_PREVIEW_LIMIT);
         tbody.innerHTML = shownRows.map(row => {
           let result;
           let bg = '';
@@ -8079,7 +8105,7 @@ clearPendingAtomicReceiptState();
         }).join('');
 
         document.getElementById('tenbd-final-preview-note').textContent =
-          `${analysis.rows.length} completed row(s) checked. ` +
+          `${shownRows.length} of ${filteredRows.length} filtered row(s) shown; ${analysis.rows.length} total checked. ` +
           `${analysis.noPanSkipped} row(s) without PAN skipped. ` +
           `${analysis.alreadyGenerated} already-generated row(s) skipped. ` +
           (analysis.errorCount
