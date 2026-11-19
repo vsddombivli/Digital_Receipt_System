@@ -1160,6 +1160,59 @@
       body.vsd-modern .main { margin: 0; padding: 0; max-width: none; }
       body.vsd-modern .tabs, body.vsd-modern #vsd-theme-toggle { display: none !important; }
     }
+
+    /* QUICK RECEIPT — opt-in Modern UI only; original form inputs remain authoritative. */
+    .vsd-quick-only { display: none; }
+    body.vsd-modern #tab-new .vsd-quick-only { display: block; }
+    body.vsd-modern #tab-new .vsd-quick-banner {
+      background: linear-gradient(115deg,#122c4d,#21518b); color: white;
+      border-radius: 16px; padding: 16px 20px; margin-bottom: 16px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    body.vsd-modern #tab-new .vsd-quick-banner strong { font: 750 1.16rem/1.35 system-ui,sans-serif; }
+    body.vsd-modern #tab-new .vsd-quick-banner span { color: #dbeafe; font-size: .82rem; }
+    body.vsd-modern #tab-new .vsd-quick-form-grid {
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 13px;
+      align-items: end;
+    }
+    body.vsd-modern #tab-new .vsd-quick-form-grid label { display: block; margin-bottom: 6px; }
+    body.vsd-modern #tab-new .vsd-quick-form-grid input,
+    body.vsd-modern #tab-new .vsd-quick-form-grid select { width: 100%; min-width: 0; }
+    body.vsd-modern #tab-new .vsd-quick-amount { font-weight: 750; font-size: 1.35rem; }
+    body.vsd-modern #tab-new .vsd-quick-hint { font-size: .79rem; color: #5a6b83; margin-top: 8px; }
+    body.vsd-modern #tab-new .vsd-quick-link {
+      appearance: none; background: transparent; border: 0; color: #2563eb;
+      padding: 10px 0; cursor: pointer; font: 700 .85rem/1.3 system-ui,sans-serif;
+      text-align: left; text-decoration: underline; text-underline-offset: 3px;
+    }
+    body.vsd-modern #tab-new .vsd-quick-link:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+    body.vsd-modern #tab-new .vsd-quick-split-control { display: none; }
+    body.vsd-modern #tab-new.vsd-quick-split .vsd-quick-split-control { display: block; }
+    body.vsd-modern #tab-new.vsd-quick-split #vsd-quick-single-controls { display: none; }
+    body.vsd-modern #tab-new #accounts-grid { display: none; }
+    body.vsd-modern #tab-new.vsd-quick-split #accounts-grid { display: grid; }
+    body.vsd-modern #tab-new .vsd-classic-accounts-label,
+    body.vsd-modern #tab-new .vsd-classic-accounts-help { display: none !important; }
+    body.vsd-modern #tab-new.vsd-quick-split .vsd-classic-accounts-label,
+    body.vsd-modern #tab-new.vsd-quick-split .vsd-classic-accounts-help { display: block !important; }
+    body.vsd-modern #tab-new .vsd-quick-advanced { display: none !important; }
+    body.vsd-modern #tab-new.vsd-quick-expanded .vsd-quick-advanced { display: block !important; }
+    body.vsd-modern #tab-new.vsd-quick-cheque #bank-group { display: block !important; }
+    body.vsd-modern #tab-new .vsd-quick-more { margin-top: 8px; }
+    body.vsd-modern #tab-new #quick-new-donation { display: inline-flex; }
+    body.vsd-modern #tab-new #classic-clear-form { display: none; }
+    body.vsd-modern #tab-new #total-amount { font-size: 1.45rem; }
+    body.vsd-modern #tab-new .payment-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    body.vsd-modern #tab-new .payment-pills .pill { flex: 1 1 125px; text-align: center; }
+    body.vsd-modern #tab-new .next-receipt-badge { margin-bottom: 12px; }
+    @media (max-width: 560px) {
+      body.vsd-modern #tab-new .vsd-quick-banner { padding: 13px 14px; }
+      body.vsd-modern #tab-new .vsd-quick-banner strong { font-size: 1.03rem; }
+      body.vsd-modern #tab-new .vsd-quick-form-grid { grid-template-columns: minmax(0,1fr); }
+      body.vsd-modern #tab-new .vsd-quick-amount { font-size: 1.5rem; }
+      body.vsd-modern #tab-new .payment-pills .pill { flex-basis: 100px; }
+      body.vsd-modern #tab-new .vsd-quick-link { min-height: 42px; }
+    }
   </style>
 </head>
 
@@ -1247,6 +1300,11 @@
         <span style="color:var(--muted);font-size:0.75rem">(auto-assigned on submit)</span>
       </div>
 
+      <div class="vsd-quick-only vsd-quick-banner" aria-label="Quick Receipt mode">
+        <div><strong>⚡ Quick Receipt</strong><br><span>Find donor → Amount → Payment → Generate</span></div>
+        <span style="font-weight:700;white-space:nowrap">Modern UI</span>
+      </div>
+
       <div id="fy-closed-banner"
         style="display:none;margin-bottom:16px;padding:16px 20px;background:#fdecea;border:1.5px solid #e74c3c;border-radius:10px;text-align:center;">
         <div style="font-size:1.2rem;margin-bottom:6px;">🔒</div>
@@ -1292,7 +1350,7 @@
             <label>PAN Number <span style="color:var(--muted)">(for 80G)</span></label>
             <input type="text" id="donor-pan" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase">
           </div>
-          <div class="form-group full">
+          <div class="form-group full vsd-quick-advanced" id="quick-email-group">
             <label>Email (optional)</label>
             <input type="email" id="donor-email" placeholder="donor@email.com">
           </div>
@@ -1301,9 +1359,27 @@
 
       <div class="card">
         <div class="card-title">🏦 Donation Details</div>
-        <label style="display:block;margin-bottom:10px">Donation Account(s) <span class="required">*</span></label>
+        <div class="vsd-quick-only" id="vsd-quick-single-controls">
+          <div class="vsd-quick-form-grid">
+            <div class="form-group">
+              <label for="vsd-quick-fund">Donation Fund <span class="required">*</span></label>
+              <select id="vsd-quick-fund" onchange="vsdQuickFundChanged()" aria-label="Donation fund"></select>
+            </div>
+            <div class="form-group">
+              <label for="vsd-quick-amount">Donation Amount (₹) <span class="required">*</span></label>
+              <input class="vsd-quick-amount" type="number" id="vsd-quick-amount" min="0.01" step="0.01"
+                inputmode="decimal" placeholder="Enter amount" oninput="vsdQuickAmountChanged()">
+            </div>
+          </div>
+          <div class="vsd-quick-hint">Default: Animal Welfare Fund (Jivdaya). Select a different fund when required.</div>
+          <button type="button" class="vsd-quick-link" onclick="vsdQuickShowSplit()">＋ Add Another Fund / Split Donation</button>
+        </div>
+        <div class="vsd-quick-only vsd-quick-split-control">
+          <button type="button" class="vsd-quick-link" onclick="vsdQuickUseSingle()">← Back to Single Fund</button>
+        </div>
+        <label class="vsd-classic-accounts-label" style="display:block;margin-bottom:10px">Donation Account(s) <span class="required">*</span></label>
         <div class="accounts-grid" id="accounts-grid"></div>
-        <div class="helper-text" style="margin-top:8px">Check one or more accounts and enter amount for each</div>
+        <div class="helper-text vsd-classic-accounts-help" style="margin-top:8px">Check one or more accounts and enter amount for each</div>
         <div class="section-sep"></div>
         <div class="form-grid">
           <div class="form-group full">
@@ -1337,23 +1413,23 @@
             <label>UPI / Transaction / Ref No. <span class="required">*</span></label>
             <input type="text" id="payment-ref" placeholder="e.g. 424423202250">
           </div>
-          <div class="form-group" id="bank-group">
+          <div class="form-group vsd-quick-advanced" id="bank-group">
             <label>Bank Name <span id="bank-required-star"></span></label>
             <input type="text" id="bank-name" placeholder="e.g. ICICI Bank, HDFC Bank">
           </div>
-          <div class="form-group">
+          <div class="form-group vsd-quick-advanced" id="quick-branch-group">
             <label>Branch Name</label>
             <input type="text" id="branch-name" placeholder="e.g. Dombivli">
           </div>
-          <div class="form-group">
+          <div class="form-group vsd-quick-advanced" id="quick-date-group">
             <label>Date <span class="required">*</span></label>
             <input type="date" id="donation-date">
           </div>
-          <div class="form-group">
+          <div class="form-group vsd-quick-advanced" id="quick-volunteer-group">
             <label>Volunteer Name <span class="required">*</span></label>
             <input type="text" id="volunteer-name" placeholder="Your name">
           </div>
-          <div class="form-group full">
+          <div class="form-group full vsd-quick-advanced" id="quick-refvol-group">
             <label>Reference Volunteer <span style="color:var(--muted)">(donor brought by)</span></label>
             <input type="text" id="ref-volunteer-select"
               placeholder="Type name if different volunteer brought this donor (optional)"
@@ -1362,11 +1438,11 @@
           </div>
           <!-- <input type="hidden" id="ref-volunteer-name"> -->
           <!-- <input type="hidden" id="ref-volunteer-location"> -->
-          <div class="form-group full">
+          <div class="form-group full vsd-quick-advanced" id="quick-remarks-group">
             <label>Remarks</label>
             <input type="text" id="remarks" value="Thank you for your contribution and support" disabled>
           </div>
-          <div class="form-group full">
+          <div class="form-group full vsd-quick-advanced" id="quick-notes-group">
             <label>Internal Notes <span style="color:var(--muted);font-weight:400">(optional — not sent to
                 donor)</span></label>
             <textarea id="notes" rows="2" style="width:100%;padding:10px 12px;border:1.5px solid #d4b896;border-radius:7px;
@@ -1374,11 +1450,16 @@
               placeholder="Internal note for future reference only..."></textarea>
           </div>
         </div>
+        <div class="vsd-quick-only vsd-quick-more">
+          <button type="button" id="vsd-quick-more-btn" class="vsd-quick-link" aria-expanded="false"
+            onclick="vsdQuickToggleMore()">＋ More Details (date, volunteer, email, notes)</button>
+        </div>
       </div>
 
       <div class="btn-row">
         <button class="btn btn-primary" id="generate-btn" onclick="generateReceipt()">✨ Generate Receipt</button>
-        <button class="btn btn-secondary" onclick="clearForm()">↺ Clear Form</button>
+        <button class="btn btn-secondary" id="classic-clear-form" onclick="clearForm()">↺ Clear Form</button>
+        <button class="btn btn-secondary vsd-quick-only" id="quick-new-donation" onclick="newReceipt()">＋ New Donation</button>
       </div>
 
       <!-- RECEIPT PREVIEW -->
@@ -3316,14 +3397,13 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
           });
         }
 
-        // Trigger any amount calculation that exists
-        if (p.amount) {
-          const amtEl = document.getElementById('total-amount');
-          if (amtEl) {
-            amtEl.removeAttribute('readonly');
-            amtEl.value = p.amount;
-            amtEl.dispatchEvent(new Event('input'));
-            amtEl.dispatchEvent(new Event('change'));
+        // Populate the authoritative fund input; total-amount is read-only/derived.
+        if (p.amount && Number(p.amount) > 0) {
+          const jivdayaIndex = ACCOUNTS.indexOf(VSD_QUICK_DEFAULT_FUND);
+          const fundInput = document.getElementById(`ac-amt-${jivdayaIndex}`);
+          if (fundInput) {
+            fundInput.value = String(p.amount);
+            recalcTotal();
           }
         }
 
@@ -4018,7 +4098,8 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
           return;
         }
 
-        if (!confirm('Please verify all details before confirming.\n\nClick OK to generate receipt or Cancel to go back and edit.')) return;
+        if (!document.body.classList.contains('vsd-modern') &&
+            !confirm('Please verify all details before confirming.\n\nClick OK to generate receipt or Cancel to go back and edit.')) return;
 
         const name = document.getElementById('donor-name').value.trim();
         if (!name) { showToast('Donor name is required', 'error'); return; }
@@ -4084,6 +4165,11 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
         if (selectedPayment === 'Cheque' && !bankName) {
           showToast('Bank Name is mandatory for Cheque payments', 'error');
           return;
+        }
+
+        if (document.body.classList.contains('vsd-modern')) {
+          const fundsSummary = selectedAccounts.map(a => `${a.name}: ₹${a.amount.toLocaleString('en-IN')}`).join('\n');
+          if (!confirm(`Please confirm this donation:\n\nDonor: ${name}\nAmount: ₹${total.toLocaleString('en-IN')}\n${fundsSummary}\nPayment: ${selectedPayment}\nDate: ${donationDate}\n\nGenerate receipt?`)) return;
         }
 
         const btn = document.getElementById('generate-btn');
@@ -4221,6 +4307,86 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
         oninput="recalcTotal()" style="display:block;">
     </div>
   `).join('');
+        vsdQuickInit();
+      }
+
+      // Modern Quick Receipt uses the existing account amount inputs as its only source of truth.
+      // No separate receipt payload, database write, or counter path is introduced.
+      const VSD_QUICK_DEFAULT_FUND = 'ANIMAL WELFARE FUND (JIVDAYA)';
+      function vsdQuickInit() {
+        const select = document.getElementById('vsd-quick-fund');
+        if (!select || !select.options.length) {
+          if (select) {
+            ACCOUNTS.forEach(name => select.add(new Option(name, name)));
+            select.value = VSD_QUICK_DEFAULT_FUND;
+          }
+        }
+        vsdQuickSyncFromAccounts();
+      }
+      function vsdQuickSyncFromAccounts() {
+        const select = document.getElementById('vsd-quick-fund');
+        const amountInput = document.getElementById('vsd-quick-amount');
+        const panel = document.getElementById('tab-new');
+        if (!select || !amountInput || !panel) return;
+        const nonzero = ACCOUNTS.map((name, i) => ({
+          name, amount: Number(document.getElementById(`ac-amt-${i}`)?.value || 0)
+        })).filter(item => item.amount > 0);
+        if (nonzero.length > 1) {
+          panel.classList.add('vsd-quick-split'); // Never silently discard multi-fund allocations.
+          return;
+        }
+        const typingAmount = document.activeElement === amountInput && !panel.classList.contains('vsd-quick-split');
+        if (nonzero.length === 1) {
+          select.value = nonzero[0].name;
+          if (!typingAmount) amountInput.value = String(nonzero[0].amount);
+        } else if (!typingAmount) {
+          select.value = VSD_QUICK_DEFAULT_FUND;
+          amountInput.value = '';
+        }
+      }
+      function vsdQuickWriteToAccounts() {
+        const panel = document.getElementById('tab-new');
+        if (!panel || panel.classList.contains('vsd-quick-split')) return;
+        const fund = document.getElementById('vsd-quick-fund')?.value;
+        const amountField = document.getElementById('vsd-quick-amount');
+        const amount = amountField?.value.trim() || '';
+        ACCOUNTS.forEach((name, i) => {
+          const input = document.getElementById(`ac-amt-${i}`);
+          if (input) input.value = name === fund ? amount : '';
+        });
+        recalcTotal();
+      }
+      function vsdQuickFundChanged() { vsdQuickWriteToAccounts(); }
+      function vsdQuickAmountChanged() { vsdQuickWriteToAccounts(); }
+      function vsdQuickShowSplit() {
+        document.getElementById('tab-new')?.classList.add('vsd-quick-split');
+        recalcTotal();
+      }
+      function vsdQuickUseSingle() {
+        const panel = document.getElementById('tab-new');
+        if (!panel) return;
+        const nonzero = ACCOUNTS.map((name, i) => ({
+          name, amount: Number(document.getElementById(`ac-amt-${i}`)?.value || 0)
+        })).filter(item => item.amount > 0);
+        if (nonzero.length > 1 && !confirm('This will keep the first selected fund and clear the other fund amounts. Continue?')) return;
+        const chosen = nonzero[0] || { name: VSD_QUICK_DEFAULT_FUND, amount: 0 };
+        panel.classList.remove('vsd-quick-split');
+        document.getElementById('vsd-quick-fund').value = chosen.name;
+        document.getElementById('vsd-quick-amount').value = chosen.amount ? String(chosen.amount) : '';
+        vsdQuickWriteToAccounts();
+      }
+      function vsdQuickToggleMore() {
+        const panel = document.getElementById('tab-new');
+        if (!panel) return;
+        const expanded = panel.classList.toggle('vsd-quick-expanded');
+        const button = document.getElementById('vsd-quick-more-btn');
+        if (button) {
+          button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+          button.textContent = expanded ? '− Hide Additional Details' : '＋ More Details (date, volunteer, email, notes)';
+        }
+      }
+      function vsdQuickPaymentState() {
+        document.getElementById('tab-new')?.classList.toggle('vsd-quick-cheque', selectedPayment === 'Cheque');
       }
 
       function recalcTotal() {
@@ -4229,6 +4395,7 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
           total += parseFloat(document.getElementById(`ac-amt-${i}`).value || 0);
         });
         document.getElementById('total-amount').value = total || '';
+        vsdQuickSyncFromAccounts();
         // Change 3: Cash max ₹2000
         if (selectedPayment === 'Cash' && total > 2000) {
           document.getElementById('total-amount').style.color = 'var(--danger)';
@@ -4246,6 +4413,7 @@ CREATE POLICY "admin_all" ON user_profiles FOR ALL USING (
         document.querySelectorAll('.payment-pills .pill').forEach(p => p.classList.remove('active'));
         el.classList.add('active');
         selectedPayment = val;
+        vsdQuickPaymentState();
         const refGroup = document.getElementById('ref-group');
         const refInput = document.getElementById('payment-ref');
         const panInput = document.getElementById('donor-pan');
@@ -5038,6 +5206,8 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         document.querySelectorAll('.payment-pills .pill').forEach(p => p.classList.remove('active'));
         document.querySelector('.payment-pills .pill').classList.add('active');
         selectedPayment = 'UPI/QR';
+        const upiButton = document.querySelector('.payment-pills .pill');
+        if (upiButton) selectPayment(upiButton, 'UPI/QR');
         document.getElementById('ref-group').style.display = '';
         document.getElementById('receipt-wrap').classList.remove('show');
         document.getElementById('screenshot-group').style.display = '';
@@ -5051,6 +5221,14 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
         document.getElementById('notes').value = '';
         clearDonorQuickSearch();
         clearPendingAtomicReceiptState();
+        const quickPanel = document.getElementById('tab-new');
+        quickPanel?.classList.remove('vsd-quick-split', 'vsd-quick-expanded', 'vsd-quick-cheque');
+        const moreButton = document.getElementById('vsd-quick-more-btn');
+        if (moreButton) {
+          moreButton.setAttribute('aria-expanded', 'false');
+          moreButton.textContent = '＋ More Details (date, volunteer, email, notes)';
+        }
+        vsdQuickInit();
       }
 
       function newReceipt() {
@@ -5137,6 +5315,7 @@ _PAN: AAA-TV-2881J | 80G Exemption Available_`);
       function setVsdTheme(theme, persist = false) {
         const modern = theme === 'modern';
         document.body.classList.toggle('vsd-modern', modern);
+        if (modern) { vsdQuickInit(); vsdQuickPaymentState(); }
         const toggle = document.getElementById('vsd-theme-toggle');
         if (toggle) {
           toggle.textContent = modern ? '↩ Classic UI' : '◐ Modern UI';
